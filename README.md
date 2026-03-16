@@ -86,8 +86,7 @@ EMEET C960 Webcam → Pi USB → MediaPipe pipeline
 - [x] MPU6050 detected at 0x68 through multiplexer
 - [x] Accelerometer data read successfully via Python (smbus2)
 - [x] 2 IMUs reading independently on channels 0 and 1 (Thumb, Index)
-- [x] 3 IMUs wired and reading on channels 0, 1, 2 (Thumb, Index, Middle) — Channels 3 & 4 still debugging
-- [ ] All 5 IMUs on channels 0–4
+- [x] All 5 IMUs wired and reading on channels 0–4 (Thumb, Index, Middle, Ring, Pinky) ✅
 - [ ] MCP3008 ADC on SPI bus
 - [ ] Flex sensor voltage divider circuits
 - [ ] Full sensor array mounted on glove
