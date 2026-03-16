@@ -85,7 +85,8 @@ EMEET C960 Webcam → Pi USB → MediaPipe pipeline
 - [x] TCA9548A detected at 0x70 via `i2cdetect`
 - [x] MPU6050 detected at 0x68 through multiplexer
 - [x] Accelerometer data read successfully via Python (smbus2)
-- [x] 2 IMUs reading independently on channels 0 and 1
+- [x] 2 IMUs reading independently on channels 0 and 1 (Thumb, Index)
+- [x] 3 IMUs wired and reading on channels 0, 1, 2 (Thumb, Index, Middle) — Channels 3 & 4 still debugging
 - [ ] All 5 IMUs on channels 0–4
 - [ ] MCP3008 ADC on SPI bus
 - [ ] Flex sensor voltage divider circuits
@@ -111,17 +112,28 @@ cd pd-glove
 source venv/bin/activate
 pip install -r requirements.txt  # install dependencies
 
-# Scan I2C bus
+# Scan I2C bus (shows TCA9548A at 0x70)
 sudo i2cdetect -y 1
 
-# Test IMU reading
-python3 -c "
-import smbus2, time
-bus = smbus2.SMBus(1)
-bus.write_byte_data(0x70, 0, 1 << 0)  # select channel 0
-bus.write_byte_data(0x68, 0x6B, 0)    # wake IMU
-time.sleep(0.01)
-ax = bus.read_byte_data(0x68,0x3B)<<8 | bus.read_byte_data(0x68,0x3C)
-print(f'Accel X: {ax}')
-"
+# Test all 5 IMUs on multiplexer channels 0-4
+python3 test_imus.py
 ```
+
+## Testing IMU Channels
+
+The `test_imus.py` script sequentially selects each TCA9548A channel, wakes the MPU6050 on that channel, and reads accelerometer X-axis data:
+
+```bash
+python3 test_imus.py
+```
+
+Expected output (all channels responding):
+```
+Channel 0: Accel X = 60048
+Channel 1: Accel X = 64888
+Channel 2: Accel X = 50088
+Channel 3: Accel X = xxxxx
+Channel 4: Accel X = xxxxx
+```
+
+If a channel shows `Remote I/O error`, the wiring to that IMU is incomplete or loose. Check SD/SC connections to the multiplexer.
