@@ -106,7 +106,16 @@ main.py                   ← Orchestrates staged pipeline
 - Current implementation scope is tremor-first (IMU only). Flex/bradykinesia remains pending hardware integration.
 - Phone video is reserved for post-session compliance validation; no real-time camera gating in the live pipeline.
 - Stable wiring topology is critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
-- Current measured capture throughput is below target 100 Hz under full 5-channel polling; this is sufficient for 4-6 Hz tremor band experiments and will be optimized in later iterations.
+- Current measured capture throughput is approximately 71 Hz under full 5-channel polling. This reflects current software/I2C throughput limits, not fundamental signal instability, and remains sufficient for 4-6 Hz tremor-band experiments.
+
+## Future Work
+
+- Integrate flex sensor + MCP3008 pathway for bradykinesia and rigidity metrics.
+- Add structured app/session timestamp protocol to formalize exercise semantics.
+- Add Transformer/TFLite inference module for MDS-UPDRS-aligned scoring.
+- Add MQTT clinical payload publishing and robust session state handling.
+- Add security layer (payload encryption, TLS/mTLS transport, and key lifecycle controls).
+- Evaluate and optimize sustained sampling rate toward full 100 Hz multi-channel acquisition.
 
 ## Documentation
 
