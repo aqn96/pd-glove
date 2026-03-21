@@ -44,7 +44,6 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
 | MCP3008 ADC | 1 | 10-bit SPI ADC for flex sensor voltage dividers | ✅ Acquired |
 | 4.7kΩ Pull-up Resistors | 2 | I2C SDA/SCL pull-ups | ✅ Acquired |
 | 10kΩ Resistors | 5 | Flex sensor voltage divider pull-downs | ✅ Acquired |
-| EMEET C960 USB Webcam | 1 | Optional local capture device for later CV experiments | ✅ Acquired |
 
 ## Wiring
 
