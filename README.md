@@ -90,9 +90,9 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 - [ ] MCP3008 ADC on SPI bus
 - [ ] Flex sensor voltage divider circuits
 - [ ] Full sensor array mounted on glove
-- [ ] Software pipeline (sensor_reader.py, dsp_pipeline.py, etc.)
+- [x] Tremor software pipeline (`sensor_reader.py` + `dsp_pipeline.py`) validated end-to-end on Pi
 
-## Software Modules (Planned)
+## Software Modules
 
 ```
 sensor_reader.py          ← 5x IMU polling at 100Hz via TCA9548A
@@ -101,6 +101,13 @@ transformer_inference.py  ← TFLite INT8 model runner (next stage)
 mqtt_publisher.py         ← JSON payload → MQTT broker (next stage)
 main.py                   ← Orchestrates staged pipeline
 ```
+
+## Current Prototype Notes (Tremor Phase)
+
+- Current implementation scope is tremor-first (IMU only). Flex/bradykinesia remains pending hardware integration.
+- Phone video is reserved for post-session compliance validation; no real-time camera gating in the live pipeline.
+- Stable wiring topology is critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
+- Current measured capture throughput is below target 100 Hz under full 5-channel polling; this is sufficient for 4-6 Hz tremor band experiments and will be optimized in later iterations.
 
 ## Quick Start
 
@@ -115,6 +122,26 @@ sudo i2cdetect -y 1
 
 # Test all 5 IMUs on multiplexer channels 0-4
 python3 test_imus.py
+```
+
+### Capture + DSP Validation (Pi)
+
+```bash
+# Capture 10s multi-IMU session
+python3 sensor_reader.py --duration 10 --output imu_capture.csv
+
+# Run tremor-band analysis for each channel
+for ch in 0 1 2 3 4; do
+  python3 dsp_pipeline.py --input imu_capture.csv --channel $ch --axis ax
+done
+```
+
+### Rest vs Tremor Comparison
+
+```bash
+python3 sensor_reader.py --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
+python3 sensor_reader.py --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
+ls -1 rest_*.csv tremor_*.csv
 ```
 
 ## Testing IMU Channels
@@ -134,4 +161,4 @@ Channel 3: Accel X = xxxxx
 Channel 4: Accel X = xxxxx
 ```
 
-If a channel shows `Remote I/O error`, the wiring to that IMU is incomplete or loose. Check SD/SC connections to the multiplexer.
+If a channel shows `Remote I/O error`, check that channel branch wiring and verify shared 3.3V/GND rails are common across all IMUs and the multiplexer.
