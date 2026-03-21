@@ -109,6 +109,11 @@ main.py                   ← Orchestrates staged pipeline
 - Stable wiring topology is critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
 - Current measured capture throughput is below target 100 Hz under full 5-channel polling; this is sufficient for 4-6 Hz tremor band experiments and will be optimized in later iterations.
 
+## Documentation
+
+- `docs/testing-workflow.md` — repeatable hardware/DSP validation procedure
+- `docs/validation-results.md` — latest recorded tremor-phase run outcomes
+
 ## Quick Start
 
 ```bash
