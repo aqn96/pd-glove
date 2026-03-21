@@ -4,6 +4,7 @@ import argparse
 import csv
 import time
 from dataclasses import dataclass
+from errno import ERREMOTEIO
 from pathlib import Path
 
 import smbus2
@@ -15,6 +16,9 @@ MPU6050_ACCEL_XOUT_H = 0x3B
 CHANNELS = (0, 1, 2, 3, 4)
 SAMPLE_RATE_HZ = 100.0
 SAMPLE_PERIOD_S = 1.0 / SAMPLE_RATE_HZ
+MUX_SETTLE_S = 0.003
+RETRY_COUNT = 3
+RETRY_BACKOFF_S = 0.002
 
 
 @dataclass(frozen=True)
@@ -36,7 +40,7 @@ class MultiImuReader:
 
     def _select_channel(self, channel: int) -> None:
         self.bus.write_byte_data(TCA9548A_ADDR, 0x00, 1 << channel)
-        time.sleep(0.0008)
+        time.sleep(MUX_SETTLE_S)
 
     @staticmethod
     def _to_signed(high: int, low: int) -> int:
@@ -48,21 +52,34 @@ class MultiImuReader:
         low = self.bus.read_byte_data(MPU6050_ADDR, register + 1)
         return self._to_signed(high, low)
 
+    def _read_word_with_retry(self, channel: int, register: int) -> int:
+        last_error: OSError | None = None
+        for attempt in range(RETRY_COUNT):
+            try:
+                self._select_channel(channel)
+                return self._read_word(register)
+            except OSError as error:
+                last_error = error
+                if error.errno != ERREMOTEIO or attempt == RETRY_COUNT - 1:
+                    raise
+                time.sleep(RETRY_BACKOFF_S * (attempt + 1))
+        assert last_error is not None
+        raise last_error
+
     def wake_all(self) -> None:
         for channel in self.channels:
             self._select_channel(channel)
             self.bus.write_byte_data(MPU6050_ADDR, MPU6050_PWR_MGMT_1, 0)
-            time.sleep(0.001)
+            time.sleep(0.005)
 
     def read_channel(self, channel: int, timestamp: float | None = None) -> ImuSample:
-        self._select_channel(channel)
         sample_time = time.time() if timestamp is None else timestamp
-        ax = self._read_word(MPU6050_ACCEL_XOUT_H)
-        ay = self._read_word(MPU6050_ACCEL_XOUT_H + 2)
-        az = self._read_word(MPU6050_ACCEL_XOUT_H + 4)
-        gx = self._read_word(MPU6050_ACCEL_XOUT_H + 8)
-        gy = self._read_word(MPU6050_ACCEL_XOUT_H + 10)
-        gz = self._read_word(MPU6050_ACCEL_XOUT_H + 12)
+        ax = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H)
+        ay = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H + 2)
+        az = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H + 4)
+        gx = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H + 8)
+        gy = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H + 10)
+        gz = self._read_word_with_retry(channel, MPU6050_ACCEL_XOUT_H + 12)
         return ImuSample(sample_time, channel, ax, ay, az, gx, gy, gz)
 
     def stream(self, duration_s: float) -> list[ImuSample]:
