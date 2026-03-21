@@ -14,12 +14,12 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
 ## System Architecture
 
 ```
-[Glove Sensors]              [USB Webcam]
-5× MPU6050 IMU               MediaPipe Pose Estimation
-5× Flex Sensor (pending)     Contextual Gatekeeper
-        ↓                           ↓
-    100Hz Raw Data          Resting vs Active State
-        ↓                           ↓
+[Glove Sensors]                   [Patient Phone Video]
+5× MPU6050 IMU                    Encrypted session recording
+5× Flex Sensor (pending)          Post-session MediaPipe validation
+        ↓                                  ↓
+   100Hz Raw Data               Compliance flags (later stage)
+        ↓
 ┌──────────────────────────────────────────┐
 │   DSP: Butterworth Band-Pass (3-15 Hz)  │
 │   + Fast Fourier Transform (FFT)        │
@@ -27,7 +27,7 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
         ↓
 ┌──────────────────────────────────────────┐
 │   ML Inference (TFLite INT8)            │
-│   Transformer Encoder → MDS-UPDRS 0-4  │
+│   Transformer Encoder → MDS-UPDRS 0-4   │
 └──────────────────────────────────────────┘
         ↓
    MQTT JSON Payload → Cloud Web App
@@ -44,7 +44,7 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
 | MCP3008 ADC | 1 | 10-bit SPI ADC for flex sensor voltage dividers | ✅ Acquired |
 | 4.7kΩ Pull-up Resistors | 2 | I2C SDA/SCL pull-ups | ✅ Acquired |
 | 10kΩ Resistors | 5 | Flex sensor voltage divider pull-downs | ✅ Acquired |
-| EMEET C960 USB Webcam | 1 | MediaPipe contextual gating | ✅ Acquired |
+| EMEET C960 USB Webcam | 1 | Optional local capture device for later CV experiments | ✅ Acquired |
 
 ## Wiring
 
@@ -60,8 +60,8 @@ Pi GPIO2 (SDA) / GPIO3 (SCL) → TCA9548A (0x70) → Channels 0–4 → 5× MPU6
 **SPI Subsystem (Bradykinesia Detection — pending flex sensors):**
 5× Flex Sensors → 10kΩ voltage dividers → MCP3008 ADC (CH0–CH4) → Pi SPI bus (spidev0.0)
 
-**USB Subsystem:**
-EMEET C960 Webcam → Pi USB → MediaPipe pipeline
+**Phone Video Subsystem (Post-Session Validation):**
+Patient phone records encrypted session video for retrospective MediaPipe compliance checks. No real-time CV gating in the live tremor pipeline.
 
 ## Pi Setup
 
@@ -95,12 +95,11 @@ EMEET C960 Webcam → Pi USB → MediaPipe pipeline
 ## Software Modules (Planned)
 
 ```
-sensor_reader.py          ← IMU + flex polling at 100Hz
-dsp_pipeline.py           ← Butterworth filter + FFT
-mediapipe_gate.py         ← Webcam resting state detection
-transformer_inference.py  ← TFLite INT8 model runner
-mqtt_publisher.py         ← JSON payload → MQTT broker
-main.py                   ← Orchestrates all modules
+sensor_reader.py          ← 5x IMU polling at 100Hz via TCA9548A
+dsp_pipeline.py           ← Butterworth filter + FFT (4-6Hz tremor metrics)
+transformer_inference.py  ← TFLite INT8 model runner (next stage)
+mqtt_publisher.py         ← JSON payload → MQTT broker (next stage)
+main.py                   ← Orchestrates staged pipeline
 ```
 
 ## Quick Start
