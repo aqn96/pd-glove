@@ -4,7 +4,7 @@ import argparse
 import csv
 import time
 from dataclasses import dataclass
-from errno import ERREMOTEIO
+from errno import EREMOTEIO
 from pathlib import Path
 
 import smbus2
@@ -60,7 +60,7 @@ class MultiImuReader:
                 return self._read_word(register)
             except OSError as error:
                 last_error = error
-                if error.errno != ERREMOTEIO or attempt == RETRY_COUNT - 1:
+                if error.errno != EREMOTEIO or attempt == RETRY_COUNT - 1:
                     raise
                 time.sleep(RETRY_BACKOFF_S * (attempt + 1))
         assert last_error is not None
