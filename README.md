@@ -121,6 +121,7 @@ main.py                   ← Orchestrates staged pipeline
 
 - `docs/testing-workflow.md` — repeatable hardware/DSP validation procedure
 - `docs/validation-results.md` — latest recorded tremor-phase run outcomes
+- `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
 
 ## Quick Start
 
