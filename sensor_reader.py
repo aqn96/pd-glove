@@ -21,6 +21,16 @@ RETRY_COUNT = 3
 RETRY_BACKOFF_S = 0.002
 
 
+def parse_channels(raw: str) -> tuple[int, ...]:
+    channels: list[int] = []
+    for token in raw.split(","):
+        channel = int(token.strip())
+        if channel < 0 or channel > 7:
+            raise ValueError("Channel values must be in range 0..7")
+        channels.append(channel)
+    return tuple(channels)
+
+
 @dataclass(frozen=True)
 class ImuSample:
     timestamp: float
@@ -132,18 +142,25 @@ def write_csv(samples: list[ImuSample], output_path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Read 5 MPU6050 sensors at 100Hz via TCA9548A.")
+    parser = argparse.ArgumentParser(description="Read MPU6050 sensors at 100Hz via TCA9548A.")
     parser.add_argument("--duration", type=float, default=10.0, help="Capture duration in seconds.")
     parser.add_argument("--output", type=Path, default=Path("imu_capture.csv"), help="CSV output path.")
     parser.add_argument("--log-interval", type=float, default=1.0, help="Progress log interval in seconds.")
+    parser.add_argument(
+        "--channels",
+        type=str,
+        default="0,1,2,3,4",
+        help="Comma-separated mux channels to capture (default: 0,1,2,3,4).",
+    )
     args = parser.parse_args()
 
-    reader = MultiImuReader()
+    channels = parse_channels(args.channels)
+    reader = MultiImuReader(channels=channels)
     wall_start = time.monotonic()
     try:
         reader.wake_all()
         print(
-            f"Starting capture: duration={args.duration:.2f}s channels={len(CHANNELS)} "
+            f"Starting capture: duration={args.duration:.2f}s channels={len(channels)} "
             f"target_hz={SAMPLE_RATE_HZ:.0f}",
             flush=True,
         )
@@ -153,9 +170,9 @@ def main() -> None:
         reader.close()
 
     wall_elapsed = time.monotonic() - wall_start
-    loop_hz = (len(samples) / len(CHANNELS)) / wall_elapsed if wall_elapsed > 0 else 0.0
+    loop_hz = (len(samples) / len(channels)) / wall_elapsed if wall_elapsed > 0 else 0.0
     print(
-        f"Captured {len(samples)} rows across {len(CHANNELS)} channels at {SAMPLE_RATE_HZ:.0f}Hz loop "
+        f"Captured {len(samples)} rows across {len(channels)} channels at {SAMPLE_RATE_HZ:.0f}Hz loop "
         f"for {args.duration:.2f}s -> {args.output}"
     )
     print(
