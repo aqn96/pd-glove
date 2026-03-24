@@ -6,8 +6,8 @@ This document captures the current tremor-phase validation status for the PD glo
 
 - Hardware: Raspberry Pi 5 + 5x MPU6050 + TCA9548A
 - Pipeline:
-  - `sensor_reader.py` (multi-IMU capture)
-  - `dsp_pipeline.py` (3-15 Hz Butterworth + FFT 4-6 Hz metrics)
+  - `scripts/sensor_reader.py` (multi-IMU capture)
+  - `scripts/dsp_pipeline.py` (3-15 Hz Butterworth + FFT 4-6 Hz metrics)
 - Scope: tremor only (flex/bradykinesia pending)
 
 ## Final Stable Hardware State
@@ -25,7 +25,7 @@ Stable configuration used for final validation:
 Command:
 
 ```bash
-python3 sensor_reader.py --duration 10 --output imu_capture_all5_fixed.csv
+python3 scripts/sensor_reader.py --duration 10 --output imu_capture_all5_fixed.csv
 ```
 
 Observed output:

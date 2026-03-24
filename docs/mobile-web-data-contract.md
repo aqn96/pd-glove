@@ -4,7 +4,7 @@ This design doc defines the data sent over the internet from the PD-glove edge g
 
 It is based on:
 
-- current repository implementation (`sensor_reader.py`, `dsp_pipeline.py`)
+- current repository implementation (`scripts/sensor_reader.py`, `scripts/dsp_pipeline.py`)
 - current repo docs and validation notes
 - paper-level architecture and requirements from the provided manuscript excerpt
 
@@ -142,8 +142,8 @@ Periodic non-clinical telemetry for reliability:
 
 Source in repo:
 
-- `sensor_reader.py`: captures `ax, ay, az, gx, gy, gz` per channel
-- `dsp_pipeline.py`: computes tremor-band metrics in 4-6 Hz from filtered signal
+- `scripts/sensor_reader.py`: captures `ax, ay, az, gx, gy, gz` per channel
+- `scripts/dsp_pipeline.py`: computes tremor-band metrics in 4-6 Hz from filtered signal
 
 Cloud fields for tremor (current path):
 

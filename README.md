@@ -90,7 +90,7 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 - [ ] MCP3008 ADC on SPI bus
 - [ ] Flex sensor voltage divider circuits
 - [ ] Full sensor array mounted on glove
-- [x] Tremor software pipeline (`sensor_reader.py` + `dsp_pipeline.py`) validated end-to-end on Pi
+- [x] Tremor software pipeline (`scripts/sensor_reader.py` + `scripts/dsp_pipeline.py`) validated end-to-end on Pi
 
 ## Software Modules
 
@@ -110,7 +110,7 @@ main.py                   ← Orchestrates staged pipeline
 - Phone video is reserved for post-session compliance validation; no real-time camera gating in the live pipeline.
 - Stable wiring topology is critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
 - Current known hardware issue: one faulty IMU module plus suspected CH3/CH4 SDA/SCL crossover/bridge causing CH4 discovery failures.
-- `test_imus.py` now accepts compatible WHO_AM_I responses (`0x68`, `0x70`, `0x71`) and supports both `--scan-only` and `--scan only`.
+- `scripts/test_imus.py` now accepts compatible WHO_AM_I responses (`0x68`, `0x70`, `0x71`) and supports both `--scan-only` and `--scan only`.
 - Temporary operating mode: use channels `0,1,2,3` for capture/analysis until CH4 wiring and sensor replacement are completed.
 - Sampling-rate note: 100 Hz is a design target from prior literature/protocol, while current measured throughput is lower in practice due to software/I2C limits (~71 Hz with 5 channels, ~89 Hz with temporary 4-channel operation).
 
@@ -143,59 +143,59 @@ pip install -r requirements.txt  # install dependencies
 sudo i2cdetect -y 1
 
 # Test all 5 IMUs on multiplexer channels 0-4
-python3 test_imus.py
+python3 scripts/test_imus.py
 
 # Current stable operation (4 IMUs): channels 0-3
-python3 test_imus.py --channels 0,1,2,3
+python3 scripts/test_imus.py --channels 0,1,2,3
 ```
 
 ### Capture + DSP Validation (Pi)
 
 ```bash
 # Capture 10s multi-IMU session (5-channel target config)
-python3 sensor_reader.py --channels 0,1,2,3,4 --duration 10 --output imu_capture.csv
+python3 scripts/sensor_reader.py --channels 0,1,2,3,4 --duration 10 --output imu_capture.csv
 # Temporary 4-channel capture
-python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output imu_capture_4ch.csv
+python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output imu_capture_4ch.csv
 
 # Run tremor-band analysis for each channel
 for ch in 0 1 2 3 4; do
-  python3 dsp_pipeline.py --input imu_capture.csv --channel $ch --axis ax
+  python3 scripts/dsp_pipeline.py --input imu_capture.csv --channel $ch --axis ax
 done
 
 # Temporary 4-channel analysis
 for ch in 0 1 2 3; do
-  python3 dsp_pipeline.py --input imu_capture_4ch.csv --channel $ch --axis ax
+  python3 scripts/dsp_pipeline.py --input imu_capture_4ch.csv --channel $ch --axis ax
 done
 ```
 
 ### One-Command Tremor Validation (4-IMU Temporary Workflow)
 
 ```bash
-python3 run_tremor_validation.py --channels 0,1,2,3 --duration 10 --axis ax
+python3 scripts/run_tremor_validation.py --channels 0,1,2,3 --duration 10 --axis ax
 ```
 
 This runs:
-- channel probe (`test_imus.py`)
-- rest capture (`sensor_reader.py`)
-- tremor capture (`sensor_reader.py`)
-- per-channel DSP output (`dsp_pipeline.py`) for rest and tremor CSVs
+- channel probe (`scripts/test_imus.py`)
+- rest capture (`scripts/sensor_reader.py`)
+- tremor capture (`scripts/sensor_reader.py`)
+- per-channel DSP output (`scripts/dsp_pipeline.py`) for rest and tremor CSVs
 
 ### Rest vs Tremor Comparison
 
 ```bash
-python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
-python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
+python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
+python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
 ls -1 rest_*.csv tremor_*.csv
 ```
 
 ## Testing IMU Channels
 
-The `test_imus.py` script sequentially selects each TCA9548A channel, reads WHO_AM_I, wakes the sensor, and reads accelerometer X-axis data.
+The `scripts/test_imus.py` script sequentially selects each TCA9548A channel, reads WHO_AM_I, wakes the sensor, and reads accelerometer X-axis data.
 
 ```bash
-python3 test_imus.py
-python3 test_imus.py --scan-only
-python3 test_imus.py --scan only
+python3 scripts/test_imus.py
+python3 scripts/test_imus.py --scan-only
+python3 scripts/test_imus.py --scan only
 ```
 
 Expected output (healthy channel):

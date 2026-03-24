@@ -35,8 +35,8 @@ Given the current repo architecture (Pi 5 + multi-IMU + local DSP), Blues-style 
 
 Keep local on Pi (already aligned with this repo):
 
-- 5-channel IMU acquisition (`sensor_reader.py`)
-- tremor-band filtering + FFT (`dsp_pipeline.py`)
+- 5-channel IMU acquisition (`scripts/sensor_reader.py`)
+- tremor-band filtering + FFT (`scripts/dsp_pipeline.py`)
 - future local model inference (TFLite Transformer)
 
 Offload to Notecard/Notehub path:
@@ -109,7 +109,7 @@ Example compact event body:
 
 ## Integration sketch for this repo
 
-1. Keep `sensor_reader.py` + `dsp_pipeline.py` as source of truth for feature generation.
+1. Keep `scripts/sensor_reader.py` + `scripts/dsp_pipeline.py` as source of truth for feature generation.
 2. Add a small transport adapter module (future) that converts DSP outputs into compact event/summary JSON.
 3. Use configurable thresholds for event emission to avoid noise-triggered bursts.
 4. Preserve privacy-by-design: no raw biometric export unless explicitly needed for debug sessions.

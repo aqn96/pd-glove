@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+
 
 def run_command(command: list[str]) -> None:
     print(f"$ {' '.join(command)}", flush=True)
@@ -16,7 +18,7 @@ def run_dsp_for_channels(csv_path: Path, channels: tuple[int, ...], axis: str) -
     for channel in channels:
         command = [
             sys.executable,
-            "dsp_pipeline.py",
+            str(SCRIPT_DIR / "dsp_pipeline.py"),
             "--input",
             str(csv_path),
             "--channel",
@@ -61,13 +63,13 @@ def main() -> None:
     channels_arg = ",".join(str(c) for c in channels)
 
     print("Step 1/4: Hardware probe", flush=True)
-    run_command([sys.executable, "test_imus.py", "--channels", channels_arg])
+    run_command([sys.executable, str(SCRIPT_DIR / "test_imus.py"), "--channels", channels_arg])
 
     print("\nStep 2/4: Rest capture", flush=True)
     run_command(
         [
             sys.executable,
-            "sensor_reader.py",
+            str(SCRIPT_DIR / "sensor_reader.py"),
             "--channels",
             channels_arg,
             "--duration",
@@ -82,7 +84,7 @@ def main() -> None:
     run_command(
         [
             sys.executable,
-            "sensor_reader.py",
+            str(SCRIPT_DIR / "sensor_reader.py"),
             "--channels",
             channels_arg,
             "--duration",
