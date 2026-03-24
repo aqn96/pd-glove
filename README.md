@@ -85,7 +85,8 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 - [x] MPU6050 detected at 0x68 through multiplexer
 - [x] Accelerometer data read successfully via Python (smbus2)
 - [x] 2 IMUs reading independently on channels 0 and 1 (Thumb, Index)
-- [x] All 5 IMUs wired and reading on channels 0–4 (Thumb, Index, Middle, Ring, Pinky) ✅
+- [x] 4 IMUs reading stably on channels 0-3 (Thumb, Index, Middle, Ring) ✅
+- [ ] Channel 4 (Pinky) stable independent read path (currently failing with `Errno 121`)
 - [ ] MCP3008 ADC on SPI bus
 - [ ] Flex sensor voltage divider circuits
 - [ ] Full sensor array mounted on glove
@@ -106,6 +107,9 @@ main.py                   ← Orchestrates staged pipeline
 - Current implementation scope is tremor-first (IMU only). Flex/bradykinesia remains pending hardware integration.
 - Phone video is reserved for post-session compliance validation; no real-time camera gating in the live pipeline.
 - Stable wiring topology is critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
+- Current known hardware issue: one faulty IMU module plus suspected CH3/CH4 SDA/SCL crossover/bridge causing CH4 discovery failures.
+- `test_imus.py` now accepts compatible WHO_AM_I responses (`0x68`, `0x70`, `0x71`) and supports both `--scan-only` and `--scan only`.
+- Temporary operating mode: use channels `0,1,2,3` for capture/analysis until CH4 wiring and sensor replacement are completed.
 - Current measured capture throughput is approximately 71 Hz under full 5-channel polling. This reflects current software/I2C throughput limits, not fundamental signal instability, and remains sufficient for 4-6 Hz tremor-band experiments.
 
 ## Future Work
@@ -138,6 +142,9 @@ sudo i2cdetect -y 1
 
 # Test all 5 IMUs on multiplexer channels 0-4
 python3 test_imus.py
+
+# Current stable operation (4 IMUs): channels 0-3
+python3 test_imus.py --channels 0,1,2,3
 ```
 
 ### Capture + DSP Validation (Pi)
@@ -145,10 +152,17 @@ python3 test_imus.py
 ```bash
 # Capture 10s multi-IMU session
 python3 sensor_reader.py --duration 10 --output imu_capture.csv
+# Temporary 4-channel capture
+python3 sensor_reader.py --duration 10 --output imu_capture_4ch.csv
 
 # Run tremor-band analysis for each channel
 for ch in 0 1 2 3 4; do
   python3 dsp_pipeline.py --input imu_capture.csv --channel $ch --axis ax
+done
+
+# Temporary 4-channel analysis
+for ch in 0 1 2 3; do
+  python3 dsp_pipeline.py --input imu_capture_4ch.csv --channel $ch --axis ax
 done
 ```
 
@@ -162,19 +176,17 @@ ls -1 rest_*.csv tremor_*.csv
 
 ## Testing IMU Channels
 
-The `test_imus.py` script sequentially selects each TCA9548A channel, wakes the MPU6050 on that channel, and reads accelerometer X-axis data:
+The `test_imus.py` script sequentially selects each TCA9548A channel, reads WHO_AM_I, wakes the sensor, and reads accelerometer X-axis data.
 
 ```bash
 python3 test_imus.py
+python3 test_imus.py --scan-only
+python3 test_imus.py --scan only
 ```
 
-Expected output (all channels responding):
+Expected output (healthy channel):
 ```
-Channel 0: Accel X = 60048
-Channel 1: Accel X = 64888
-Channel 2: Accel X = 50088
-Channel 3: Accel X = xxxxx
-Channel 4: Accel X = xxxxx
+CH0: OK WHO_AM_I=0x70 (MPU6500-class clone) Accel X = 57748
 ```
 
-If a channel shows `Remote I/O error`, check that channel branch wiring and verify shared 3.3V/GND rails are common across all IMUs and the multiplexer.
+If a channel shows `Remote I/O error` or `not found`, check branch wiring continuity and verify shared 3.3V/GND rails are common across all IMUs and the multiplexer.

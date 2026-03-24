@@ -7,8 +7,6 @@ TCA9548A_ADDR = 0x70
 MPU6050_ADDR = 0x68
 MPU6050_PWR_MGMT_1 = 0x6B
 MPU6050_ACCEL_XOUT_H = 0x3B
-<<<<<<< HEAD
-=======
 MPU6050_WHO_AM_I = 0x75
 MPU6050_WHO_AM_I_EXPECTED = 0x68
 COMPATIBLE_WHO_AM_I = {
@@ -16,7 +14,6 @@ COMPATIBLE_WHO_AM_I = {
     0x70: "MPU6500-class clone",
     0x71: "MPU9250/MPU9255-class clone",
 }
->>>>>>> 7428047 (improve test_imus.py test)
 
 
 def parse_channels(raw: str) -> list[int]:
@@ -29,8 +26,6 @@ def parse_channels(raw: str) -> list[int]:
     return channels
 
 
-<<<<<<< HEAD
-=======
 def select_mux_channel(bus: smbus2.SMBus, channel: int) -> None:
     bus.write_byte(TCA9548A_ADDR, 1 << channel)
 
@@ -63,7 +58,6 @@ def scan_channels(bus: smbus2.SMBus, channels: list[int]) -> None:
             print(f"CH{channel}: not found")
 
 
->>>>>>> 7428047 (improve test_imus.py test)
 def main() -> None:
     parser = argparse.ArgumentParser(description="Quick MPU6050 per-channel check through TCA9548A.")
     parser.add_argument(
@@ -72,8 +66,6 @@ def main() -> None:
         default="0,1,2,3,4",
         help="Comma-separated mux channels to probe (default: 0,1,2,3,4).",
     )
-<<<<<<< HEAD
-=======
     parser.add_argument(
         "--scan-only",
         action="store_true",
@@ -86,7 +78,6 @@ def main() -> None:
         choices=["only"],
         help="Alias for --scan-only. Supports legacy usage: --scan only.",
     )
->>>>>>> 7428047 (improve test_imus.py test)
     args = parser.parse_args()
 
     channels = parse_channels(args.channels)
@@ -94,12 +85,6 @@ def main() -> None:
     failures = 0
 
     try:
-<<<<<<< HEAD
-        for channel in channels:
-            try:
-                bus.write_byte_data(TCA9548A_ADDR, 0, 1 << channel)
-                time.sleep(0.01)
-=======
         if args.scan_only or args.scan == "only":
             scan_channels(bus, channels)
             return
@@ -111,26 +96,18 @@ def main() -> None:
                 who_am_i = read_who_am_i(bus)
                 if not who_am_i_is_compatible(who_am_i):
                     raise OSError(f"unexpected WHO_AM_I=0x{who_am_i:02X}")
->>>>>>> 7428047 (improve test_imus.py test)
                 bus.write_byte_data(MPU6050_ADDR, MPU6050_PWR_MGMT_1, 0)
                 time.sleep(0.01)
                 ax_high = bus.read_byte_data(MPU6050_ADDR, MPU6050_ACCEL_XOUT_H)
                 ax_low = bus.read_byte_data(MPU6050_ADDR, MPU6050_ACCEL_XOUT_H + 1)
                 ax = (ax_high << 8) | ax_low
-<<<<<<< HEAD
-                print(f"CH{channel}: OK Accel X = {ax}")
-=======
                 chip_label = COMPATIBLE_WHO_AM_I[who_am_i]
                 print(f"CH{channel}: OK WHO_AM_I=0x{who_am_i:02X} ({chip_label}) Accel X = {ax}")
->>>>>>> 7428047 (improve test_imus.py test)
             except OSError as error:
                 failures += 1
                 print(f"CH{channel}: FAIL {error}")
     finally:
-<<<<<<< HEAD
-=======
         disable_all_mux_channels(bus)
->>>>>>> 7428047 (improve test_imus.py test)
         bus.close()
 
     print(f"Probe finished: tested={len(channels)} failures={failures}")
