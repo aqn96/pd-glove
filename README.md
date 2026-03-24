@@ -166,6 +166,18 @@ for ch in 0 1 2 3; do
 done
 ```
 
+### One-Command Tremor Validation (4-IMU Temporary Workflow)
+
+```bash
+python3 run_tremor_validation.py --channels 0,1,2,3 --duration 10 --axis ax
+```
+
+This runs:
+- channel probe (`test_imus.py`)
+- rest capture (`sensor_reader.py`)
+- tremor capture (`sensor_reader.py`)
+- per-channel DSP output (`dsp_pipeline.py`) for rest and tremor CSVs
+
 ### Rest vs Tremor Comparison
 
 ```bash
