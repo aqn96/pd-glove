@@ -123,6 +123,7 @@ main.py                   ← Orchestrates staged pipeline
 - `docs/validation-results.md` — latest recorded tremor-phase run outcomes
 - `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
 - `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
+- `docs/activity5-datasets.md` — Activity 5 write-up: measurable attributes, predictions, external datasets, and custom dataset plan
 
 ## Quick Start
 
