@@ -18,7 +18,7 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
 5× MPU6050 IMU                    Encrypted session recording
 5× Flex Sensor (pending)          Post-session MediaPipe validation
         ↓                                  ↓
-   100Hz Raw Data               Compliance flags (later stage)
+    ~89Hz measured (4ch), 100Hz target   Compliance flags (later stage)
         ↓
 ┌──────────────────────────────────────────┐
 │   DSP: Butterworth Band-Pass (3-15 Hz)  │
@@ -95,8 +95,10 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 ## Software Modules
 
 ```
-sensor_reader.py          ← 5x IMU polling at 100Hz via TCA9548A
+sensor_reader.py          ← Multi-IMU polling via TCA9548A (100Hz target)
+test_imus.py              ← Per-channel probe + WHO_AM_I compatibility checks
 dsp_pipeline.py           ← Butterworth filter + FFT (4-6Hz tremor metrics)
+run_tremor_validation.py  ← One-command probe + capture + DSP workflow
 transformer_inference.py  ← TFLite INT8 model runner (next stage)
 mqtt_publisher.py         ← JSON payload → MQTT broker (next stage)
 main.py                   ← Orchestrates staged pipeline
@@ -110,7 +112,7 @@ main.py                   ← Orchestrates staged pipeline
 - Current known hardware issue: one faulty IMU module plus suspected CH3/CH4 SDA/SCL crossover/bridge causing CH4 discovery failures.
 - `test_imus.py` now accepts compatible WHO_AM_I responses (`0x68`, `0x70`, `0x71`) and supports both `--scan-only` and `--scan only`.
 - Temporary operating mode: use channels `0,1,2,3` for capture/analysis until CH4 wiring and sensor replacement are completed.
-- Current measured capture throughput is approximately 71 Hz under full 5-channel polling. This reflects current software/I2C throughput limits, not fundamental signal instability, and remains sufficient for 4-6 Hz tremor-band experiments.
+- Sampling-rate note: 100 Hz is a design target from prior literature/protocol, while current measured throughput is lower in practice due to software/I2C limits (~71 Hz with 5 channels, ~89 Hz with temporary 4-channel operation).
 
 ## Future Work
 
@@ -150,10 +152,10 @@ python3 test_imus.py --channels 0,1,2,3
 ### Capture + DSP Validation (Pi)
 
 ```bash
-# Capture 10s multi-IMU session
-python3 sensor_reader.py --duration 10 --output imu_capture.csv
+# Capture 10s multi-IMU session (5-channel target config)
+python3 sensor_reader.py --channels 0,1,2,3,4 --duration 10 --output imu_capture.csv
 # Temporary 4-channel capture
-python3 sensor_reader.py --duration 10 --output imu_capture_4ch.csv
+python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output imu_capture_4ch.csv
 
 # Run tremor-band analysis for each channel
 for ch in 0 1 2 3 4; do
@@ -181,8 +183,8 @@ This runs:
 ### Rest vs Tremor Comparison
 
 ```bash
-python3 sensor_reader.py --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
-python3 sensor_reader.py --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
+python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
+python3 sensor_reader.py --channels 0,1,2,3 --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
 ls -1 rest_*.csv tremor_*.csv
 ```
 
