@@ -47,10 +47,12 @@
 
 ## Hardware Configuration
 
-**Mounting:**
+**Mounting (Per-Finger PLA Ring Design):**
 - PLA 3D-printed rings (one per finger)
-- Elastic bands for attachment
-- Hot glue on side-top bars for stability
+- Bottom: Two slots for elastic band threading (adjustable tension)
+- Top: Two side bars matching sensor width for hot glue stabilization
+- Top cavity designed to fit MPU6050 sensor precisely
+- Result: Stable sensor positioning with minimal motion artifacts
 
 **Electrical:**
 - Shared 3.3V and GND rails

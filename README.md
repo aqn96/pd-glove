@@ -111,7 +111,11 @@ main.py                   ← Orchestrates staged pipeline
 ## Current Prototype Status (Tremor Phase Complete)
 
 ### Hardware
-- **Wearable form factor:** PLA rings + elastic bands with hot glue securing sensors to side-top bars (stable mounting achieved)
+- **Wearable form factor:** Custom 3D-printed PLA rings (one per finger) with:
+  - Bottom: Two slots for elastic band threading (adjustable tension)
+  - Top: Two side bars matching sensor width for hot glue stabilization
+  - Top cavity designed to fit MPU6050 sensor precisely
+  - Result: Stable mounting with minimal motion artifacts
 - **Operational channels:** 4 IMUs on channels 0-3 (Thumb, Index, Middle, Ring)
 - **Channel 4 issue:** Hardware fault + suspected SDA/SCL crossover preventing Pinky sensor operation
 - **Sampling rate:** 88.9-89.3 Hz sustained (4-channel), vs. 100 Hz design target

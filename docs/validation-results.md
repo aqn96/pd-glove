@@ -20,11 +20,20 @@ This document captures the tremor-phase validation status for the PD glove proto
 <!-- TODO: Add image: ![Mounted glove overview](images/hardware/glove-complete.jpg) -->
 <!-- TODO: Add image: ![PLA ring detail with hot glue](images/hardware/pla-ring-hot-glue-detail.jpg) -->
 
-The sensors are now mounted on a wearable glove using:
-- **PLA 3D-printed rings** (one per finger)
-- **Elastic bands** for secure attachment
-- **Hot glue** applied to the side-top bars of each ring for stability
-- This configuration provides stable sensor positioning during rest and tremor capture
+**Per-Finger PLA Ring Design:**
+
+Each sensor is mounted using a custom 3D-printed PLA ring with the following features:
+
+- **Bottom:** Two slots for elastic band threading
+  - Allows band to pass through for secure finger attachment
+  - Enables tension adjustment for different finger sizes
+  
+- **Top:** Two side bars (left + right) matching sensor width
+  - Hot glue applied to these bars to stabilize the MPU6050 sensor
+  - Top cavity designed to fit sensor dimensions precisely
+  
+- **Material:** PLA (3D-printed)
+- **Result:** Stable sensor positioning during rest and tremor capture with minimal motion artifacts
 
 ## Stable Hardware Configuration
 
