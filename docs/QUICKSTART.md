@@ -30,10 +30,10 @@ python3 scripts/run_tremor_validation.py
 
 ```bash
 # View master CSV
-cat ~/pd-glove/tremor_validation_master.csv | column -t -s,
+cat ~/pd-glove/data/tremor_validation_master.csv | column -t -s,
 
 # Or copy to laptop for analysis
-scp aqnguyen96@iotpi5.local:~/pd-glove/tremor_validation_master.csv ~/Downloads/
+scp aqnguyen96@iotpi5.local:~/pd-glove/data/tremor_validation_master.csv ~/Downloads/
 ```
 
 ## Advanced Options
@@ -65,7 +65,7 @@ python3 scripts/run_tremor_validation.py \
 - Just re-run the script
 
 **If you need to delete a bad test:**
-- Edit `tremor_validation_master.csv` manually and remove the rows
+- Edit `data/tremor_validation_master.csv` manually and remove the rows
 - Or use a CSV editor on your laptop after copying
 
 **Check hardware:**

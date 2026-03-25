@@ -9,7 +9,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-MASTER_CSV = REPO_ROOT / "tremor_validation_master.csv"
+DATA_DIR = REPO_ROOT / "data"
+MASTER_CSV = DATA_DIR / "tremor_validation_master.csv"
 
 
 def run_command(command: list[str]) -> None:
@@ -72,6 +73,9 @@ def append_to_master_csv(person_id: str, test_name: str, timestamp: str, channel
                          tremor_metrics: dict[int, dict[str, float]],
                          sampling_hz: float, retries: int, notes: str = "") -> None:
     """Append validation results to master CSV."""
+    
+    # Create data directory if it doesn't exist
+    DATA_DIR.mkdir(exist_ok=True)
     
     # Create CSV with headers if it doesn't exist
     if not MASTER_CSV.exists():

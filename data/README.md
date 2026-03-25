@@ -1,0 +1,48 @@
+# Data Directory
+
+This directory contains validated tremor detection datasets.
+
+## Files
+
+### `tremor_validation_master.csv`
+
+**Master dataset log** — All validation test results automatically appended by `scripts/run_tremor_validation.py`
+
+**Columns:**
+- `person_id` — Subject identifier (e.g., person_1, person_A, person_B)
+- `test_name` — Test identifier (e.g., test_one, test_two)
+- `timestamp` — ISO 8601 timestamp of test execution
+- `channel` — IMU channel (0=Thumb, 1=Index, 2=Middle, 3=Ring)
+- `condition` — Either "rest" or "tremor"
+- `dominant_freq_hz` — Dominant frequency in 4-6 Hz tremor band
+- `dominant_amp` — Amplitude at dominant frequency
+- `band_power` — Total power in 4-6 Hz band (primary metric)
+- `sampling_hz` — Measured sampling rate during capture
+- `retries` — Number of I2C retries (0 = perfect stability)
+- `notes` — Optional notes about test conditions
+
+**Structure:**
+- Each test generates 8 rows: 4 channels × 2 conditions (rest/tremor)
+- Data is append-only (never delete rows, mark bad tests in notes)
+
+**Usage:**
+```python
+import pandas as pd
+df = pd.read_csv('data/tremor_validation_master.csv')
+```
+
+## Adding Data
+
+Data is automatically appended when running:
+```bash
+python3 scripts/run_tremor_validation.py
+```
+
+Manual data entry is not recommended — always use the validation script to ensure consistent formatting.
+
+## Dataset Versioning
+
+When dataset reaches significant milestones, create snapshot copies:
+```bash
+cp data/tremor_validation_master.csv data/tremor_validation_v1.0_2026-03-25.csv
+```

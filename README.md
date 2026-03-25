@@ -194,7 +194,7 @@ Then automatically:
 2. Captures rest data (10s)
 3. Captures tremor data (10s) — user performs tremor during this
 4. Runs DSP analysis on both captures
-5. **Appends results to `tremor_validation_master.csv`** in repo root
+5. **Appends results to `data/tremor_validation_master.csv`**
 
 **Advanced usage:**
 
@@ -212,7 +212,7 @@ python3 scripts/run_tremor_validation.py --channels 0,1,2,3 --duration 15
 **Output:**
 - `rest_4ch.csv` — temporary rest capture (overwritten each run)
 - `tremor_4ch.csv` — temporary tremor capture (overwritten each run)
-- `tremor_validation_master.csv` — **permanent log of all validation tests** ✅
+- `data/tremor_validation_master.csv` — **permanent log of all validation tests** ✅
 
 ### Rest vs Tremor Comparison
 
