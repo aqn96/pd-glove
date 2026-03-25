@@ -1,5 +1,6 @@
 
 *.csv
+!tremor_validation_master.csv
 .venv/
 venv/
 .DS_Store
