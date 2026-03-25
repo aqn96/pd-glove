@@ -45,16 +45,19 @@ All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline 
 | 4.7kΩ Pull-up Resistors | 2 | I2C SDA/SCL pull-ups | ✅ Acquired |
 | 10kΩ Resistors | 5 | Flex sensor voltage divider pull-downs | ✅ Acquired |
 
-## Wiring
+## Wiring & Sensor Placement
 
 **I2C Subsystem (Tremor Detection):**
 Pi GPIO2 (SDA) / GPIO3 (SCL) → TCA9548A (0x70) → Channels 0–4 → 5× MPU6050 (0x68 each)
 
+**Per-Finger Channel Mapping:**
 - Ch0: Thumb
 - Ch1: Index
 - Ch2: Middle
 - Ch3: Ring
-- Ch4: Pinky
+- Ch4: Pinky (hardware issue, under investigation)
+
+**Design Rationale:** Per-finger IMU placement enables spatial isolation of the thumb-index interaction characteristic of Parkinsonian pill-rolling tremor, providing superior resolution over single wrist-worn sensors for fine-grained motor pattern recognition.
 
 **SPI Subsystem (Bradykinesia Detection — pending flex sensors):**
 5× Flex Sensors → 10kΩ voltage dividers → MCP3008 ADC (CH0–CH4) → Pi SPI bus (spidev0.0)
@@ -115,11 +118,12 @@ main.py                   ← Orchestrates staged pipeline
 - **I2C stability:** Zero retries across multi-subject validation
 
 ### Validation Status
-- ✅ **Multi-subject dataset collected:** 9 tests across 2 subjects
+- ✅ **Multi-subject dataset collected:** 9 tests across 2 subjects (72 per-finger DSP feature vectors)
 - ✅ **Tremor discrimination validated:** 30-895× power increase from rest to tremor
 - ✅ **Clinical severity range:** Light (1.4K) → Moderate (2-7K) → High (7-15K) → Severe (26K)
 - ✅ **Frequency accuracy:** All tremor captures in 4-6 Hz Parkinsonian range
 - ✅ **Environmental controls documented:** Contamination effects identified and logged
+- ✅ **Dataset ready for Transformer training:** `data/tremor_validation_master.csv`
 
 ### Implementation Scope
 - Current focus is tremor-first (IMU only). Flex/bradykinesia remains pending hardware integration.
