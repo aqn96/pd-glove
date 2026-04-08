@@ -10,11 +10,15 @@ It is based on:
 
 > Scope note: the current implementation does **not** use Blues Notecard/DPU technology in the live data path. Any Blues/DPU integration is experimental and future-facing.
 
+---
+
 ## 1) Contract goals
 
 - Give app/backend teams a stable, versioned payload contract.
 - Keep cloud payloads clinically useful and privacy-preserving.
 - Separate **current production-ready fields** from **planned fields** (flex integration pending).
+
+---
 
 ## 2) Privacy boundary (non-negotiable)
 
@@ -31,12 +35,16 @@ Data sent:
 - session/context metadata
 - sensor and pipeline health indicators
 
+---
+
 ## 3) Transmission model
 
 - Protocol: MQTT JSON payloads
 - Granularity: **exercise-centric** (primary), with optional event/window messages
 - Ordering: at-least-once delivery expected; consumers must deduplicate by `message_id`
 - Timestamps: UTC ISO-8601
+
+---
 
 ## 4) Versioning and compatibility
 
@@ -55,6 +63,8 @@ Compatibility rules:
 - consumers must ignore unknown fields
 - breaking changes require major version bump
 
+---
+
 ## 5) Message types
 
 ### 5.1 `exercise_summary` (primary contract)
@@ -66,10 +76,10 @@ One message per exercise task (rest, finger tapping, hand open/close, pronation/
   "schema_version": "2.0.0",
   "message_type": "exercise_summary",
   "message_id": "6a8a88b7-4c37-4e7b-b93f-e2306146f0be",
-  "generated_at": "2026-03-22T11:20:00Z",
+  "generated_at": "2026-03-25T17:41:56Z",
   "device_id": "pdg-001",
   "patient_id_hash": "pt_9f2c6f",
-  "session_id": "sess_20260322_1120",
+  "session_id": "sess_20260325_1741",
   "hand_side": "right",
   "exercise": {
     "code": "rest_tremor",
@@ -82,23 +92,39 @@ One message per exercise task (rest, finger tapping, hand open/close, pronation/
   "tremor": {
     "enabled": true,
     "sample_rate_hz_target": 100.0,
-    "sample_rate_hz_effective": 71.3,
+    "sample_rate_hz_effective": 89.25,
     "channels": [
       {
         "finger": "thumb",
         "channel": 0,
         "axis": "ax",
-        "dominant_freq_hz_4_6": 5.3,
-        "dominant_amp_4_6": 1.785462,
-        "band_power_4_6": 23.555304
+        "dominant_freq_hz_4_6": 4.0,
+        "dominant_amp_4_6": 24.302194,
+        "band_power_4_6": 2536.787274
       },
       {
         "finger": "index",
         "channel": 1,
         "axis": "ax",
-        "dominant_freq_hz_4_6": 6.0,
-        "dominant_amp_4_6": 1.717052,
-        "band_power_4_6": 16.856509
+        "dominant_freq_hz_4_6": 4.0,
+        "dominant_amp_4_6": 45.555303,
+        "band_power_4_6": 6629.875246
+      },
+      {
+        "finger": "middle",
+        "channel": 2,
+        "axis": "ax",
+        "dominant_freq_hz_4_6": 5.0,
+        "dominant_amp_4_6": 21.388471,
+        "band_power_4_6": 2859.482638
+      },
+      {
+        "finger": "ring",
+        "channel": 3,
+        "axis": "ax",
+        "dominant_freq_hz_4_6": 4.0,
+        "dominant_amp_4_6": 27.585935,
+        "band_power_4_6": 2861.246377
       }
     ]
   },
@@ -136,9 +162,11 @@ Periodic non-clinical telemetry for reliability:
 - sensor/channel failures
 - queue depth and publish retries
 
+---
+
 ## 6) Sensor-specific cloud fields
 
-## 6.1 MPU6050 (tremor)
+### 6.1 MPU6050 (tremor)
 
 Source in repo:
 
@@ -162,7 +190,7 @@ Recommended channel map:
 - 3 ring
 - 4 pinky
 
-## 6.2 Flex sensors (stiffness/bradykinesia)
+### 6.2 Flex sensors (stiffness/bradykinesia)
 
 Status in repo:
 
@@ -184,6 +212,8 @@ Interim behavior before flex integration:
 
 - keep `flex.enabled=false`
 - include `flex.status="not_integrated"` so app does not misinterpret missing values as zero pathology
+
+---
 
 ## 7) Exercise semantics for app team
 
@@ -209,6 +239,8 @@ If interrupted/incomplete, still publish payload with:
 
 This is clinically meaningful for longitudinal analysis.
 
+---
+
 ## 8) Field definitions and units
 
 - Frequencies: Hz
@@ -217,6 +249,8 @@ This is clinically meaningful for longitudinal analysis.
 - Scores: `0-4` integer/float for MDS-UPDRS aligned outputs
 - Confidence: `0.0-1.0`
 - `state_validity`: boolean indicating whether captured state matches expected exercise condition
+
+---
 
 ## 9) Validation and null-handling requirements
 
@@ -233,26 +267,34 @@ Producer requirements:
 - always include `quality` object
 - never silently drop failed channels; mark per-channel quality/health
 
+---
+
 ## 10) Suggested MQTT topics
 
 - `pdglove/v2/exercise_summary/{device_id}`
 - `pdglove/v2/session_summary/{device_id}`
 - `pdglove/v2/device_health/{device_id}`
 
+---
+
 ## 11) Current vs planned matrix (important)
 
-- Current implemented in repo:
-  - IMU capture (5 channels), tremor DSP metrics, CSV outputs
-  - no committed MQTT publisher module yet
-  - no committed TFLite inference module yet
-  - flex hardware/software integration pending
+Current implemented in repo:
 
-- Planned contract support:
-  - publish exercise JSON over MQTT
-  - include model outputs and confidence
-  - include flex-derived stiffness/bradykinesia metrics
+- IMU capture (5 channels), tremor DSP metrics, CSV outputs
+- no committed MQTT publisher module yet
+- no committed TFLite inference module yet
+- flex hardware/software integration pending
+
+Planned contract support:
+
+- publish exercise JSON over MQTT
+- include model outputs and confidence
+- include flex-derived stiffness/bradykinesia metrics
 
 App team should build for forward compatibility using `schema_version`, `enabled` flags, and nullable fields.
+
+---
 
 ## 12) Minimal TypeScript interface (for frontend/backend)
 
@@ -270,6 +312,8 @@ interface PdGloveMessageBase {
 }
 ```
 
+---
+
 ## 13) Implementation notes for mobile/web
 
 - Keep UI components split into:
@@ -277,3 +321,9 @@ interface PdGloveMessageBase {
   - stiffness/bradykinesia panel (feature-flag until `flex.enabled=true`)
 - Store raw received JSON for auditability; derive visualization models separately.
 - Preserve UTC timestamps end-to-end; perform timezone conversion only in presentation layer.
+
+---
+
+## Notes
+
+> **Example data source:** All channel values in Section 5.1 are drawn from real hardware validation data — `person_1 test_two` from `data/tremor_validation_master.csv`, recorded `2026-03-25T17:41:56Z`. This was a standard tremor session with no exaggerated intensity protocol, representative of a typical mid-severity run. Effective sampling rate (89.25 Hz), retry count (0), and all four per-finger DSP metrics are taken directly from the CSV without modification. `model_output` fields remain null as TFLite inference was not yet integrated at time of capture.
