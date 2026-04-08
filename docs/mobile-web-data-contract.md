@@ -324,7 +324,7 @@ interface PdGloveMessageBase {
 
 ## 14) Dashboard guidance for patient and provider application
 
-![Dashboard mockup](images/dashboard-mockup.png)
+![Dashboard mockup](images/pd_glove_dashboard_example.png)
 
 The application surfaces session data to two audiences with different needs.
 
