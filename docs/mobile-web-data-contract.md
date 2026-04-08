@@ -8,8 +8,6 @@ It is based on:
 - current repo docs and validation notes
 - paper-level architecture and requirements from the provided manuscript excerpt
 
-> Scope note: the current implementation does **not** use Blues Notecard/DPU technology in the live data path. Any Blues/DPU integration is experimental and future-facing.
-
 ---
 
 ## 1) Contract goals
@@ -321,6 +319,39 @@ interface PdGloveMessageBase {
   - stiffness/bradykinesia panel (feature-flag until `flex.enabled=true`)
 - Store raw received JSON for auditability; derive visualization models separately.
 - Preserve UTC timestamps end-to-end; perform timezone conversion only in presentation layer.
+
+---
+
+## 14) Dashboard guidance for patient and provider application
+
+The application surfaces session data to two audiences with different needs.
+
+### Patient view
+
+- **Session status** — did the exercise complete successfully (`exercise.status`)
+- **Per-finger tremor indicator** — a simple severity indicator per finger derived from `band_power_4_6`, not raw numbers
+- **MDS-UPDRS score** — shown once `model_output.updrs_score_0_4` is available; display as pending until TFLite is integrated
+- **Longitudinal trend** — tremor severity across sessions over time; this is the primary clinical value for the patient
+
+### Provider view
+
+- **Session summary per patient** — exercise completion status, medication state (`med_state`), and any flagged sessions (`compliance_flag`)
+- **Trend charts** — band power and eventual UPDRS scores across sessions, surfaced at the patient level
+- **Session integrity indicators** — `state_validity` and `compliance_flag` tell the provider whether a session's data can be trusted clinically
+- **Incomplete session data** — always show interrupted/incomplete sessions with their status; a patient unable to complete finger tapping for 10 seconds is clinically meaningful
+
+### What not to show
+
+Do not surface raw DSP values (`dominant_freq_hz_4_6`, `dominant_amp_4_6`, `band_power_4_6` as numbers) directly to patients or providers — these are engineering units. Translate them into severity indicators or UPDRS-aligned outputs before display.
+
+### Gating rule
+
+Only render clinical values when all three hold:
+1. `exercise.status === "complete"`
+2. `quality.state_validity === true`
+3. `quality.compliance_flag !== "invalidated"`
+
+Otherwise mark the session as flagged and exclude it from trend calculations.
 
 ---
 
