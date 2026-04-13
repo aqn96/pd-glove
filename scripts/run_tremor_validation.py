@@ -176,6 +176,23 @@ def delete_rows_from_master_csv(person_id: str | None, test_name: str | None, as
     print(f"Remaining rows: {len(kept_rows)}", flush=True)
 
 
+def print_workflow_help() -> None:
+    """Print practical usage guidance for demo operation."""
+    print("\nTremor Validation Workflow Help", flush=True)
+    print("- Run capture flow (interactive):", flush=True)
+    print("  python3 scripts/run_tremor_validation.py", flush=True)
+    print("- Delete demo rows by person ID:", flush=True)
+    print("  python3 scripts/run_tremor_validation.py --delete-person-id test1", flush=True)
+    print("- Delete by test name:", flush=True)
+    print("  python3 scripts/run_tremor_validation.py --delete-test-name demo", flush=True)
+    print("- Combine filters for targeted cleanup:", flush=True)
+    print("  python3 scripts/run_tremor_validation.py --delete-person-id person_A --delete-test-name demo", flush=True)
+    print("- Skip delete confirmation:", flush=True)
+    print("  python3 scripts/run_tremor_validation.py --delete-person-id test1 --yes", flush=True)
+    print("- Show this help page:", flush=True)
+    print("  python3 scripts/run_tremor_validation.py --workflow-help\n", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run full rest+tremor validation workflow.")
     parser.add_argument("--person-id", type=str, help="Person identifier (e.g., person_1, person_A). If not provided, will prompt.")
@@ -213,7 +230,40 @@ def main() -> None:
         action="store_true",
         help="Delete mode: skip confirmation prompt.",
     )
+    parser.add_argument(
+        "--workflow-help",
+        action="store_true",
+        help="Show practical run/delete examples and exit.",
+    )
     args = parser.parse_args()
+
+    if args.workflow_help:
+        print_workflow_help()
+        return
+
+    if (
+        not args.delete_person_id
+        and not args.delete_test_name
+        and not args.person_id
+        and not args.test_name
+        and sys.stdin.isatty()
+    ):
+        print("\nSelect mode:", flush=True)
+        print("1) Run validation capture", flush=True)
+        print("2) Delete rows from master CSV", flush=True)
+        print("3) Show workflow help", flush=True)
+        mode_choice = input("Enter choice [1/2/3] (default 1): ").strip()
+        if mode_choice == "2":
+            delete_person = input("Person ID to delete (leave blank to skip): ").strip()
+            delete_test = input("Test name to delete (leave blank to skip): ").strip()
+            args.delete_person_id = delete_person or None
+            args.delete_test_name = delete_test or None
+            if not args.delete_person_id and not args.delete_test_name:
+                print("Error: Enter at least one delete filter.", flush=True)
+                sys.exit(1)
+        elif mode_choice in {"3", "h", "H", "?"}:
+            print_workflow_help()
+            return
 
     if args.delete_person_id or args.delete_test_name:
         if (

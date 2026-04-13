@@ -15,7 +15,12 @@ source venv/bin/activate
 python3 scripts/run_tremor_validation.py
 ```
 
-**You will be prompted for:**
+**You will be prompted to choose mode:**
+1. Run validation capture
+2. Delete rows from master CSV
+3. Show workflow help
+
+If you choose capture mode, you will be prompted for:
 1. Person ID (e.g., `person_C`, `person_1`)
 2. Test name (e.g., `test_one`, `test_two`)
 
@@ -56,6 +61,9 @@ python3 scripts/run_tremor_validation.py \
   --duration 10 \
   --axis ax \
   --notes "Testing with new wiring"
+
+# Show practical workflow help
+python3 scripts/run_tremor_validation.py --workflow-help
 ```
 
 ## Troubleshooting
