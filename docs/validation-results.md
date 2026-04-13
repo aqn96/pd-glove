@@ -17,8 +17,8 @@ This document captures the tremor-phase validation status for the PD glove proto
 
 ## Hardware Mounting Solution
 
-<!-- TODO: Add image: ![Mounted glove overview](images/hardware/glove-complete.jpg) -->
-<!-- TODO: Add image: ![PLA ring detail with hot glue](images/hardware/pla-ring-hot-glue-detail.jpg) -->
+<!-- TODO: Add image: ![Mounted glove overview](../images/glove-complete.jpg) -->
+<!-- TODO: Add image: ![PLA ring detail with hot glue](../images/pla-ring-hot-glue-detail.jpg) -->
 
 **Per-Finger PLA Ring Design:**
 
