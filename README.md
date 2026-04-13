@@ -147,11 +147,30 @@ main.py                   ← Orchestrates staged pipeline
 
 ## Documentation
 
-- `docs/testing-workflow.md` — repeatable hardware/DSP validation procedure
-- `docs/validation-results.md` — latest recorded tremor-phase run outcomes
-- `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
-- `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
-- `docs/activity5-datasets.md` — Activity 5 write-up: measurable attributes, predictions, external datasets, and custom dataset plan
+- `docs/guides/QUICKSTART.md` — setup and run commands
+- `docs/guides/testing-workflow.md` — repeatable hardware/DSP validation procedure
+- `docs/reports/validation-results.md` — latest recorded tremor-phase run outcomes
+- `docs/specs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
+- `docs/research/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
+- `docs/research/activity5-datasets.md` — measurable attributes, predictions, external datasets, and custom dataset plan
+- `docs/research/dataset-summary-2026-03-25.md` — baseline dataset observations
+- `docs/research/gait-cv-pipeline.md` — gait capture and CV pipeline notes
+
+## Repository Layout
+
+```text
+images/
+├── architecture/   # System and wiring diagrams
+├── posters/        # Poster and presentation assets
+└── prototype/      # Prototype hardware photos
+
+docs/
+├── guides/         # Setup and operating workflows
+├── reports/        # Validation outcomes and run summaries
+├── research/       # Exploratory and planning notes
+├── specs/          # Data contracts and technical specs
+└── images/         # Images embedded in markdown docs
+```
 
 ## Quick Start
 
