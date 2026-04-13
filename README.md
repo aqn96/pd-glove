@@ -254,6 +254,12 @@ python3 scripts/run_tremor_validation.py --notes "Exaggerated tremor test"
 
 # Custom channels or duration
 python3 scripts/run_tremor_validation.py --channels 0,1,2,3 --duration 15
+
+# Demo cleanup: remove all rows for a person ID
+python3 scripts/run_tremor_validation.py --delete-person-id test1
+
+# More targeted cleanup: person ID + test name
+python3 scripts/run_tremor_validation.py --delete-person-id person_C --delete-test-name demo
 ```
 
 **Output:**

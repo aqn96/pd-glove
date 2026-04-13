@@ -65,8 +65,22 @@ python3 scripts/run_tremor_validation.py \
 - Just re-run the script
 
 **If you need to delete a bad test:**
-- Edit `data/tremor_validation_master.csv` manually and remove the rows
-- Or use a CSV editor on your laptop after copying
+- Delete all rows for a person ID:
+  ```bash
+  python3 scripts/run_tremor_validation.py --delete-person-id test1
+  ```
+- Delete rows for a specific test name:
+  ```bash
+  python3 scripts/run_tremor_validation.py --delete-test-name test_one
+  ```
+- Combine both filters (more targeted):
+  ```bash
+  python3 scripts/run_tremor_validation.py --delete-person-id person_A --delete-test-name demo
+  ```
+- Skip confirmation prompt:
+  ```bash
+  python3 scripts/run_tremor_validation.py --delete-person-id test1 --yes
+  ```
 
 **Check hardware:**
 ```bash

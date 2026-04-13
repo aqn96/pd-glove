@@ -6,6 +6,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -109,6 +110,72 @@ def append_to_master_csv(person_id: str, test_name: str, timestamp: str, channel
     print(f"\n✅ Results appended to master CSV: {MASTER_CSV}", flush=True)
 
 
+def delete_rows_from_master_csv(person_id: str | None, test_name: str | None, assume_yes: bool) -> None:
+    """Delete rows from master CSV matching person_id and/or test_name."""
+    if not MASTER_CSV.exists():
+        print(f"Error: Master CSV not found: {MASTER_CSV}", flush=True)
+        sys.exit(1)
+
+    if not person_id and not test_name:
+        print("Error: Provide at least one filter: --delete-person-id and/or --delete-test-name.", flush=True)
+        sys.exit(1)
+
+    with open(MASTER_CSV, "r", newline="") as source:
+        reader = csv.DictReader(source)
+        headers = reader.fieldnames
+        if not headers:
+            print(f"Error: CSV appears empty or missing headers: {MASTER_CSV}", flush=True)
+            sys.exit(1)
+        rows = list(reader)
+
+    total_rows = len(rows)
+    if total_rows == 0:
+        print("Master CSV has no data rows.", flush=True)
+        return
+
+    def matches_filters(row: dict[str, str]) -> bool:
+        person_match = person_id is None or row.get("person_id") == person_id
+        test_match = test_name is None or row.get("test_name") == test_name
+        return person_match and test_match
+
+    rows_to_delete = [row for row in rows if matches_filters(row)]
+    if not rows_to_delete:
+        print("No matching rows found. No changes made.", flush=True)
+        return
+
+    kept_rows = [row for row in rows if not matches_filters(row)]
+    delete_count = len(rows_to_delete)
+    percent = (delete_count / total_rows) * 100
+
+    filter_text = []
+    if person_id:
+        filter_text.append(f"person_id='{person_id}'")
+    if test_name:
+        filter_text.append(f"test_name='{test_name}'")
+    print(f"Matched {delete_count}/{total_rows} rows ({percent:.1f}%) for {' and '.join(filter_text)}.", flush=True)
+
+    if not assume_yes:
+        response = input("Proceed with deletion? Type 'yes' to confirm: ").strip().lower()
+        if response != "yes":
+            print("Deletion cancelled. No changes made.", flush=True)
+            return
+
+    temp_path: Path | None = None
+    try:
+        with NamedTemporaryFile("w", delete=False, newline="", dir=str(MASTER_CSV.parent)) as temp:
+            temp_path = Path(temp.name)
+            writer = csv.DictWriter(temp, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(kept_rows)
+        temp_path.replace(MASTER_CSV)
+    finally:
+        if temp_path and temp_path.exists():
+            temp_path.unlink()
+
+    print(f"✅ Deleted {delete_count} rows from {MASTER_CSV}", flush=True)
+    print(f"Remaining rows: {len(kept_rows)}", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run full rest+tremor validation workflow.")
     parser.add_argument("--person-id", type=str, help="Person identifier (e.g., person_1, person_A). If not provided, will prompt.")
@@ -131,7 +198,48 @@ def main() -> None:
     )
     parser.add_argument("--notes", type=str, default="", help="Optional notes about this test.")
     parser.add_argument("--sampling-hz", type=float, default=89.0, help="Expected sampling rate (for CSV metadata).")
+    parser.add_argument(
+        "--delete-person-id",
+        type=str,
+        help="Delete mode: remove all rows matching this person_id from the master CSV.",
+    )
+    parser.add_argument(
+        "--delete-test-name",
+        type=str,
+        help="Delete mode: remove all rows matching this test_name from the master CSV.",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Delete mode: skip confirmation prompt.",
+    )
     args = parser.parse_args()
+
+    if args.delete_person_id or args.delete_test_name:
+        if (
+            args.person_id
+            or args.test_name
+            or args.notes
+            or args.rest_output != Path("rest_4ch.csv")
+            or args.tremor_output != Path("tremor_4ch.csv")
+            or args.channels != "0,1,2,3"
+            or args.duration != 10.0
+            or args.axis != "ax"
+            or args.sampling_hz != 89.0
+        ):
+            print(
+                "Error: Delete mode cannot be combined with capture options. "
+                "Use only --delete-person-id/--delete-test-name and optional --yes.",
+                flush=True,
+            )
+            sys.exit(1)
+
+        delete_rows_from_master_csv(
+            person_id=args.delete_person_id,
+            test_name=args.delete_test_name,
+            assume_yes=args.yes,
+        )
+        return
 
     # Prompt for person_id if not provided
     person_id = args.person_id
