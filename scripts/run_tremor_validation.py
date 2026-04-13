@@ -294,7 +294,7 @@ def main() -> None:
     # Prompt for person_id if not provided
     person_id = args.person_id
     if not person_id:
-        person_id = input("\nEnter person ID (e.g., person_1, person_A, person_B): ").strip()
+        person_id = input("\nEnter person ID (e.g., person_1, person_2): ").strip()
         if not person_id:
             print("Error: Person ID is required.", flush=True)
             sys.exit(1)

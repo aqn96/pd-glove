@@ -12,7 +12,7 @@ This directory contains validated tremor detection datasets for the PD-glove sen
 Per-finger IMU placement enables isolation of the thumb-index interaction characteristic of Parkinsonian resting tremor, providing spatial granularity superior to single wrist-worn sensors for fine-grained motor pattern recognition.
 
 **Columns (DSP Feature Vectors):**
-- `person_id` — Subject identifier (e.g., person_1, person_A, person_B)
+- `person_id` — Subject identifier (e.g., person_1, person_2)
 - `test_name` — Test identifier (e.g., test_one, test_two)
 - `timestamp` — ISO 8601 timestamp of test execution
 - `channel` — IMU channel (0=Thumb, 1=Index, 2=Middle, 3=Ring)
