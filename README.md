@@ -147,8 +147,11 @@ main.py                   ← Orchestrates staged pipeline
 
 ## Documentation
 
-- `docs/QUICKSTART.md` — setup and run commands
-- `docs/testing-workflow.md` — repeatable hardware/DSP validation procedure
+Start here if you're new to the repo:
+- `docs/QUICKSTART.md` — first-run setup and bring-up
+- `docs/testing-workflow.md` — standard validation flow used in this project
+
+Then use these references for deeper details:
 - `docs/validation-results.md` — latest recorded tremor-phase run outcomes
 - `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
 - `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
@@ -159,6 +162,14 @@ main.py                   ← Orchestrates staged pipeline
 ## Repository Layout
 
 ```text
+pd-glove/
+├── scripts/                         # Sensor polling, DSP analysis, validation workflow
+├── data/                            # Captured/processed datasets and master validation CSV
+├── docs/                            # Project docs (setup, testing, specs, notes)
+├── images/                          # Shared image assets used by docs and presentations
+├── requirements.txt                 # Python dependencies
+└── README.md                        # Main project overview
+
 images/
 ├── edge_to_cloud_architecture.png
 ├── pd_glove_circuit.png
@@ -173,6 +184,13 @@ docs/
 ├── mobile-web-data-contract.md
 └── ... (other docs)
 ```
+
+### How to Navigate This Repo
+
+- **If you want to run hardware tests:** go to `docs/QUICKSTART.md`, then `docs/testing-workflow.md`.
+- **If you want current project status/results:** read `docs/validation-results.md`.
+- **If you want data schema for app integration:** read `docs/mobile-web-data-contract.md`.
+- **If you want architecture visuals/photos:** check `images/`.
 
 ## Quick Start
 
