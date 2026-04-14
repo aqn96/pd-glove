@@ -11,6 +11,20 @@ An IoT-enabled wearable glove system for continuous, objective monitoring of Par
 
 All sensor data is processed locally on a Raspberry Pi 5 through a DSP pipeline and Transformer-based ML model, with only processed clinical scores published via MQTT to the cloud. Raw biometric data never leaves the device (Privacy-by-Design).
 
+## Intended Use and Clinical Scope
+
+- This prototype is intended for **research-grade monitoring and decision support**, not standalone diagnosis.
+- MDS-UPDRS-aligned tremor tasks are used for structured data capture, but final clinical interpretation should remain clinician-supervised.
+- For the standardized 3-task assessment protocol and separate therapeutic hand-exercise guidance, see `docs/assessment-and-therapy-protocol.md`.
+
+## Team Cloud Handoff (CSV -> AWS)
+
+When sharing data with backend teammates, credentials and config are not enough on their own:
+
+- **Required:** message schema (IoT payload fields/types/units) and storage schema (DynamoDB key/attribute mapping, optional S3 layout).
+- **Certificates/keys:** enable secure connection only; they do not define payload structure.
+- **Security:** never commit private keys/cert bundles to this repository.
+
 ## System Architecture
 
 ```
@@ -153,6 +167,7 @@ Start here if you're new to the repo:
 
 Then use these references for deeper details:
 - `docs/validation-results.md` — latest recorded tremor-phase run outcomes
+- `docs/assessment-and-therapy-protocol.md` — 3-task assessment protocol + separate therapeutic routine
 - `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
 - `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
 - `docs/activity5-datasets.md` — measurable attributes, predictions, external datasets, and custom dataset plan

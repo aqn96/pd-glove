@@ -55,7 +55,24 @@ python3 scripts/sensor_reader.py --duration 10 --output tremor_$(date +%Y%m%d_%H
 
 Compare per-channel 4-6 Hz metrics between the two files.
 
-## 5) Troubleshooting Priority
+## 5) MDS-UPDRS-Aligned Tremor Assessment Tasks (3-task set)
+
+Use these task labels so captures are consistent and model-ready:
+
+1. `3.17_REST` (Rest Tremor of Hands)
+   - Forearm supported on table, wrist/hand hanging relaxed over edge.
+   - Record 15-30 seconds.
+   - Optional distraction task (e.g., counting backward) to reduce voluntary suppression.
+2. `3.15_POSTURAL` (Postural Tremor of Hands)
+   - Lift hand level with forearm, palm down, hold steady.
+   - Record 30 seconds to capture possible re-emergent tremor.
+3. `3.16_KINETIC` (Kinetic Tremor of Hands)
+   - Controlled movement segment (e.g., slow lift/hold/lower, or finger-to-target when feasible).
+   - Record 10-20 seconds of movement.
+
+For full setup detail and therapeutic exercises, see `docs/assessment-and-therapy-protocol.md`.
+
+## 6) Troubleshooting Priority
 
 When `Errno 121` appears:
 

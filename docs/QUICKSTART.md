@@ -15,6 +15,8 @@ source venv/bin/activate
 python3 scripts/run_tremor_validation.py
 ```
 
+For standardized task setup, see `docs/assessment-and-therapy-protocol.md`.
+
 **You will be prompted to choose mode:**
 1. Run validation capture
 2. Delete rows from master CSV
@@ -107,3 +109,7 @@ python3 scripts/test_imus.py --channels 0,1,2,3
 - Move hand during rest
 - Allow distractions during capture
 - Capture on unstable surface
+
+## Clinical Scope
+
+This system is intended for research monitoring and decision support. It is **not** a standalone diagnostic device.
