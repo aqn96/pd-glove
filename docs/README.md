@@ -7,5 +7,8 @@
 - `mobile-web-data-contract.md` — payload schema and integration contract
 - `blues-dpu-notes.md` — Blues platform integration ideas
 - `activity5-datasets.md` — dataset planning and references
+- `assignments/` — organized assignment submissions
+  - `assignments/activity-05-datasets.md` — Activity 5
+  - `assignments/activity-07-report.md` — Activity 7
 - `dataset-summary-2026-03-25.md` — collected dataset summary
 - `gait-cv-pipeline.md` — gait video + CV pipeline notes
