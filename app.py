@@ -104,13 +104,31 @@ def subject_summary(rows: list[dict]) -> list[dict]:
     return result
 
 
+def _per_subject_averages(rows: list[dict]) -> tuple[float, float, int]:
+    """Return (avg_rest, avg_tremor, subject_count) weighted equally per subject."""
+    by_subject: dict[str, dict[str, list[float]]] = {}
+    for r in rows:
+        pid = r["person_id"]
+        if pid not in by_subject:
+            by_subject[pid] = {"rest": [], "tremor": []}
+        bp = float(r["band_power"])
+        if r["condition"] == "rest":
+            by_subject[pid]["rest"].append(bp)
+        elif r["condition"] == "tremor":
+            by_subject[pid]["tremor"].append(bp)
+    rest_avgs = [sum(v["rest"]) / len(v["rest"]) for v in by_subject.values() if v["rest"]]
+    tremor_avgs = [sum(v["tremor"]) / len(v["tremor"]) for v in by_subject.values() if v["tremor"]]
+    avg_rest = sum(rest_avgs) / len(rest_avgs) if rest_avgs else 0.0
+    avg_tremor = sum(tremor_avgs) / len(tremor_avgs) if tremor_avgs else 0.0
+    return avg_rest, avg_tremor, len(by_subject)
+
+
 def population_stats(rows: list[dict]) -> dict:
-    rest = [float(r["band_power"]) for r in rows if r["condition"] == "rest"]
-    tremor = [float(r["band_power"]) for r in rows if r["condition"] == "tremor"]
+    avg_rest, avg_tremor, n = _per_subject_averages(rows)
     pids = set(r["person_id"] for r in rows)
     return {
-        "avg_rest_power": round(sum(rest) / len(rest), 1) if rest else 0,
-        "avg_tremor_power": round(sum(tremor) / len(tremor), 1) if tremor else 0,
+        "avg_rest_power": round(avg_rest, 1),
+        "avg_tremor_power": round(avg_tremor, 1),
         "subject_count": len(pids),
     }
 
@@ -293,13 +311,10 @@ def _run_assessment(person_id: str, test_name: str, notes: str):
                  if r["person_id"] == person_id and r["test_name"] == test_name and r["condition"] == "rest"]
     this_tremor = [float(r["band_power"]) for r in all_rows
                    if r["person_id"] == person_id and r["test_name"] == test_name and r["condition"] == "tremor"]
-    pop_rest = [float(r["band_power"]) for r in all_rows if r["condition"] == "rest"]
-    pop_tremor = [float(r["band_power"]) for r in all_rows if r["condition"] == "tremor"]
 
     avg_rest = sum(this_rest) / len(this_rest) if this_rest else 0
     avg_tremor = sum(this_tremor) / len(this_tremor) if this_tremor else 0
-    pop_avg_rest = sum(pop_rest) / len(pop_rest) if pop_rest else 0
-    pop_avg_tremor = sum(pop_tremor) / len(pop_tremor) if pop_tremor else 0
+    pop_avg_rest, pop_avg_tremor, pop_count = _per_subject_averages(all_rows)
     ratio = avg_tremor / avg_rest if avg_rest > 0 else 0
 
     # Dominant freq: average across channels for rest capture
@@ -307,7 +322,6 @@ def _run_assessment(person_id: str, test_name: str, notes: str):
     avg_freq = sum(freqs) / len(freqs) if freqs else 0
 
     label, color = classify_severity(avg_tremor)
-    pop_subjects = set(r["person_id"] for r in all_rows)
 
     yield sse("done",
               person_id=person_id,
@@ -316,7 +330,7 @@ def _run_assessment(person_id: str, test_name: str, notes: str):
               avg_tremor_power=round(avg_tremor, 1),
               pop_avg_rest=round(pop_avg_rest, 1),
               pop_avg_tremor=round(pop_avg_tremor, 1),
-              pop_count=len(pop_subjects),
+              pop_count=pop_count,
               severity_label=label,
               severity_color=color,
               separation_ratio=round(ratio, 1),
