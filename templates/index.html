@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PD Glove — Tremor Assessment</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --blue: #3b82f6;
+    --blue-light: #eff6ff;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --orange: #f97316;
+    --red: #ef4444;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Nav ─────────────────────────────────────────────── */
+  nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .nav-brand { font-weight: 700; font-size: 1rem; letter-spacing: -.01em; }
+  .nav-brand span { color: var(--blue); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-links button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: .85rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .nav-links button:hover { background: var(--bg); border-color: #cbd5e1; }
+  .nav-links button.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* ── Layout ──────────────────────────────────────────── */
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Cards ───────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 32px;
+  }
+  .card + .card { margin-top: 16px; }
+
+  h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+  h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+  .subtitle { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+  /* ── Form ────────────────────────────────────────────── */
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .95rem;
+    color: var(--text);
+    background: var(--card);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .form-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    margin-top: 8px;
+  }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-primary:active { transform: scale(.99); }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  .btn-secondary {
+    padding: 10px 20px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  .btn-danger {
+    padding: 6px 12px;
+    background: none;
+    color: var(--red);
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-danger:hover { background: #fef2f2; }
+
+  /* ── Stepper ─────────────────────────────────────────── */
+  .stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .stepper::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 32px;
+    right: 32px;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 1;
+    flex: 1;
+  }
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    background: var(--card);
+    border: 2px solid var(--border);
+    color: var(--muted);
+    transition: all .3s;
+  }
+  .step-item.done .step-circle { background: var(--green); border-color: var(--green); color: #fff; }
+  .step-item.active .step-circle {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(59,130,246,.2);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(59,130,246,.2); }
+    50%       { box-shadow: 0 0 0 8px rgba(59,130,246,.08); }
+  }
+  .step-label { font-size: .7rem; font-weight: 500; color: var(--muted); text-align: center; max-width: 64px; line-height: 1.3; }
+  .step-item.active .step-label { color: var(--blue); font-weight: 600; }
+  .step-item.done .step-label { color: var(--green); }
+
+  /* ── Prompt card (countdown) ─────────────────────────── */
+  #prompt-card {
+    text-align: center;
+    padding: 32px;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--card);
+    margin-bottom: 16px;
+    transition: border-color .3s, background .3s;
+  }
+  #prompt-icon { font-size: 3rem; margin-bottom: 8px; }
+  #prompt-heading { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+  #prompt-sub { color: var(--muted); font-size: .95rem; margin-bottom: 20px; }
+  #prompt-label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  #countdown-number {
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    line-height: 1;
+    margin-top: 4px;
+    transition: color .3s;
+  }
+
+  /* ── Capture progress ────────────────────────────────── */
+  #capture-card { margin-bottom: 16px; }
+  #capture-label { font-size: .9rem; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+  .progress-track {
+    height: 10px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  #capture-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--blue), #60a5fa);
+    border-radius: 999px;
+    transition: none;
+  }
+
+  /* ── Status message ──────────────────────────────────── */
+  #step-message { font-size: .9rem; color: var(--muted); min-height: 20px; margin-bottom: 12px; }
+
+  /* ── Log output ──────────────────────────────────────── */
+  details { margin-top: 8px; }
+  details summary {
+    font-size: .8rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+  }
+  details summary:hover { color: var(--text); }
+  #log-output {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: .75rem;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 160px;
+    overflow-y: auto;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* ── Error banner ────────────────────────────────────── */
+  #error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: .9rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ── Results ─────────────────────────────────────────── */
+  .result-header { margin-bottom: 20px; }
+  .result-header .person { font-size: 1.4rem; font-weight: 700; }
+  .result-header .test { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .metric-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .metric-label { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .metric-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; }
+  .metric-unit { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+  .severity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .severity-row .label { font-size: .82rem; font-weight: 600; color: var(--muted); flex: 1; }
+  .badge {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .02em;
+  }
+
+  /* ── Comparison bars ─────────────────────────────────── */
+  .compare-section h2 { margin-bottom: 4px; }
+  .compare-note { font-size: .8rem; color: var(--muted); margin-bottom: 16px; }
+  .compare-group { margin-bottom: 16px; }
+  .compare-group-label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-row-label { font-size: .8rem; font-weight: 500; width: 60px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 20px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+  .bar-fill { height: 100%; border-radius: 4px; min-width: 2px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.you { background: var(--blue); }
+  .bar-fill.avg { background: #cbd5e1; }
+  .bar-value { font-size: .8rem; font-weight: 600; width: 70px; text-align: right; flex-shrink: 0; color: var(--muted); }
+
+  /* ── Result actions ──────────────────────────────────── */
+  .result-actions { display: flex; gap: 12px; margin-top: 8px; }
+  .result-actions .btn-secondary { flex: 1; text-align: center; }
+
+  /* ── Records table ───────────────────────────────────── */
+  .pop-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .pop-stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .pop-stat .val { font-size: 1.3rem; font-weight: 700; }
+  .pop-stat .lbl { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 2px solid var(--border); }
+  th { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 10px 12px; text-align: left; }
+  td { padding: 12px; font-size: .88rem; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fafbfc; }
+  .empty-state { text-align: center; color: var(--muted); font-size: .9rem; padding: 32px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">PD <span>Glove</span></div>
+  <div class="nav-links">
+    <button id="btn-new" onclick="goHome()">New Assessment</button>
+    <button id="btn-records" onclick="loadRecords()">Records</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── View: Home ──────────────────────────────────────── -->
+  <div id="view-home" class="view active">
+    <div class="card">
+      <h1>Tremor Assessment</h1>
+      <p class="subtitle" style="margin-bottom:28px">Enter subject details to begin a full rest + tremor capture.</p>
+
+      <form id="form-assess" onsubmit="startAssessment(event)">
+        <div class="form-group">
+          <label>Subject ID</label>
+          <input name="person_id" placeholder="e.g. person_A" required autocomplete="off" spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label>Test Label</label>
+          <input name="test_name" placeholder="e.g. test_one" required autocomplete="off" spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input name="notes" placeholder="Any relevant context…" autocomplete="off">
+        </div>
+        <button class="btn-primary" type="submit">Begin Assessment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── View: Progress ──────────────────────────────────── -->
+  <div id="view-progress" class="view">
+    <div class="card" style="margin-bottom:16px">
+      <div class="stepper" id="stepper">
+        <div class="step-item pending" id="step-1">
+          <div class="step-circle" id="sc-1">1</div>
+          <div class="step-label">Hardware</div>
+        </div>
+        <div class="step-item pending" id="step-2">
+          <div class="step-circle" id="sc-2">2</div>
+          <div class="step-label">Rest</div>
+        </div>
+        <div class="step-item pending" id="step-3">
+          <div class="step-circle" id="sc-3">3</div>
+          <div class="step-label">Tremor</div>
+        </div>
+        <div class="step-item pending" id="step-4">
+          <div class="step-circle" id="sc-4">4</div>
+          <div class="step-label">Analysis</div>
+        </div>
+        <div class="step-item pending" id="step-5">
+          <div class="step-circle" id="sc-5">5</div>
+          <div class="step-label">Saving</div>
+        </div>
+      </div>
+      <div id="step-message">Starting…</div>
+    </div>
+
+    <div id="error-banner"></div>
+
+    <!-- Countdown prompt -->
+    <div id="prompt-card" style="display:none">
+      <div id="prompt-icon"></div>
+      <div id="prompt-heading"></div>
+      <div id="prompt-sub"></div>
+      <div id="prompt-label">Starting in…</div>
+      <div id="countdown-number">—</div>
+    </div>
+
+    <!-- Capture progress -->
+    <div id="capture-card" class="card" style="display:none">
+      <div id="capture-label">Recording…</div>
+      <div class="progress-track"><div id="capture-bar"></div></div>
+    </div>
+
+    <!-- Log -->
+    <details>
+      <summary>Show debug log</summary>
+      <div id="log-output"></div>
+    </details>
+  </div>
+
+  <!-- ── View: Results ───────────────────────────────────── -->
+  <div id="view-results" class="view">
+    <div class="card">
+      <div class="result-header">
+        <div class="person" id="r-person"></div>
+        <div class="test" id="r-test"></div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Rest Power</div>
+          <div class="metric-value" id="r-rest"></div>
+          <div class="metric-unit">band power (4–6 Hz)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Tremor Power</div>
+          <div class="metric-value" id="r-tremor"></div>
+          <div class="metric-unit">band power (4–6 Hz)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Separation</div>
+          <div class="metric-value" id="r-ratio"></div>
+          <div class="metric-unit">tremor ÷ rest ratio</div>
+        </div>
+      </div>
+
+      <div class="severity-row">
+        <div class="label">Tremor Severity (MDS-UPDRS)</div>
+        <span class="badge" id="r-badge"></span>
+      </div>
+
+      <div class="compare-section">
+        <h2>Population Comparison</h2>
+        <div class="compare-note" id="r-compare-note"></div>
+
+        <div class="compare-group">
+          <div class="compare-group-label">Rest Power</div>
+          <div class="bar-row">
+            <div class="bar-row-label">You</div>
+            <div class="bar-track"><div class="bar-fill you" id="b-you-rest" style="width:0%"></div></div>
+            <div class="bar-value" id="bv-you-rest"></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-row-label">Avg</div>
+            <div class="bar-track"><div class="bar-fill avg" id="b-avg-rest" style="width:0%"></div></div>
+            <div class="bar-value" id="bv-avg-rest"></div>
+          </div>
+        </div>
+
+        <div class="compare-group">
+          <div class="compare-group-label">Tremor Power</div>
+          <div class="bar-row">
+            <div class="bar-row-label">You</div>
+            <div class="bar-track"><div class="bar-fill you" id="b-you-tremor" style="width:0%"></div></div>
+            <div class="bar-value" id="bv-you-tremor"></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-row-label">Avg</div>
+            <div class="bar-track"><div class="bar-fill avg" id="b-avg-tremor" style="width:0%"></div></div>
+            <div class="bar-value" id="bv-avg-tremor"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn-secondary" onclick="goHome()">+ New Assessment</button>
+        <button class="btn-danger" id="btn-delete-result" onclick="deleteCurrentResult()">Delete This Result</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── View: Records ───────────────────────────────────── -->
+  <div id="view-records" class="view">
+    <div class="card" style="margin-bottom:16px">
+      <h2>Population Averages</h2>
+      <div class="pop-stats">
+        <div class="pop-stat">
+          <div class="val" id="pop-count">—</div>
+          <div class="lbl">Subjects</div>
+        </div>
+        <div class="pop-stat">
+          <div class="val" id="pop-rest">—</div>
+          <div class="lbl">Avg Rest Power</div>
+        </div>
+        <div class="pop-stat">
+          <div class="val" id="pop-tremor">—</div>
+          <div class="lbl">Avg Tremor Power</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Subjects</h2>
+      <div id="records-empty" class="empty-state" style="display:none">No records yet.</div>
+      <table id="records-table">
+        <thead>
+          <tr>
+            <th>Subject ID</th>
+            <th>Tests</th>
+            <th>Avg Rest</th>
+            <th>Avg Tremor</th>
+            <th>Severity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="records-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentResult = null;
+
+// ── View switching ─────────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('btn-new').classList.toggle('active', name === 'home');
+  document.getElementById('btn-records').classList.toggle('active', name === 'records');
+}
+
+function goHome() {
+  resetProgress();
+  showView('home');
+}
+
+// ── Step indicator ─────────────────────────────────────────────────────────
+function setStep(num, state) {
+  // state: 'pending' | 'active' | 'done'
+  const item = document.getElementById('step-' + num);
+  const circle = document.getElementById('sc-' + num);
+  item.className = 'step-item ' + state;
+  if (state === 'done') {
+    circle.textContent = '✓';
+  } else {
+    circle.textContent = num;
+  }
+}
+
+function updateStep(num, message) {
+  for (let i = 1; i <= 5; i++) {
+    if (i < num) setStep(i, 'done');
+    else if (i === num) setStep(i, 'active');
+    else setStep(i, 'pending');
+  }
+  document.getElementById('step-message').textContent = message || '';
+}
+
+function markStepDone(num) {
+  setStep(num, 'done');
+}
+
+// ── Countdown prompt ───────────────────────────────────────────────────────
+function showPrompt(icon, heading, sub, seconds, color) {
+  const card = document.getElementById('prompt-card');
+  card.style.display = 'block';
+  card.style.borderColor = color + '66';
+  card.style.background = color + '0d';
+  document.getElementById('prompt-icon').textContent = icon;
+  document.getElementById('prompt-heading').textContent = heading;
+  document.getElementById('prompt-heading').style.color = color;
+  document.getElementById('prompt-sub').textContent = sub;
+  document.getElementById('countdown-number').textContent = seconds;
+  document.getElementById('countdown-number').style.color = color;
+  document.getElementById('capture-card').style.display = 'none';
+}
+
+function updateTick(seconds) {
+  if (seconds === 0) {
+    document.getElementById('prompt-card').style.display = 'none';
+  } else {
+    document.getElementById('countdown-number').textContent = seconds;
+  }
+}
+
+// ── Capture progress bar ───────────────────────────────────────────────────
+let captureEnd = null;
+
+function startCapture(duration, label) {
+  document.getElementById('prompt-card').style.display = 'none';
+  const card = document.getElementById('capture-card');
+  card.style.display = 'block';
+  document.getElementById('capture-label').textContent = label + '…';
+
+  const bar = document.getElementById('capture-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.transition = 'width ' + duration + 's linear';
+      bar.style.width = '100%';
+    });
+  });
+
+  captureEnd = Date.now() + duration * 1000;
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function appendLog(text) {
+  if (!text) return;
+  const el = document.getElementById('log-output');
+  el.textContent += text + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Error ──────────────────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('step-message').textContent = 'Assessment failed.';
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetProgress() {
+  for (let i = 1; i <= 5; i++) setStep(i, 'pending');
+  document.getElementById('step-message').textContent = '';
+  document.getElementById('prompt-card').style.display = 'none';
+  document.getElementById('capture-card').style.display = 'none';
+  document.getElementById('error-banner').style.display = 'none';
+  document.getElementById('log-output').textContent = '';
+  document.getElementById('capture-bar').style.width = '0%';
+  document.getElementById('capture-bar').style.transition = 'none';
+}
+
+// ── SSE parsing ────────────────────────────────────────────────────────────
+function parseSSEChunks(text) {
+  const events = [];
+  const blocks = text.split('\n\n');
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+    let type = 'message', data = null;
+    for (const line of block.split('\n')) {
+      if (line.startsWith('event: ')) type = line.slice(7).trim();
+      if (line.startsWith('data: ')) {
+        try { data = JSON.parse(line.slice(6)); } catch {}
+      }
+    }
+    if (data !== null) events.push({ type, data });
+  }
+  return events;
+}
+
+function handleEvent({ type, data }) {
+  switch (type) {
+    case 'step':
+      updateStep(data.num, data.message);
+      document.getElementById('capture-card').style.display = 'none';
+      break;
+    case 'step_done':
+      markStepDone(data.num);
+      break;
+    case 'prompt':
+      showPrompt(data.icon, data.heading, data.sub, data.seconds, data.color);
+      break;
+    case 'tick':
+      updateTick(data.seconds);
+      break;
+    case 'capture':
+      startCapture(data.duration, data.label);
+      break;
+    case 'log':
+      appendLog(data.text);
+      break;
+    case 'error':
+      showError(data.message);
+      break;
+    case 'done':
+      showResults(data);
+      break;
+  }
+}
+
+// ── Start assessment ───────────────────────────────────────────────────────
+async function startAssessment(event) {
+  event.preventDefault();
+  const fd = new FormData(event.target);
+  const params = new URLSearchParams({
+    person_id: fd.get('person_id'),
+    test_name: fd.get('test_name'),
+    notes: fd.get('notes') || '',
+  });
+
+  resetProgress();
+  showView('progress');
+
+  let buffer = '';
+  try {
+    const response = await fetch('/api/assess?' + params);
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: response.statusText }));
+      showError(err.error || 'Request failed');
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = parseSSEChunks(buffer);
+      // Keep any trailing incomplete block in buffer
+      const lastTwoNl = buffer.lastIndexOf('\n\n');
+      buffer = lastTwoNl >= 0 ? buffer.slice(lastTwoNl + 2) : buffer;
+      for (const ev of events) handleEvent(ev);
+    }
+  } catch (err) {
+    showError('Connection error: ' + err.message);
+  }
+}
+
+// ── Show results ───────────────────────────────────────────────────────────
+function showResults(data) {
+  currentResult = data;
+  showView('results');
+
+  document.getElementById('r-person').textContent = data.person_id;
+  document.getElementById('r-test').textContent = data.test_name;
+  document.getElementById('r-rest').textContent = fmt(data.avg_rest_power);
+  document.getElementById('r-tremor').textContent = fmt(data.avg_tremor_power);
+  document.getElementById('r-ratio').textContent = data.separation_ratio + '×';
+
+  const badge = document.getElementById('r-badge');
+  badge.textContent = data.severity_label;
+  badge.style.background = data.severity_color;
+
+  document.getElementById('r-compare-note').textContent =
+    'Compared against ' + data.pop_count + ' subject' + (data.pop_count === 1 ? '' : 's') + ' in dataset (including you).';
+
+  // Bars — normalize each pair separately
+  const maxRest = Math.max(data.avg_rest_power, data.pop_avg_rest, 1);
+  const maxTremor = Math.max(data.avg_tremor_power, data.pop_avg_tremor, 1);
+
+  setTimeout(() => {
+    setBar('b-you-rest',   data.avg_rest_power  / maxRest   * 100, 'bv-you-rest',   data.avg_rest_power);
+    setBar('b-avg-rest',   data.pop_avg_rest    / maxRest   * 100, 'bv-avg-rest',   data.pop_avg_rest);
+    setBar('b-you-tremor', data.avg_tremor_power / maxTremor * 100, 'bv-you-tremor', data.avg_tremor_power);
+    setBar('b-avg-tremor', data.pop_avg_tremor   / maxTremor * 100, 'bv-avg-tremor', data.pop_avg_tremor);
+  }, 80); // slight delay so CSS transition fires
+}
+
+function setBar(barId, pct, valId, raw) {
+  document.getElementById(barId).style.width = pct + '%';
+  document.getElementById(valId).textContent = fmt(raw);
+}
+
+function fmt(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return n.toFixed(1);
+}
+
+// ── Delete current result ──────────────────────────────────────────────────
+async function deleteCurrentResult() {
+  if (!currentResult) return;
+  const { person_id, test_name } = currentResult;
+  if (!confirm(`Delete results for "${person_id} / ${test_name}"?`)) return;
+
+  const resp = await fetch(`/api/records/${encodeURIComponent(person_id)}/${encodeURIComponent(test_name)}`, {
+    method: 'DELETE',
+  });
+
+  if (resp.ok) {
+    currentResult = null;
+    goHome();
+  } else {
+    const err = await resp.json().catch(() => ({}));
+    alert(err.error || 'Delete failed');
+  }
+}
+
+// ── Records ────────────────────────────────────────────────────────────────
+async function loadRecords() {
+  showView('records');
+  document.getElementById('records-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">Loading…</td></tr>';
+
+  const resp = await fetch('/api/records');
+  const data = await resp.json();
+
+  document.getElementById('pop-count').textContent = data.population.subject_count;
+  document.getElementById('pop-rest').textContent = fmt(data.population.avg_rest_power);
+  document.getElementById('pop-tremor').textContent = fmt(data.population.avg_tremor_power);
+
+  const tbody = document.getElementById('records-tbody');
+  tbody.innerHTML = '';
+
+  if (!data.subjects.length) {
+    document.getElementById('records-table').style.display = 'none';
+    document.getElementById('records-empty').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('records-table').style.display = '';
+  document.getElementById('records-empty').style.display = 'none';
+
+  data.subjects.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600">${s.person_id}</td>
+      <td>${s.test_count}</td>
+      <td>${fmt(s.avg_rest_power)}</td>
+      <td>${fmt(s.avg_tremor_power)}</td>
+      <td><span class="badge" style="background:${s.severity_color}">${s.severity_label}</span></td>
+      <td><button class="btn-danger" onclick="deleteSubject('${s.person_id}')">Delete</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function deleteSubject(personId) {
+  if (!confirm(`Delete all records for "${personId}"?`)) return;
+  const resp = await fetch(`/api/records/${encodeURIComponent(personId)}`, { method: 'DELETE' });
+  if (resp.ok) {
+    loadRecords();
+  } else {
+    const err = await resp.json().catch(() => ({}));
+    alert(err.error || 'Delete failed');
+  }
+}
+</script>
+</body>
+</html>

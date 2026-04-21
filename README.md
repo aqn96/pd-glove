@@ -113,13 +113,19 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 ## Software Modules
 
 ```
-sensor_reader.py          ← Multi-IMU polling via TCA9548A (100Hz target)
-test_imus.py              ← Per-channel probe + WHO_AM_I compatibility checks
-dsp_pipeline.py           ← Butterworth filter + FFT (4-6Hz tremor metrics)
-run_tremor_validation.py  ← One-command probe + capture + DSP workflow
-transformer_inference.py  ← TFLite INT8 model runner (next stage)
-mqtt_publisher.py         ← JSON payload → MQTT broker (next stage)
-main.py                   ← Orchestrates staged pipeline
+app.py                    ← Demo web app: guided UI served on local network (port 5000)
+templates/index.html      ← Web UI for app.py
+
+scripts/
+  sensor_reader.py        ← Multi-IMU polling via TCA9548A (100Hz target)
+  test_imus.py            ← Per-channel probe + WHO_AM_I compatibility checks
+  dsp_pipeline.py         ← Butterworth filter + FFT (4-6Hz tremor metrics)
+  run_tremor_validation.py← Terminal fallback: one-command probe + capture + DSP workflow
+
+(planned)
+  transformer_inference.py← TFLite INT8 model runner (next stage)
+  mqtt_publisher.py       ← JSON payload → MQTT broker (next stage)
+  main.py                 ← Orchestrates staged pipeline
 ```
 
 ## Current Prototype Status (Tremor Phase Complete)
@@ -178,126 +184,106 @@ Then use these references for deeper details:
 
 ```text
 pd-glove/
-├── scripts/                         # Sensor polling, DSP analysis, validation workflow
-├── data/                            # Captured/processed datasets and master validation CSV
+├── app.py                           # Demo web app (Flask server — run this for demos)
+├── templates/
+│   └── index.html                   # Web UI served by app.py
+├── scripts/
+│   ├── run_tremor_validation.py     # Terminal fallback: full rest+tremor workflow
+│   ├── sensor_reader.py             # Multi-IMU polling via TCA9548A
+│   ├── test_imus.py                 # Per-channel hardware probe
+│   └── dsp_pipeline.py             # Butterworth filter + FFT tremor metrics
+├── data/
+│   └── tremor_validation_master.csv # Append-only log of all assessments
 ├── docs/                            # Project docs (setup, testing, specs, notes)
-├── images/                          # Shared image assets used by docs and presentations
-├── requirements.txt                 # Python dependencies
-└── README.md                        # Main project overview
-
-images/
-├── edge_to_cloud_architecture.png
-├── pd_glove_circuit.png
-├── pd_glove_dashboard_example.png
-├── prototype_photo.jpg
-└── sea-ms-student-showcase-poster-template-fl25.png
-
-docs/
-├── QUICKSTART.md
-├── testing-workflow.md
-├── validation-results.md
-├── mobile-web-data-contract.md
-└── ... (other docs)
+├── images/                          # Architecture diagrams, circuit photos
+├── requirements.txt                 # Python dependencies (includes Flask)
+└── README.md
 ```
 
 ### How to Navigate This Repo
 
-- **If you want to run hardware tests:** go to `docs/QUICKSTART.md`, then `docs/testing-workflow.md`.
-- **If you want current project status/results:** read `docs/validation-results.md`.
-- **If you want data schema for app integration:** read `docs/mobile-web-data-contract.md`.
-- **If you want architecture visuals/photos:** check `images/`.
+- **Running a demo:** see [Running the Demo](#running-the-demo) above.
+- **Hardware bring-up / first time setup:** `docs/QUICKSTART.md`
+- **Standard testing workflow:** `docs/testing-workflow.md`
+- **Current results and dataset:** `docs/validation-results.md`
+- **Cloud payload schema:** `docs/mobile-web-data-contract.md`
 
-## Quick Start
+## Running the Demo
+
+There are two ways to run an assessment. Use the **web app** for demos — it gives a guided step-by-step UI in the browser. Fall back to the **terminal script** if Flask has issues.
+
+### Option A — Web App (primary)
+
+`app.py` runs a local web server on the Pi. Open it from any browser on the same network (your laptop, tablet, etc.) — no installation needed on the client side.
 
 ```bash
 ssh aqnguyen96@iotpi5.local
 cd pd-glove
 source venv/bin/activate
-pip install -r requirements.txt  # install dependencies
+pip install -r requirements.txt   # first time only — adds Flask
+python3 app.py
+```
+
+Then open **http://iotpi5.local:5000** in your browser (or use the Pi's IP address if mDNS isn't working).
+
+**What it does:**
+1. Enter a Subject ID and Test Label, click **Begin Assessment**
+2. Hardware probe runs automatically
+3. **5-second countdown** with prompt to hold hand still → 10s rest recording
+4. **3-second countdown** with prompt to shake hand → 10s tremor recording
+5. DSP analysis runs, result is saved to `data/tremor_validation_master.csv`
+6. Results page shows rest power, tremor power, severity classification, and a bar chart comparing the subject against the population average
+
+No need to restart between subjects — click **+ New Assessment** after each one. Use the **Records** tab to delete any subject's data.
+
+> **Note — local hosting:** The server runs only on the Pi, on your local network. Nothing is sent to the internet. Anyone on the same WiFi can reach it at port 5000 while `app.py` is running.
+
+---
+
+### Option B — Terminal Script (fallback)
+
+If the web app isn't working, use the original terminal workflow directly:
+
+```bash
+ssh aqnguyen96@iotpi5.local
+cd pd-glove
+source venv/bin/activate
+python3 scripts/run_tremor_validation.py
+```
+
+The script will prompt for a Person ID and Test Name, then walk through the same hardware probe → rest capture → tremor capture → DSP → CSV append flow in the terminal.
+
+**Cleanup after a demo:**
+```bash
+# Remove a demo subject by person ID
+python3 scripts/run_tremor_validation.py --delete-person-id person_A
+
+# More targeted: person ID + test name
+python3 scripts/run_tremor_validation.py --delete-person-id person_A --delete-test-name test_one
+```
+
+---
+
+## Quick Start (Hardware Bring-Up)
+
+```bash
+ssh aqnguyen96@iotpi5.local
+cd pd-glove
+source venv/bin/activate
+pip install -r requirements.txt
 
 # Scan I2C bus (shows TCA9548A at 0x70)
 sudo i2cdetect -y 1
 
-# Test all 5 IMUs on multiplexer channels 0-4
-python3 scripts/test_imus.py
-
-# Current stable operation (4 IMUs): channels 0-3
+# Test all IMUs (stable on channels 0-3)
 python3 scripts/test_imus.py --channels 0,1,2,3
-```
-
-### Manual Capture + DSP Validation
-
-If you need manual control instead of the automated workflow:
-
-```bash
-# Manual capture
-python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output imu_capture_4ch.csv
-
-# Manual analysis for each channel
-for ch in 0 1 2 3; do
-  python3 scripts/dsp_pipeline.py --input imu_capture_4ch.csv --channel $ch --axis ax
-done
-```
-
-### One-Command Tremor Validation Workflow (Recommended)
-
-**Run the complete validation workflow with automatic master CSV logging:**
-
-```bash
-python3 scripts/run_tremor_validation.py
-```
-
-The script will prompt for:
-- **Person ID** (e.g., `person_1`, `person_A`, `person_C`)
-- **Test name** (e.g., `test_one`, `test_two`)
-
-Then automatically:
-1. Probes hardware channels (`scripts/test_imus.py`)
-2. Captures rest data (10s)
-3. Captures tremor data (10s) — user performs tremor during this
-4. Runs DSP analysis on both captures
-5. **Appends results to `data/tremor_validation_master.csv`**
-
-**Advanced usage:**
-
-```bash
-# Specify person/test via command line
-python3 scripts/run_tremor_validation.py --person-id person_C --test-name test_one
-
-# Add notes about the test
-python3 scripts/run_tremor_validation.py --notes "Exaggerated tremor test"
-
-# Custom channels or duration
-python3 scripts/run_tremor_validation.py --channels 0,1,2,3 --duration 15
-
-# Demo cleanup: remove all rows for a person ID
-python3 scripts/run_tremor_validation.py --delete-person-id test1
-
-# More targeted cleanup: person ID + test name
-python3 scripts/run_tremor_validation.py --delete-person-id person_C --delete-test-name demo
-```
-
-**Output:**
-- `rest_4ch.csv` — temporary rest capture (overwritten each run)
-- `tremor_4ch.csv` — temporary tremor capture (overwritten each run)
-- `data/tremor_validation_master.csv` — **permanent log of all validation tests** ✅
-
-### Rest vs Tremor Comparison
-
-```bash
-python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output rest_$(date +%Y%m%d_%H%M%S).csv
-python3 scripts/sensor_reader.py --channels 0,1,2,3 --duration 10 --output tremor_$(date +%Y%m%d_%H%M%S).csv
-ls -1 rest_*.csv tremor_*.csv
 ```
 
 ## Testing IMU Channels
 
-The `scripts/test_imus.py` script sequentially selects each TCA9548A channel, reads WHO_AM_I, wakes the sensor, and reads accelerometer X-axis data.
-
 ```bash
 python3 scripts/test_imus.py
 python3 scripts/test_imus.py --scan-only
-python3 scripts/test_imus.py --scan only
 ```
 
 Expected output (healthy channel):
