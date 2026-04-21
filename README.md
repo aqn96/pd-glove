@@ -167,11 +167,15 @@ scripts/
 
 ## Documentation
 
-Start here if you're new to the repo:
+**Demo day:**
+- `docs/DEMO_SCRIPT.md` — ~5-minute spoken walkthrough for presenting at the booth
+- `docs/FAQ.md` — answers to common questions: what are IMUs, what is bradykinesia, how was the Pi set up, what does the circuit do, and more
+
+**Setup and testing:**
 - `docs/QUICKSTART.md` — first-run setup and bring-up
 - `docs/testing-workflow.md` — standard validation flow used in this project
 
-Then use these references for deeper details:
+**Reference:**
 - `docs/validation-results.md` — latest recorded tremor-phase run outcomes
 - `docs/assessment-and-therapy-protocol.md` — 3-task assessment protocol + separate therapeutic routine
 - `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
