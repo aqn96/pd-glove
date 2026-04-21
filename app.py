@@ -232,9 +232,9 @@ def _run_assessment(person_id: str, test_name: str, notes: str):
 
     # ── Tremor countdown ──────────────────────────────────────────────────────
     yield sse("prompt",
-              icon="👋",
-              heading="Shake Your Hand",
-              sub="Gently shake your hand back and forth, as if waving slowly.",
+              icon="🖐",
+              heading="Vibrate Your Fingers",
+              sub="Keep your wrist still. Gently tremble your fingers in place — like a pill-rolling motion.",
               seconds=TREMOR_COUNTDOWN_S,
               color="#f59e0b")
     for i in range(TREMOR_COUNTDOWN_S, 0, -1):

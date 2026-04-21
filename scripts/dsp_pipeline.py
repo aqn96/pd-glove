@@ -56,6 +56,16 @@ def analyze_signal(signal: np.ndarray, sample_rate_hz: float = SAMPLE_RATE_HZ) -
     return tremor_metrics(freqs, mags)
 
 
+def estimate_sample_rate_hz(csv_path: Path, channel: int = 0) -> float:
+    data = np.genfromtxt(csv_path, delimiter=",", names=True, dtype=None, encoding="utf-8")
+    channel_data = data[data["channel"] == channel]
+    n = int(channel_data.size)
+    if n < 2:
+        return SAMPLE_RATE_HZ
+    timestamps = np.asarray(channel_data["timestamp"], dtype=np.float64)
+    return float((n - 1) / (timestamps[-1] - timestamps[0]))
+
+
 def load_channel_axis(csv_path: Path, channel: int, axis: str) -> np.ndarray:
     data = np.genfromtxt(csv_path, delimiter=",", names=True, dtype=None, encoding="utf-8")
     if axis not in data.dtype.names:
