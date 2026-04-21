@@ -308,9 +308,11 @@ def _run_assessment(person_id: str, test_name: str, notes: str):
     # ── Compute summary ───────────────────────────────────────────────────────
     all_rows = read_all_rows()
     this_rest = [float(r["band_power"]) for r in all_rows
-                 if r["person_id"] == person_id and r["test_name"] == test_name and r["condition"] == "rest"]
+                 if r["person_id"] == person_id and r["test_name"] == test_name
+                 and r["timestamp"] == ts and r["condition"] == "rest"]
     this_tremor = [float(r["band_power"]) for r in all_rows
-                   if r["person_id"] == person_id and r["test_name"] == test_name and r["condition"] == "tremor"]
+                   if r["person_id"] == person_id and r["test_name"] == test_name
+                   and r["timestamp"] == ts and r["condition"] == "tremor"]
 
     avg_rest = sum(this_rest) / len(this_rest) if this_rest else 0
     avg_tremor = sum(this_tremor) / len(this_tremor) if this_tremor else 0
