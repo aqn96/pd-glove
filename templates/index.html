@@ -94,6 +94,8 @@
     outline: none;
   }
   .form-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+  .field-hint { font-size: .75rem; color: var(--muted); margin-top: 5px; }
+  .field-hint code { font-family: "SF Mono", "Fira Code", monospace; background: var(--bg); padding: 1px 4px; border-radius: 3px; }
 
   .btn-primary {
     width: 100%;
@@ -381,11 +383,13 @@
       <form id="form-assess" onsubmit="startAssessment(event)">
         <div class="form-group">
           <label>Subject ID</label>
-          <input name="person_id" placeholder="e.g. person_A" required autocomplete="off" spellcheck="false">
+          <input name="person_id" placeholder="e.g. person_A, jack, personA" required autocomplete="off" spellcheck="false">
+          <div class="field-hint">Spaces, hyphens, and numbers are fine — avoid <code>/</code> slashes.</div>
         </div>
         <div class="form-group">
           <label>Test Label</label>
-          <input name="test_name" placeholder="e.g. test_one" required autocomplete="off" spellcheck="false">
+          <input name="test_name" placeholder="e.g. test_one, sample_one, trial_1" required autocomplete="off" spellcheck="false">
+          <div class="field-hint">Spaces, hyphens, and numbers are fine — avoid <code>/</code> slashes.</div>
         </div>
         <div class="form-group">
           <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
