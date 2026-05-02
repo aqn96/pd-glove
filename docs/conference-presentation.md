@@ -25,7 +25,7 @@ Frame the talk around **what this enables in the world**, not what we soldered. 
 |---|---|---|
 | 1 | *Sensing-to-Decision: A Low-Cost, Privacy-Centric Edge Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification* (paper title verbatim) | 0:15 |
 | 2 | The Monitoring Gap | 1:00 |
-| 3 | Sensing-to-Decision: Privacy by Architecture | 1:00 |
+| 3 | Sensing-to-Decision | 1:00 |
 | 4 | The Prototype | 0:30 |
 | 5 | Live Demo | 5:00 |
 | 6 | What the Prototype Proves | 1:00 |
@@ -83,59 +83,87 @@ Build-side assets to create:
 > The Monitoring Gap
 
 **Subtitle (on slide):**
-> Parkinson's symptoms move hour by hour. Clinic visits happen every 3 to 6 months.
+> Parkinson's symptoms shift hour by hour. Clinical assessments don't.
 
-**On-slide text (large stat block, bottom of slide):**
+**On-slide text (three impact lines stacked beneath the timeline visual):**
+
+> **Symptoms shift hour by hour** — medication windows, fatigue, stress
+> **Direct costs rise as PD progresses** — more clinic visits is not a scalable answer
+> **Steepest growth in regions with the fewest specialists**
+
+**Headline stat block (bottom of slide, large bold type):**
+
 > **25.2 million PD cases projected by 2050**
-> *Most growth in regions with the fewest specialists.*
+> *The fastest-growing neurological disorder by prevalence, disability, and mortality.*
 
-**Visual:** Two contrasting timelines stacked, top-to-bottom:
-- Top timeline: thin sparse line with 3–4 dots, label "Clinic visits — every 3 to 6 months."
-- Bottom timeline: dense fluctuating waveform, label "Actual symptoms — hour by hour."
+**Visual (top half of slide):** Two stacked timelines spanning a 6-month window, drawn with intent:
+- Top timeline (label *"Clinic visits"*): a thin neutral-blue line with 3 dots, evenly spaced.
+- Bottom timeline (label *"Actual symptoms"*): a dense jagged waveform in amber/red, with two of the troughs annotated *"medication wearing off."*
+- Thin downward arrows from each clinic dot into the waveform, each labeled *"snapshot."* The arrows hit only 3 of the dozens of fluctuations — visually demonstrating the *snapshot effect* the paper names.
 
-The 25.2 M stat block sits below both timelines.
+The three impact lines sit in the middle band; the 25.2 M stat block anchors the bottom.
 
 **Script:**
 
-> "Here's the gap. Patients with Parkinson's see a neurologist a few times a year. Their motor symptoms shift hour by hour — medication wears off, fatigue sets in, stress changes everything. So the most important question for managing the disease — *am I in a good window or a bad one right now?* — is something the clinical system simply doesn't measure.
+> "Here's the gap. Patients with Parkinson's see a neurologist a few times a year. Their symptoms shift hour by hour — medication wears off, fatigue sets in, stress changes everything. So the most important clinical question — *am I in a good window or a bad one right now?* — is something the current system simply doesn't measure. The paper calls this the *snapshot effect* — every clinical assessment captures a single moment in a disease that's never standing still.
 >
-> And the gap is going to widen. Cases are projected to hit 25.2 million by 2050, and the steepest growth is in places that already have the fewest movement-disorder specialists. So whatever the answer is, it cannot depend on more clinic time. There isn't more clinic time."
+> And it's getting harder, not easier. Direct costs of Parkinson's care rise substantially as the disease progresses, and more frequent clinic visits is simply not a scalable answer to that. There isn't more clinic time, and the populations expected to see the steepest growth in PD are the ones with the fewest movement-disorder specialists to begin with.
+>
+> By 2050, we're looking at 25.2 million cases worldwide — Parkinson's is the fastest-growing neurological disorder on Earth. So whatever the answer to continuous monitoring is, it has to work outside the clinic, on hardware people can actually afford. That's the constraint this paper is built around."
 
-**Notes:** Don't rush this slide. The mission of the entire talk lives here. If the audience leaves with one number, it's 25.2 million.
+**Notes:**
+- Mission slide. Speak slowly. Don't rush past the cost beat — that's the line the audience will internalize as *"more visits won't fix this."*
+- Pause briefly before "25.2 million" — that's the headline number, let it land.
+- The closing line ("hardware people can actually afford") is the bridge into Slide 3 — deliver it with intention; it sets up the privacy + low-cost framework directly.
 
 ---
 
-## Slide 3 — Sensing-to-Decision: Privacy by Architecture (1:00)
+## Slide 3 — Sensing-to-Decision (1:00)
 
 **Title (on slide):**
 > Sensing-to-Decision
 
-**Subtitle (on slide, bold strapline above the icon row):**
-> Privacy-by-design, by architecture — not by policy.
+**Subtitle (on slide, bold strapline):**
+> Privacy by architecture, not by promise.
+> A four-layer edge framework: sense at home · decide on-device · share only the encrypted summary.
 
-**On-slide text (three-icon row across the middle):**
+**On-slide text — three-icon row across the upper-middle band:**
 
 | Icon | Label | One-line caption |
 |---|---|---|
 | 🧤 (glove) | **Sense at home** | Continuous capture on commodity hardware |
-| 🔲 (chip) | **Decide on-device** | Raw data stays here · Privacy boundary |
+| 🔲 (chip) | **Decide on-device** | DSP + inference local · Privacy boundary |
 | 🔐 (envelope) | **Share only what matters** | Encrypted clinical summary, not raw biometrics |
 
-**Visual:** Three icons in a horizontal row, each with the label + caption above. A bold dashed red vertical line falls just to the right of the middle icon, labeled **"Privacy-by-Design boundary"**. The strapline sits above the icon row in larger weight.
+**On-slide text — boundary-check panel below the icons (two columns):**
+
+> **Stays on-device by architecture**
+> Raw accelerometer streams · Raw flex streams · DSP intermediate state · Severity classification
+>
+> **Crosses the wire — encrypted by architecture**
+> Per-exercise clinical JSON · Session video (post-session compliance audit only)
+>
+> *Encryption profile per paper §IV-B: AES-256-GCM payload · MQTT over TLS 1.3 · Mutual cert auth. MQTT publisher is identified in §VIII as next-stage integration work.*
+
+**Visual:** Three icons in a horizontal row, each with the label + caption above. A bold dashed red vertical line falls just to the right of the middle icon, labeled **"Privacy-by-Design boundary."** Strapline above the icon row in larger weight. Below the icons: a clean two-column boundary-check panel — left column with a small lock-and-Pi icon (stays inside), right column with a small encrypted-envelope icon (crosses the wire). The encryption-profile line sits in smaller italic at the bottom.
 
 **Script:**
 
-> "Our framework is called sensing-to-decision, and it has three commitments.
+> "Our framework is called sensing-to-decision, and it has three architectural commitments.
 >
-> First, the measurement happens at home, continuously, on commodity hardware — no clinic visit required.
+> First, the measurement happens at home, continuously, on commodity hardware. The current prototype demonstrates this — DSP and severity classification run entirely on the Pi today.
 >
-> Second, the decision happens on the device itself. Raw accelerometer streams and raw finger-curvature streams never leave the Pi. Session video is captured by the patient's phone and encrypted on-device before it ever crosses the network. The interpretation — the actual scoring — is local.
+> Second, the decision happens on the device itself. Raw accelerometer streams, raw flex streams — by architecture, none of it crosses the network. The interpretation, the clinical scoring, is local.
 >
-> Third, what *does* leave is only the clinical summary, encrypted, designed for a clinician to act on. Not a waveform, not a plaintext video, not a fingerprint of someone's nervous system. A score, with context.
+> Third, only the clinical summary leaves the device, and it crosses the wire encrypted. The framework specifies AES-256-GCM at the application layer, MQTT over TLS 1.3 with mutual certificate authentication at transport. That publisher is identified in the paper as the next integration stage.
 >
-> The key word here is *architecture*. Privacy isn't a setting we toggle — it's a property of where computation physically happens. If the raw data isn't there, it can't leak."
+> The key word here is *architecture*. Most systems that call themselves privacy-preserving are running cryptography on top of cloud surveillance. This framework doesn't transmit the raw data at all. Privacy isn't a setting we toggle — it's a property of where computation physically happens. If the raw data isn't there, it can't leak."
 
-**Notes:** This is the slide that defines what the project *is*. Land it cleanly. The "by architecture, not by policy" line is the most quotable thing in the talk — pause before and after it.
+**Notes:**
+- This is the slide that defines what the project *is*. Land it cleanly.
+- The "by architecture, not by promise" line is the most quotable thing in the talk — pause before and after it.
+- The "cryptography on top of cloud surveillance" line is the sharpener — it directly contrasts the framework against the typical "secure cloud" pitch the audience hears constantly.
+- Be honest about the MQTT publisher being next-stage. Reviewers know; the audience deserves the same honesty. Frame it as scope clarity, not weakness.
 
 ---
 
@@ -147,15 +175,23 @@ The 25.2 M stat block sits below both timelines.
 **Subtitle (on slide):**
 > Five-finger wearable · Raspberry Pi 5 edge gateway · Built on commodity hardware
 
-**On-slide text:** None — the photo carries the slide.
+**On-slide text — single spec strip across the bottom of the photo:**
 
-**Visual:** Single full-bleed photo of the assembled glove on the table next to the Pi 5 and the laptop running the demo dashboard (`images/prototype_photo.jpg` if it shows the full setup; otherwise stage a fresh photo). Subtitle sits at the bottom in smaller type.
+> **5 IMU mounts** (4 operational; CH4 hardware fault under investigation) · **TCA9548A** I²C mux · **MCP3008** SPI ADC ready · **Flex sensor channels designed** (hardware pending arrival) · **All processing local on Pi 5**
+
+**Visual:** Full-bleed photo of the assembled glove on the table next to the Pi 5 and the laptop running the demo dashboard (`images/prototype_photo.jpg`, or stage a fresh photo if the existing one doesn't show the full setup). Subtitle sits at the top in smaller type. The spec strip overlays the bottom edge of the photo in a translucent dark band — readable but doesn't fight the image.
 
 **Script:**
 
-> "I want to show you the prototype rather than describe it. So I'm going to step over to the demo here for the next few minutes — what you'll see is a real assessment, end-to-end, on the actual hardware. Then I'll come back and tell you what we've validated and where this is going."
+> "I want to show you the prototype rather than describe it. Five IMU mounts, one per finger — four operational today, with the fifth-channel hardware fault still under investigation. Five flex-sensor channels are wired into the design; the sensors themselves are pending arrival. All capture, filtering, and feature extraction runs on a single Raspberry Pi 5. Every component is off the commodity supply chain — no proprietary parts.
+>
+> So instead of walking through the architecture diagram, I'm going to step over to the demo here for the next few minutes — what you'll see is a real assessment, end-to-end, on the actual hardware. Then I'll come back and tell you what we've validated and where this is going."
 
-**Notes:** Brief transition slide. Don't read the subtitle — the audience can. Walk to the demo setup as you finish speaking.
+**Notes:**
+- Brief transition slide. Don't read the spec strip — the audience can.
+- Walk to the demo setup as you finish speaking.
+- The "no proprietary parts" line is intentional — it sets up the equity argument on Slide 7 ahead of time, so when you say "designed for where PD is growing fastest," the audience already knows the parts are commodity.
+- Honesty on CH4 + flex disarms the obvious "where's the fifth channel / where's the bradykinesia data" question before someone asks it in Q&A.
 
 ---
 
@@ -185,32 +221,40 @@ The 25.2 M stat block sits below both timelines.
 **Title (on slide):**
 > What the Prototype Proves
 
-**Subtitle (on slide):** None.
+**Subtitle (on slide):**
+> From architecture to evidence — three things we've validated on real hardware.
 
-**On-slide text (three statements stacked, each in large type with a smaller supporting line):**
+**On-slide text — three statements stacked, each anchored by a paper-supported number and a "what it means" line:**
 
-> **The signal is real.**
-> *Across multi-subject testing, the device cleanly separates tremor from rest — every time, in the clinically expected frequency band.*
+> **1. The signal is real.**
+> **30× to 895×** rest-to-tremor separation across all four channels and both subjects.
+> *Every tremor capture landed inside the 4–6 Hz Parkinsonian band.*
 >
-> **The hardware is reliable.**
-> *Stable continuous capture across every session, with zero communication failures recorded.*
+> **2. The hardware is reliable.**
+> **0 I²C retries** across **9 validation runs**. **88.9–89.3 Hz** sustained sampling.
+> *Stable enough to trust the data, against a 100 Hz design target.*
 >
-> **The pipeline runs entirely on the device.**
-> *Raw data never leaves. The cloud only ever sees the encrypted summary.*
+> **3. The pipeline runs entirely on-device.**
+> **Raw biometric data never leaves the Pi.** By architecture, only encrypted clinical summaries cross the wire (publisher integration is next-stage).
+> *Privacy commitment, demonstrable in the prototype today.*
 
-**Visual:** Plain three-statement layout. No graphics. Generous spacing so each statement reads as its own beat.
+**Visual:** Three-statement layout with bold numeric callouts in your accent color (suggested: blue `#3b82f6`). Each statement gets its own row. Generous vertical spacing so each one reads as a beat. No graphs — the audience just saw the demo, this is the receipts.
 
 **Script:**
 
 > "Three things we've established with the working prototype.
 >
-> The signal is real. Across nine validation tests on two subjects, the device reliably distinguishes resting tremor from rest, in the right 4-to-6-hertz frequency range every single time. The separation is large enough that there's no overlap between the two states.
+> First, the signal is real. Across nine validation tests on two subjects, we measured tremor-to-rest band power separation between thirty times and eight hundred and ninety-five times — and every single tremor capture landed in the four-to-six hertz Parkinsonian band. The separation is large enough that there's no overlap between the two states.
 >
-> The hardware is reliable. Across every one of those tests, sampling stayed stable and we recorded zero communication retries on the sensor bus.
+> Second, the hardware is reliable. Across every one of those nine tests, sampling stayed stable in the 89-hertz range, and we recorded zero communication retries on the sensor bus. That stability matters — it means the data is trustworthy enough to feed into a model.
 >
-> And critically, the entire pipeline runs on the device itself. The cloud doesn't see your raw biometrics. It sees a clinical summary. That's the privacy commitment, in operation, today."
+> And third, critically, the entire pipeline runs on the device itself. Raw biometric data never leaves the Pi. By architecture, only encrypted clinical summaries cross the wire — that publisher is the immediate next integration step. But the privacy commitment from Slide 3 is structural, and it's demonstrable in the prototype today."
 
-**Notes:** No tables, no per-channel numbers — the audience just watched the demo, they don't need the table. If a skeptic in Q&A asks for the actual separation magnitude, you have Backup B1.
+**Notes:**
+- This is the "we built it and it works" slide. Confidence, not modesty.
+- The "30× to 895×" is the strongest number in the talk — speak it slowly.
+- If asked in Q&A for raw numbers per channel or per subject, you have Backup B1.
+- Closing line ties back to Slide 3 — the privacy commitment isn't just a diagram, it's measurable in this prototype right now.
 
 ---
 
@@ -219,32 +263,37 @@ The 25.2 M stat block sits below both timelines.
 **Title (on slide):**
 > Designed for Where PD Is Growing Fastest
 
-**Subtitle (on slide):** None.
+**Subtitle (on slide):**
+> Continuous PD monitoring at the price of a phone charger.
 
-**On-slide text (cost progression, two stages, with a strapline below):**
+**On-slide text — cost progression, two stages:**
 
 > **Today** — Built on commodity hardware (Raspberry Pi 5)
 >
-> **Near future** — `<$35` deployment target on Pi Zero 2W (~$15) or ESP32 (~$5–10)
+> **Near future** — `<$35` deployment target
+> Pi Zero 2W (~$15) · ESP32 (~$5–10) · Arduino Nano 33 BLE Sense (~$30)
 
-Strapline below the progression, in larger weight:
+**On-slide text — three impact bullets below the progression:**
 
-> **Continuous PD monitoring at the price of a phone charger.**
+> **No proprietary hardware.** Off-the-shelf components, accessible supply chain.
+> **No cloud dependency.** Processing stays local — no recurring cloud costs by architecture.
+> **Built for resource-constrained settings.** Where PD is projected to grow the fastest.
 
-Smallest line below the strapline:
-> *Engineered for the regions where PD is growing fastest.*
-
-**Visual:** Simple horizontal arrow going left-to-right. Pi 5 icon on the left, Pi Zero 2W and ESP32 icons on the right. The strapline sits below the arrow in bold.
+**Visual:** Simple horizontal arrow going left-to-right. Pi 5 icon on the left under "Today." Pi Zero 2W, ESP32, and Arduino icons on the right under "Near future." The `<$35` figure rendered large in your accent color. The strapline ("phone charger") sits in the subtitle slot at the top of the slide. The three impact bullets sit below the cost progression, each anchored by a bold lead phrase.
 
 **Script:**
 
 > "Here's why I think this is more than a research artifact.
 >
-> The architecture we built doesn't depend on expensive proprietary hardware or recurring cloud costs. Today's prototype runs on a Raspberry Pi 5. But the inference pipeline is designed to port directly to a Pi Zero 2W at around fifteen dollars, or an ESP32 in the five-to-ten-dollar range. The deployment target is under thirty-five dollars. Continuous, privacy-preserving Parkinson's monitoring, at the price of a phone charger.
+> The architecture we built doesn't depend on expensive proprietary hardware. It doesn't depend on recurring cloud costs. It doesn't depend on always-on broadband. Today's prototype runs on a Raspberry Pi 5. Because the pipeline operates on compact INT8-quantized DSP feature vectors rather than raw waveforms, it ports directly to a Pi Zero 2W at around fifteen dollars, an ESP32 in the five-to-ten-dollar range, or an Arduino Nano 33 BLE Sense at around thirty dollars. The framework's deployment target is under thirty-five dollars per device — continuous, privacy-preserving Parkinson's monitoring, at the price of a phone charger.
 >
-> That's the part that I think matters most. The populations expected to see the biggest growth in PD over the next 25 years are not the populations with the most neurologists or the best broadband. If the answer to continuous monitoring requires either, it doesn't reach them. This one can."
+> And that's the part that I think matters most. The populations expected to see the biggest growth in Parkinson's over the next 25 years are not the populations with the most neurologists, or the best broadband, or the budget for proprietary clinical devices. If the answer to continuous monitoring depends on any of those, it doesn't reach the people who need it most. This framework was designed so it can."
 
-**Notes:** This is the impact slide. Speak slower here. The "phone charger" line is meant to land — let it sit for a beat before continuing.
+**Notes:**
+- This is the impact slide. Speak slower here.
+- The "phone charger" line is the punchline — let it sit for a beat before continuing.
+- The closing line ("the people who need it most") is the moral case of the entire talk. Don't rush past it.
+- If asked about latency or model size: TFLite INT8 quantization reduces footprint by 70–85% and gets sub-5 ms inference on comparable ARM (cited in paper §II-D, ref [10]). On-device benchmark on the Pi 5 is forthcoming.
 
 ---
 
@@ -255,32 +304,34 @@ Smallest line below the strapline:
 
 **Subtitle (on slide):** None.
 
-**On-slide text:**
+**On-slide text — three takeaways, each anchored by a concrete:**
 
 > **A working prototype, not a paper sketch.**
-> *The sensing pipeline is real, validated, and reproducible.*
+> *9 tests · 2 subjects · 30–895× tremor discrimination — real signal, real hardware, today.*
 >
 > **Privacy by architecture, not by promise.**
-> *Raw data physically cannot leak from a device that never transmits it.*
+> *Raw biometric data physically cannot leak from a device that never transmits it.*
 >
-> **Built for the world Parkinson's is actually growing in.**
-> *Commodity hardware, no cloud dependency, deployable anywhere.*
+> **Engineered for the world Parkinson's is actually growing in.**
+> *Commodity hardware. No cloud dependency. `<$35` deployment target.*
 
-**Visual:** Three short stacked statements. No graphics. Match the layout of Slide 6 visually so the audience recognizes the bookend.
+**Visual:** Three short stacked statements with the bold lead line in larger type and the supporting line in smaller italic. Match the layout of Slide 6 visually so the audience recognizes the bookend. No graphics — let the words carry it.
 
 **Script:**
 
 > "Three things to take away.
 >
-> One, this is a working prototype — not a paper sketch. You just saw it run.
+> One, this is a working prototype — not a paper sketch. Nine tests, two subjects, thirty-to-eight-hundred-fold tremor discrimination on real hardware. You just saw it run.
 >
-> Two, the privacy story is structural, not promotional. Data doesn't leak from a device that doesn't transmit it.
+> Two, the privacy story is structural, not promotional. Raw biometric data physically cannot leak from a device that doesn't transmit it.
 >
-> And three, this is built for the world Parkinson's is actually growing in — the parts of the world where you can't assume specialist access or reliable broadband, but where the burden of this disease is going to land hardest over the next two decades.
+> And three, this is engineered for the world Parkinson's is actually growing in — commodity hardware, no cloud dependency, a sub-thirty-five-dollar deployment target. The parts of the world where you can't assume specialist access or reliable broadband are exactly the parts where the burden of this disease is going to land hardest over the next two decades. We built this so it could reach them.
 >
 > Thank you. I'd love to take questions."
 
-**Notes:** Close clean. Don't add a fourth line. Pause before "Thank you."
+**Notes:**
+- Close clean. Don't add a fourth line. Pause before "Thank you."
+- This is the bookend to Slide 6 — same layout, same structure, but here each takeaway is anchored to a number (9 tests, never-transmit, <$35) so the audience leaves with concrete recall.
 
 ---
 
