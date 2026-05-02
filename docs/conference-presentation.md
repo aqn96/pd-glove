@@ -71,9 +71,9 @@ Build-side assets to create:
 
 > "Good afternoon. I'm An Nguyen, from Northeastern University. This is joint work with Hong Peng, Madhu Babu Cherukuri, and Sarita Singh.
 >
-> What I'm going to show you today isn't really a sensor paper. It's a question about who gets to be monitored for a disease that's growing faster than any other in neurology — and a working prototype of one answer that runs entirely on commodity edge hardware."
+> What I'm going to show you today isn't really a sensor paper. It's an architectural argument — that continuous, privacy-preserving monitoring of Parkinson's disease, the fastest-growing neurological disorder in the world, can be done entirely on low-cost commodity edge hardware. And we built a working prototype to back it up."
 
-**Notes:** Open with the framing shift. You're not pitching hardware; you're pitching access. Pause after "neurology" before saying "and a working prototype."
+**Notes:** Open with the framing shift. You're not pitching hardware; you're pitching a design philosophy — privacy-centric, low-cost, edge-first. Pause briefly before "And we built a working prototype to back it up" — that's the line that turns the thesis from claim into evidence.
 
 ---
 
