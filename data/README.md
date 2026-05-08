@@ -1,8 +1,23 @@
 # Data Directory
 
-This directory contains validated tremor detection datasets for the PD-glove sensing-to-decision framework.
+This directory contains validated datasets for the PD-glove sensing-to-decision framework.
 
 ## Files
+
+### `flex_bench_thumb_2026-05-07.csv`
+
+**Off-platform flex-sensor bench characterization** — 10 trials × 4 angles (0°, 30°, 60°, 90°) on a single SparkFun SEN-10264 mounted on a thumb jig, sampled by an Arduino Nano 33 BLE Sense Lite at 12-bit ADC resolution.
+
+**Columns:**
+- `trial` — Trial index (1–10 per angle)
+- `angle_deg` — Bench-jig angle (0, 30, 60, 90)
+- `adc_value` — Raw ADC reading
+- `capture_date` — ISO 8601 capture date
+
+**Scope and analysis notes:**
+- Off-platform: not the Pi 5 + MCP3008 deployment path. See `docs/flex-bench-characterization.md` for the protocol, results, and reproducibility notes.
+- 90° readings are retained for reproducibility but excluded from the paper analysis due to hysteresis-zone instability (SD ≈ ±145 ADC).
+- Source of truth for paper §V-E and §VIII flex-sensor claims (AIIoT 2026 camera-ready).
 
 ### `tremor_validation_master.csv`
 

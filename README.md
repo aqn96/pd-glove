@@ -30,7 +30,7 @@ When sharing data with backend teammates, credentials and config are not enough 
 ```
 [Glove Sensors]                   [Patient Phone Video]
 5× MPU6050 IMU                    Encrypted session recording
-5× Flex Sensor (pending)          Post-session MediaPipe validation
+5× Flex Sensor (thumb bench validated)  Post-session MediaPipe validation
         ↓                                  ↓
     ~89Hz measured (4ch), 100Hz target   Compliance flags (later stage)
         ↓
@@ -54,7 +54,7 @@ When sharing data with backend teammates, credentials and config are not enough 
 | Raspberry Pi 5 (8GB) | 1 | Edge computing gateway | ✅ Acquired |
 | MPU6050 IMU (GY-521) | 5 | 6-axis accel/gyro for tremor detection (one per finger) | ✅ Acquired & Soldered |
 | TCA9548A I2C Multiplexer | 1 | Routes I2C bus for 5 IMUs sharing address 0x68 | ✅ Acquired & Soldered |
-| SparkFun Flex Sensor 2.2" (SEN-10264) | 5 | Resistive bend sensors for bradykinesia measurement | ⏳ Pending |
+| SparkFun Flex Sensor 2.2" (SEN-10264) | 5 | Resistive bend sensors for bradykinesia measurement | 🧪 Bench validated (thumb only, off-platform on Arduino Nano — see `docs/flex-bench-characterization.md`); Pi 5 + MCP3008 integration pending |
 | MCP3008 ADC | 1 | 10-bit SPI ADC for flex sensor voltage dividers | ✅ Acquired |
 | 4.7kΩ Pull-up Resistors | 2 | I2C SDA/SCL pull-ups | ✅ Acquired |
 | 10kΩ Resistors | 5 | Flex sensor voltage divider pull-downs | ✅ Acquired |
@@ -73,7 +73,7 @@ Pi GPIO2 (SDA) / GPIO3 (SCL) → TCA9548A (0x70) → Channels 0–4 → 5× MPU6
 
 **Design Rationale:** Per-finger IMU placement enables spatial isolation of the thumb-index interaction characteristic of Parkinsonian pill-rolling tremor, providing superior resolution over single wrist-worn sensors for fine-grained motor pattern recognition.
 
-**SPI Subsystem (Bradykinesia Detection — pending flex sensors):**
+**SPI Subsystem (Bradykinesia Detection — Pi 5 + MCP3008 integration pending; thumb-only bench characterization complete off-platform on Arduino Nano 33 BLE Sense Lite, see `docs/flex-bench-characterization.md`):**
 5× Flex Sensors → 10kΩ voltage dividers → MCP3008 ADC (CH0–CH4) → Pi SPI bus (spidev0.0)
 
 **Phone Video Subsystem (Post-Session Validation):**
@@ -107,8 +107,8 @@ Patient phone records encrypted session video for retrospective MediaPipe compli
 - [x] **Production-grade tremor discrimination: 30-895× rest-to-tremor separation** ✅
 - [x] Tremor software pipeline (`scripts/sensor_reader.py` + `scripts/dsp_pipeline.py`) validated end-to-end on Pi
 - [ ] Channel 4 (Pinky) stable independent read path (hardware issue + wiring crossover)
-- [ ] MCP3008 ADC on SPI bus
-- [ ] Flex sensor voltage divider circuits
+- [ ] MCP3008 ADC on SPI bus (Pi 5 host integration pending)
+- [ ] Flex sensor voltage divider circuits on Pi 5 host (off-platform Arduino bench characterization complete; see `docs/flex-bench-characterization.md`)
 
 ## Software Modules
 
@@ -148,9 +148,10 @@ scripts/
 - ✅ **Frequency accuracy:** All tremor captures in 4-6 Hz Parkinsonian range
 - ✅ **Environmental controls documented:** Contamination effects identified and logged
 - ✅ **Dataset ready for Transformer training:** `data/tremor_validation_master.csv`
+- 🧪 **Off-platform flex bench characterization (thumb):** 10 trials × 0°/30°/60° on Arduino Nano 33 BLE Sense Lite — flat-vs-bent separable (Cohen's d = 2.15 between 0° and 60°); `data/flex_bench_thumb_2026-05-07.csv`
 
 ### Implementation Scope
-- Current focus is tremor-first (IMU only). Flex/bradykinesia remains pending hardware integration.
+- Current focus is tremor-first on the Pi 5. Flex/bradykinesia bench characterization is complete on a thumb-mounted SparkFun SEN-10264 sampled by an Arduino Nano 33 BLE Sense Lite (see `docs/flex-bench-characterization.md`); Pi 5 + MCP3008 multi-finger integration remains pending.
 - Phone video is reserved for post-session compliance validation; no real-time camera gating in the live pipeline.
 - Stable wiring topology critical: shared 3.3V and shared GND rails across Pi, TCA9548A, and all IMUs.
 - `scripts/test_imus.py` accepts compatible WHO_AM_I responses (`0x68`, `0x70`, `0x71`) for MPU6050 clones.
@@ -158,7 +159,7 @@ scripts/
 ## Future Work
 
 - Train Transformer/TFLite INT8 model on multi-subject validation dataset for MDS-UPDRS-aligned scoring.
-- Integrate flex sensor + MCP3008 pathway for bradykinesia and rigidity metrics.
+- Integrate flex sensor + MCP3008 pathway on the Pi 5 host for bradykinesia and rigidity metrics (off-platform Arduino bench characterization already documented in `docs/flex-bench-characterization.md`).
 - Add MQTT clinical payload publishing and robust session state handling.
 - Add structured app/session timestamp protocol to formalize exercise semantics.
 - Add security layer (payload encryption, TLS/mTLS transport, and key lifecycle controls).
@@ -176,7 +177,9 @@ scripts/
 - `docs/testing-workflow.md` — standard validation flow used in this project
 
 **Reference:**
-- `docs/validation-results.md` — latest recorded tremor-phase run outcomes
+- `docs/validation-results.md` — latest recorded tremor-phase run outcomes (Pi 5 + IMU integrated path)
+- `docs/flex-bench-characterization.md` — off-platform thumb flex sensor bench protocol and results (Arduino Nano 33 BLE Sense Lite)
+- `docs/camera-ready-edits.md` — AIIoT 2026 camera-ready paper edit checklist
 - `docs/assessment-and-therapy-protocol.md` — 3-task assessment protocol + separate therapeutic routine
 - `docs/mobile-web-data-contract.md` — cloud payload schema for MPU tremor and flex stiffness metrics
 - `docs/blues-dpu-notes.md` — Blues platform, DPU framing, and PD-glove integration ideas
@@ -195,9 +198,12 @@ pd-glove/
 │   ├── run_tremor_validation.py     # Terminal fallback: full rest+tremor workflow
 │   ├── sensor_reader.py             # Multi-IMU polling via TCA9548A
 │   ├── test_imus.py                 # Per-channel hardware probe
-│   └── dsp_pipeline.py             # Butterworth filter + FFT tremor metrics
+│   ├── dsp_pipeline.py              # Butterworth filter + FFT tremor metrics
+│   └── flex_bench/
+│       └── plot_bench.py            # Regenerate flex bench Fig. 5 right panel
 ├── data/
-│   └── tremor_validation_master.csv # Append-only log of all assessments
+│   ├── tremor_validation_master.csv      # Append-only log of all assessments
+│   └── flex_bench_thumb_2026-05-07.csv   # Off-platform thumb flex bench characterization (10 trials × 4 angles)
 ├── docs/                            # Project docs (setup, testing, specs, notes)
 ├── images/                          # Architecture diagrams, circuit photos
 ├── requirements.txt                 # Python dependencies (includes Flask)

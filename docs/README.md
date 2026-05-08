@@ -3,7 +3,9 @@
 - `QUICKSTART.md` — setup and bring-up steps
 - `testing-workflow.md` — repeatable validation workflow
 - `assessment-and-therapy-protocol.md` — 3-task assessment protocol + separate therapeutic routine
-- `validation-results.md` — run logs and outcomes
+- `validation-results.md` — run logs and outcomes (Pi 5 + IMU integrated path)
+- `flex-bench-characterization.md` — off-platform thumb flex sensor bench protocol and results (Arduino Nano 33 BLE Sense Lite)
+- `camera-ready-edits.md` — AIIoT 2026 camera-ready paper edit checklist
 - `mobile-web-data-contract.md` — payload schema and integration contract
 - `blues-dpu-notes.md` — Blues platform integration ideas
 - `activity5-datasets.md` — dataset planning and references

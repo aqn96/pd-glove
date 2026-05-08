@@ -13,7 +13,7 @@ This document captures the tremor-phase validation status for the PD glove proto
   - `scripts/sensor_reader.py` (multi-IMU capture)
   - `scripts/dsp_pipeline.py` (3-15 Hz Butterworth + FFT 4-6 Hz metrics)
   - `scripts/run_tremor_validation.py` (one-command rest+tremor workflow)
-- **Scope:** Tremor only (flex/bradykinesia pending)
+- **Scope:** Tremor only on the Pi 5 + 4-IMU integrated path. Off-platform thumb-only flex bench characterization is documented separately in `flex-bench-characterization.md`. Pi 5 + MCP3008 flex integration remains pending.
 
 ## Hardware Mounting Solution
 

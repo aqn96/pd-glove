@@ -1,6 +1,7 @@
 
 *.csv
 !data/tremor_validation_master.csv
+!data/flex_bench_thumb_*.csv
 .venv/
 venv/
 .DS_Store
