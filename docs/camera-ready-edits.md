@@ -118,13 +118,74 @@ The re-read also surfaced these patterns. None are inconsistencies — they are 
 
 ---
 
+## Optional length tightening (low-risk surgical cuts)
+
+A re-read for length surfaced some redundancy that adds words without adding information. **None of these are required** — the paper is fine as-is. But if you want to free up a few lines without changing the paper's voice, these are the safest cuts. Each one removes duplicated material; none introduces new claims, new numbers, or new structural changes.
+
+**Risk note.** Reviewers will not notice these cuts because they delete repetition rather than add or modify content. The paper still says everything it currently says — just once instead of twice or three times. Safer than the major-revision-style rewrites we already chose to skip.
+
+**Recommended.** Cuts 1 and 2 below are highest-leverage and lowest-risk. They take roughly 2 minutes to apply and free ~8 lines. Cuts 3 and 4 are optional polish.
+
+### Cut 1 (recommended) — §III-F: delete the duplicate "Incomplete sessions" sentence
+
+**Where.** §III-F (Data Transmission and Privacy) currently ends with:
+
+> "Incomplete sessions are transmitted with an interrupted status flag rather than discarded, as the inability to complete an exercise is itself a clinically meaningful indicator of disease progression [23]."
+
+**Action.** Delete this sentence entirely from §III-F.
+
+**Why.** §IV-A (Data Contract) already makes the same point with a stronger concrete example ("a patient sustaining 10 seconds of finger tapping last month but only 4 seconds today provides actionable longitudinal data [23]"). §III-F is about transmission/privacy; the longitudinal-meaning argument belongs in §IV-A's session-semantics section, where it already lives. Removing the §III-F version eliminates a near-verbatim duplicate one section apart.
+
+### Cut 2 (recommended) — §V-A: tighten the PLA ring sentence
+
+**Where.** §V-A opens with:
+
+> "Custom 3D-printed polylactic acid (PLA) rings - one per finger - serve as the sensor mounting platform, each designed with two bottom slots for elastic band threading to provide adjustable tension, two side bars matching the MPU6050 footprint for hot-glue stabilization, and a top cavity sized to fit the sensor body precisely. This mounting strategy minimizes motion artifacts without requiring adhesives directly on the skin, supporting repeated donning across sessions."
+
+**Replace with:**
+
+> "Custom 3D-printed PLA rings (one per finger) hold each MPU6050 in a top cavity, with elastic-band slots for adjustable tension and side bars for hot-glue stabilization. This minimizes motion artifacts without skin adhesives and supports repeated donning across sessions."
+
+**Why.** Same information, roughly half the length. The slot/bar/cavity geometry is workshop-paper detail that a reviewer does not need to follow the prototype description. The replacement keeps every claim (PLA, one per finger, elastic-band tension, hot-glue stabilization, no skin adhesive, repeated donning) and the same neutral tone.
+
+### Cut 3 (optional) — §VIII: shorten the flex-bench recap
+
+**Where.** §VIII (Limitations and Future Work) currently restates four facts already in §V-D:
+
+> "Preliminary flex sensor characterization has been conducted on an Arduino Nano 33 BLE Sense Lite (~$30), confirming separable raw-ADC response across 0°/30°/60° bench positions at ~33 Hz (serial-output limited at 9600 baud; the underlying SAADC supports substantially higher rates). The Nano's onboard 12-bit ADC and integrated IMU (BMI270 + BMM150) together demonstrate that both sensing modalities required by this framework are achievable on a single sub-$35 device."
+
+**Replace with:**
+
+> "Preliminary flex characterization on the Nano 33 BLE Sense Lite (~$30, see §V-D) confirms that both sensing modalities can run on a single sub-$35 device, supporting the TFLite Micro deployment path described above."
+
+**Why.** §VIII is the future-work section, not a second results paragraph. The bench numbers, the 33 Hz / 9600-baud disclosure, and the BMI270 + BMM150 IMU naming all already appear in §V-D where they belong. One back-reference is enough.
+
+**Risk note.** This is a more visible cut than #1 and #2 because it shortens an entire paragraph rather than tweaking a sentence. If you would rather keep the verbose version for emphasis, no harm — it is repetition, not contradiction.
+
+### Cut 4 (optional) — §VII: trim one "below 70 g²" repetition
+
+**Where.** §VII currently says:
+
+> "Critically, rest windows remained consistently below 70 g² across both subjects and all nine test runs, confirming that the app-controlled timestamp protocol adequately gates the tremor scoring window without requiring real-time activity classification…"
+
+**Replace with:**
+
+> "Critically, the consistently low rest-window band power confirms that the app-controlled timestamp protocol adequately gates the tremor scoring window without requiring real-time activity classification…"
+
+**Why.** "Below 70 g²" already appears in Table I (where the rest maxima are 51 and 69) and in the §V-B body text. The third mention in §VII restates a number the reader has seen twice. The interpretation ("gating works") is what §VII contributes; the number was §V-B's contribution.
+
+**Risk note.** Same as Cut 3 — visible but defensible. The §VII paragraph still references §V-B's findings; it just stops repeating the specific value.
+
+---
+
 ## Asset tracking (paper-side, not LaTeX edits)
 
 | Item | Status | Action |
 |---|---|---|
-| `images/flex_bench_scatter.png` | ✅ in repo | None |
-| Fig. 5 left panel: thumb-on-jig photo | ⏳ pending | Need photo from Vatsalya. Paper currently references `flex_bench_combined.png` |
-| Fig. 5 filename in LaTeX | ⚠️ inconsistent | Paper `\includegraphics` references `flex_bench_combined.png`; repo has `flex_bench_scatter.png`. Reconcile when the photo lands. |
+| `images/flex_bench_scatter.png` | ✅ in repo | None — used as Fig. 5 right panel |
+| Fig. 5 left panel: full five-finger flex prototype photo | ⏳ to combine | User has the photo of the assembled five-finger flex prototype. Combine with the scatter plot into one side-by-side PNG (e.g., via Photopea, Keynote, or Cmd+Shift+4 screenshot of both Preview windows aligned). |
+| Fig. 5 caption | ✅ updated | Caption now honestly scopes both panels: "(Left) Assembled five-finger flex sensor prototype… integration with the Pi 5 + MCP3008 host is pending. (Right) ADC distribution from a single thumb-mounted sensor sampled off-platform…" |
+| Fig. 5 filename in LaTeX | ⚠️ check | Paper `\includegraphics` should point at the new combined PNG (suggest `images/flex_bench_combined.png`). |
 | Author block: add Vatsalya Cherukuri | ⏳ pending | Add to manuscript author list, position after An Nguyen. |
 | EDAS / manuscript author reconciliation | ⏳ pending | EDAS lists Madhu Babu Cherukuri; manuscript does not. Confirm with chair before camera-ready. |
 
@@ -146,6 +207,8 @@ After applying Fixes A–C, verify each statement is true of the manuscript:
 - [ ] §III-G severity claim is consistent with §V-B's own bin definitions (after Fix A)
 - [ ] §VII cross-ref to severity anchors points to §V-B not §III (after Fix B)
 - [ ] §I MediaPipe sentence is hedged consistently with §III-B-3 / §VIII (after Fix C)
+- [ ] Fig. 5 caption scopes the left panel as "Assembled five-finger flex sensor prototype" and the right panel as single-thumb bench data, with no claim that the photo represents the bench setup
+- [ ] Fig. 5 `\includegraphics` references the combined PNG file actually present in the repo
 
 ---
 
