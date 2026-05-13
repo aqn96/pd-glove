@@ -3,7 +3,7 @@
 **Paper:** Sensing-to-Decision: A Low-Cost, Privacy-Centric Edge Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification
 **Conference:** IEEE World AI IoT Congress 2026, 20–22 May 2026
 **Slot assumption:** 15-minute parallel-session talk
-**Format:** ~6 min slides + ~5 min live demo + ~3 min Q&A
+**Format:** ~7 min slides + ~5 min live demo + ~3 min Q&A
 **Presenter:** An Nguyen
 **Co-authors:** Madhu Babu Cherukuri, Vatsalya Rohitbhai Dabhi, Sarita Singh, Hongpeng Fu
 **Presentation deadline:** 12 May 2026
@@ -30,8 +30,9 @@ Frame the talk around **what this enables in the world**, not what we soldered. 
 | 5 | Live Demo | 5:00 |
 | 6 | What the Prototype Proves | 1:00 |
 | 7 | Designed for Where PD Is Growing Fastest | 1:00 |
-| 8 | Three Takeaways | 0:30 |
-| 9 | Questions? | 3:00 |
+| 8 | Limitations & Future Work | 0:50 |
+| 9 | Conclusion | 0:30 |
+| 10 | Questions? | 3:00 |
 
 ## Asset checklist
 
@@ -39,7 +40,7 @@ Images already in the repo at `images/`:
 
 | Asset | Used on |
 |---|---|
-| `prototype_photo.jpg` | Slide 1 (corner), Slide 4 (full bleed), Slide 9 (background) |
+| `prototype_photo.jpg` | Slide 1 (corner), Slide 4 (full bleed), Slide 10 (background) |
 | `edge_to_cloud_architecture.png` | Optional Slide 3 alternate visual |
 | `pd_glove_circuit.png` | Optional Backup B3 visual |
 | `pd_glove_dashboard_example.png` | Optional Backup B1 visual |
@@ -49,10 +50,11 @@ Build-side assets to create:
 
 - [ ] Slide 2 — two-timeline graphic (sparse clinic dots vs dense symptom waveform)
 - [ ] Slide 3 — three-icon row (glove / chip / encrypted envelope) with dashed red boundary line
-- [ ] Slide 6 — three-statement layout, no graphics
+- [ ] Slide 6 — three-statement layout + small `flex_bench_scatter.png` inset on the right
 - [ ] Slide 7 — cost progression graphic (Pi 5 today → Pi Zero 2W / ESP32 future)
-- [ ] Slide 8 — three-line takeaways layout, no graphics
-- [ ] Slide 9 — QR code linking to the paper (generate once IEEE Xplore listing is live)
+- [ ] Slide 8 — two-column layout (Limitations | Future Work), no graphics
+- [ ] Slide 9 — conclusion layout, three stacked statements, no graphics
+- [ ] Slide 10 — QR code linking to the paper (generate once IEEE Xplore listing is live)
 
 ---
 
@@ -228,9 +230,9 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **On-slide text — three statements stacked, each anchored by a paper-supported number and a "what it means" line:**
 
-> **1. The signal is real.**
-> **30× to 895×** rest-to-tremor separation across all four channels and both subjects.
-> *Every tremor capture landed inside the 4–6 Hz Parkinsonian band.*
+> **1. The signal is real — on both modalities.**
+> **Tremor (IMU):** 30× to 895× rest-to-tremor separation across all four channels, every capture inside the 4–6 Hz Parkinsonian band.
+> **Flex (thumb, bench):** Cohen's d = 2.15 between 0° and 60° on Arduino Nano off-platform (paper §V-D, Table II).
 >
 > **2. The hardware is reliable.**
 > **0 I²C retries** across **9 validation runs**. **88.9–89.3 Hz** sustained sampling.
@@ -240,13 +242,13 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 > **Raw biometric data never leaves the Pi.** By architecture, only encrypted clinical summaries cross the wire (publisher integration is next-stage).
 > *Privacy commitment, demonstrable in the prototype today.*
 
-**Visual:** Three-statement layout with bold numeric callouts in your accent color (suggested: blue `#3b82f6`). Each statement gets its own row. Generous vertical spacing so each one reads as a beat. No graphs — the audience just saw the demo, this is the receipts.
+**Visual:** Two-column layout. **Left two-thirds:** the three statements stacked, bold numeric callouts in accent color (suggested: blue `#3b82f6`). **Right one-third:** small inset of `images/flex_bench_scatter.png` (the 0°/30°/60° box-plus-strip plot) with a one-line caption *"Flex (thumb, bench): 0°/60° cleanly separated, d=2.15."* No tremor chart — the dashboard from the demo carries that visually.
 
 **Script:**
 
 > "Three things we've established with the working prototype.
 >
-> First, the signal is real. Across nine validation tests on two subjects, we measured tremor-to-rest band power separation between thirty times and eight hundred and ninety-five times — and every single tremor capture landed in the four-to-six hertz Parkinsonian band. The separation is large enough that there's no overlap between the two states.
+> First, the signal is real on both sensing modalities. On the tremor side, across nine validation tests on two subjects, we measured tremor-to-rest band power separation between thirty times and eight hundred and ninety-five times — every single tremor capture landed in the four-to-six hertz Parkinsonian band. The separation is large enough that there's no overlap between the two states. On the flex side, we bench-characterized a single thumb sensor off-platform on an Arduino Nano — ten trials at each of three bench-jig angles. The chart on the right shows the result: flat versus bent is cleanly separated, Cohen's d of two-point-one-five between zero and sixty degrees. That's a flat-versus-bent claim at the channel level — graded angle reporting isn't supported on this rig yet, and the Pi 5 plus MCP3008 multi-finger integration is the next step.
 >
 > Second, the hardware is reliable. Across every one of those nine tests, sampling stayed stable in the 89-hertz range, and we recorded zero communication retries on the sensor bus. That stability matters — it means the data is trustworthy enough to feed into a model.
 >
@@ -255,8 +257,9 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 **Notes:**
 - This is the "we built it and it works" slide. Confidence, not modesty.
 - The "30× to 895×" is the strongest number in the talk — speak it slowly.
-- If asked in Q&A for raw numbers per channel or per subject, you have Backup B1.
-- Flex was already stated as "validated" on Slide 4 — do not repeat the bench numbers here. If someone asks, the honest framing is "thumb channel bench-characterized; Pi 5 multi-finger integration is the next step" (paper §V-D, §VIII).
+- Flex scope on this slide matches paper §V-D exactly: thumb only, off-platform on Arduino Nano, **flat-vs-bent** discrimination only (d = 2.15 between 0° and 60°). Do **not** claim graded angle reporting — the 30°/60° envelopes overlap (d = 0.68), and §V-D explicitly does not claim it.
+- If a reviewer pushes on "what about the other four flex channels," the honest framing is "five sensors are mounted on the glove; the Pi 5 + MCP3008 multi-finger host pipeline is the next integration step" (paper Fig. 5 caption, §VIII).
+- If asked in Q&A for raw numbers per IMU channel or per subject, you have Backup B1; Backup B1 also carries the flex Table II values.
 - Closing line ties back to Slide 3 — the privacy commitment isn't just a diagram, it's measurable in this prototype right now.
 
 ---
@@ -300,17 +303,55 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 ---
 
-## Slide 8 — Three Takeaways (0:30)
+## Slide 8 — Limitations & Future Work (0:50)
 
 **Title (on slide):**
-> Three Takeaways
+> Limitations & Future Work
+
+**Subtitle (on slide):**
+> Honest scope — and what's next.
+
+**On-slide text — two-column layout (left: limitations today; right: future work next):**
+
+| **Limitations (today)** | **Future Work (next)** |
+|---|---|
+| Healthy volunteers; public-dataset pre-training (mPower / PhysioNet) | Train TFLite Transformer scoring model on the validated tremor dataset |
+| TFLite scoring model + MQTT publisher: architecture defined, integration pending | Multi-finger flex on Pi 5 + MCP3008 (off-platform bench complete) |
+| Multi-finger flex on Pi 5 pending (thumb bench-validated off-platform on Arduino Nano) | Diagnosed PD cohort + weighted-kappa agreement vs. neurologist scores |
+| MediaPipe compliance validation: planned extension (app-timestamp gating today) | Port runtime to sub-$35 devices · longitudinal fine-tuning · uncertainty-aware scoring · fairness audit |
+
+**Visual:** Two-column text layout. No graphics. Column headers in bold accent color; body in plain weight. Generous white space between rows so each item reads as a discrete beat. A thin vertical divider between the columns helps the eye separate "today" from "next."
+
+**Script:**
+
+> "Before I close, the honest scope.
+>
+> On the limitations side: today's signal validation is on healthy volunteers performing simulated tremor — clinical PD-cohort validation is the next study, not this paper. The TFLite scoring model and the MQTT publisher are architecturally specified but not yet integrated. The flex bench is single-thumb off-platform on the Arduino Nano; multi-finger flex on the Pi 5 with the MCP3008 is ahead of us. And MediaPipe-based compliance validation is a planned extension — today, gating is handled by app-controlled timestamps rather than real-time computer vision.
+>
+> On the future-work side: four directions guide what's next. Train the scoring model on the validation dataset we showed. Finish the Pi 5 multi-finger flex pipeline so bradykinesia metrics are live. Recruit a diagnosed PD cohort to run weighted-kappa agreement against neurologist scores. And port the runtime to sub-thirty-five-dollar devices — Pi Zero 2W and ESP32 — with longitudinal model fine-tuning, uncertainty-aware scoring, and fairness auditing as the longer arc.
+>
+> Every one of these is grounded in what the prototype already demonstrates. None of them require rebuilding the architecture."
+
+**Notes:**
+- Speak this slide briskly — it's information-dense but you don't want to dwell on caveats.
+- Every item on this slide maps to a specific paper section: §V-B (healthy volunteers), §III-D (TFLite), §III-F (MQTT), §V-D (flex), §III-B-3 (MediaPipe), §VIII (four future-work directions). No new claims.
+- Honesty here disarms Q&A — reviewers who came in with "what's pending?" questions get the answer pre-emptively.
+- The closing line ("None of them require rebuilding the architecture") is the bridge to Slide 9's conclusion: the work that's pending is integration work, not redesign work. That's the message reviewers should leave with.
+- Do **not** apologize. State the scope, state the path, move on.
+
+---
+
+## Slide 9 — Conclusion (0:30)
+
+**Title (on slide):**
+> Conclusion
 
 **Subtitle (on slide):** None.
 
-**On-slide text — three takeaways, each anchored by a concrete:**
+**On-slide text — three stacked statements, each anchored by a concrete:**
 
 > **A working prototype, not a paper sketch.**
-> *9 tests · 2 subjects · 30–895× tremor discrimination — real signal, real hardware, today.*
+> *Tremor: 9 tests · 2 subjects · 30–895× discrimination. Flex: thumb bench-validated, d = 2.15. Both modalities, real signal, real hardware, today.*
 >
 > **Privacy by architecture, not by promise.**
 > *Raw biometric data physically cannot leak from a device that never transmits it.*
@@ -322,9 +363,9 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **Script:**
 
-> "Three things to take away.
+> "To close, three things.
 >
-> One, this is a working prototype — not a paper sketch. Nine tests, two subjects, thirty-to-eight-hundred-fold tremor discrimination on real hardware. You just saw it run.
+> One, this is a working prototype — not a paper sketch. Both sensing modalities are validated: nine tests and two subjects with thirty-to-eight-hundred-fold tremor discrimination on the IMU side, and a bench-validated flex channel on the bradykinesia side. Real signal, real hardware, today.
 >
 > Two, the privacy story is structural, not promotional. Raw biometric data physically cannot leak from a device that doesn't transmit it.
 >
@@ -334,11 +375,11 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **Notes:**
 - Close clean. Don't add a fourth line. Pause before "Thank you."
-- This is the bookend to Slide 6 — same layout, same structure, but here each takeaway is anchored to a number (9 tests, never-transmit, <$35) so the audience leaves with concrete recall.
+- This is the bookend to Slide 6 — same layout, same structure, but here each statement is anchored to a number (9 tests, never-transmit, <$35) so the audience leaves with concrete recall.
 
 ---
 
-## Slide 9 — Questions? (3:00)
+## Slide 10 — Questions? (3:00)
 
 **Title (on slide):**
 > Questions?
@@ -415,7 +456,7 @@ To make the deck visually coherent without spending a lot of time on it:
 
 - **Color palette:** Stick to two accent colors. Suggest **`#3b82f6` (blue, used in the existing app UI)** for "you / patient" elements and **`#ef4444` (red)** for the privacy boundary on Slide 3. Neutrals for everything else.
 - **Typography:** A single sans-serif throughout (Inter, Helvetica Neue, or PowerPoint's Calibri). Title 40–48pt, body 24–28pt, captions 14–16pt. Don't mix more than two weights.
-- **Slide masters:** Use one master slide for the seven content slides (2, 3, 4, 6, 7, 8, 9) so headers and footers stay consistent. Slide 1 (title) and Slide 5 (demo) can have their own layouts.
+- **Slide masters:** Use one master slide for the eight content slides (2, 3, 4, 6, 7, 8, 9, 10) so headers and footers stay consistent. Slide 1 (title) and Slide 5 (demo) can have their own layouts.
 - **Footer (every content slide):** small line bottom-left — "AIIoT 2026 · An Nguyen · Northeastern" — plus slide number bottom-right.
 - **Avoid:** dense bullets, animations, transitions, screenshots of the paper. The slides must be readable from the back of the room.
 
@@ -427,7 +468,7 @@ To make the deck visually coherent without spending a lot of time on it:
 - [ ] Time the slides-only run (target ~6 min) and a full run with demo (target ~11 min)
 - [ ] Practice Slide 3 (privacy by architecture) and Slide 7 (scale) until you can deliver them without notes — these are the two slides that carry the talk
 - [ ] If the demo fails live, pivot to "what you'd see is…" and keep moving — do not debug on stage
-- [ ] Generate the QR code for Slide 9 once the IEEE Xplore listing is live
+- [ ] Generate the QR code for Slide 10 once the IEEE Xplore listing is live
 
 ## Tone reminders
 

@@ -14,4 +14,4 @@
   - `assignments/activity-07-report.md` — Activity 7
 - `dataset-summary-2026-03-25.md` — collected dataset summary
 - `gait-cv-pipeline.md` — gait video + CV pipeline notes
-- `conference-presentation.md` — IEEE AIIoT 2026 slide-by-slide deck and script (8 slides + 5-min live demo)
+- `conference-presentation.md` — IEEE AIIoT 2026 slide-by-slide deck and script (10 slides including a 5-min live demo slot)
