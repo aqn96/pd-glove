@@ -348,34 +348,37 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **Subtitle (on slide):** None.
 
-**On-slide text — three stacked statements, each anchored by a concrete:**
+**On-slide text — three stacked statements, each broadening from prototype to pattern:**
 
-> **A working prototype, not a paper sketch.**
-> *Tremor: 9 tests · 2 subjects · 30–895× discrimination. Flex: thumb bench-validated, d = 2.15. Both modalities, real signal, real hardware, today.*
+> **A working prototype — and a generalizable framework.**
+> *Dual-modality validation on real hardware today (Tremor: 9 tests · 2 subjects · 30–895× discrimination. Flex: thumb bench-validated, d = 2.15). The sense-locally · decide-on-device · share-only-encrypted-summary pattern isn't PD-specific.*
 >
 > **Privacy by architecture, not by promise.**
 > *Raw biometric data physically cannot leak from a device that never transmits it.*
 >
-> **Engineered for the world Parkinson's is actually growing in.**
-> *Commodity hardware. No cloud dependency. `<$35` deployment target.*
+> **A path to continuous healthcare monitoring at global scale.**
+> *Phone-guided sessions · edge inference · encrypted summary out. Commodity hardware, no cloud dependency, `<$35` deployment target — for any chronic condition, anywhere broadband isn't a given.*
 
-**Visual:** Three short stacked statements with the bold lead line in larger type and the supporting line in smaller italic. Match the layout of Slide 6 visually so the audience recognizes the bookend. No graphics — let the words carry it.
+**Visual:** Three short stacked statements with the bold lead line in larger type and the supporting line in smaller italic. Match the layout of Slide 6 visually so the audience recognizes the bookend. No graphics — let the words carry it. Optional: a small closing strapline at the bottom in italic: *"Parkinson's is the first instance. The framework is the contribution."*
 
 **Script:**
 
 > "To close, three things.
 >
-> One, this is a working prototype — not a paper sketch. Both sensing modalities are validated: nine tests and two subjects with thirty-to-eight-hundred-fold tremor discrimination on the IMU side, and a bench-validated flex channel on the bradykinesia side. Real signal, real hardware, today.
+> One, we built a working prototype — both sensing modalities validated on real hardware today. But the larger point is that the architecture behind it isn't PD-specific. *Sense locally · decide on the device · share only the encrypted summary.* That pattern works for any chronic condition where continuous motor or physiological monitoring is clinically useful — stroke recovery, multiple sclerosis, post-surgical rehab. The glove is one instance; the framework generalizes.
 >
-> Two, the privacy story is structural, not promotional. Raw biometric data physically cannot leak from a device that doesn't transmit it.
+> Two, the privacy story is structural, not promotional. Raw biometric data physically cannot leak from a device that doesn't transmit it. That's not a setting we toggle — it's a property of where computation physically happens.
 >
-> And three, this is engineered for the world Parkinson's is actually growing in — commodity hardware, no cloud dependency, a sub-thirty-five-dollar deployment target. The parts of the world where you can't assume specialist access or reliable broadband are exactly the parts where the burden of this disease is going to land hardest over the next two decades. We built this so it could reach them.
+> And three, this is a path to accessible, continuous healthcare monitoring at global scale. A phone-guided exercise app, an edge gateway running locally, an encrypted clinical summary on the wire — on commodity hardware that costs less than a phone charger. The populations expected to see the steepest growth in chronic-disease burden over the next 25 years are the same populations with the fewest specialists and the least reliable broadband. If continuous clinical monitoring is going to reach them, it has to look like this — not like cloud-tethered, proprietary, premium devices.
+>
+> Parkinson's is the first instance. The framework is the contribution.
 >
 > Thank you. I'd love to take questions."
 
 **Notes:**
-- Close clean. Don't add a fourth line. Pause before "Thank you."
-- This is the bookend to Slide 6 — same layout, same structure, but here each statement is anchored to a number (9 tests, never-transmit, <$35) so the audience leaves with concrete recall.
+- Close clean. The "Parkinson's is the first instance. The framework is the contribution." line is your landing — pause before and after.
+- This is the bookend to Slide 6 — same three-statement layout — but here each statement *broadens* from the prototype's specific evidence to the IoT pattern it instantiates. Audience leaves with the framework, not just the device.
+- The chronic-condition examples (stroke, MS, rehab) are illustrative; do not over-claim that the current implementation supports them — only that the *architecture* generalizes. If asked which condition is next, honest answer is "PD is the focus today; other motor-symptom conditions are the natural next instances."
 
 ---
 
