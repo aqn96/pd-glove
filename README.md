@@ -1,8 +1,8 @@
 # PD Monitoring Glove
 
-**Sensing-to-Decision: A Transformer-Based Edge Computing Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification**
+**Sensing-to-Decision: A Low-Cost, Privacy-Centric Edge Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification**
 
-Author: An Nguyen
+Authors: An Nguyen, Madhu Babu Cherukuri, Vatsalya Rohitbhai Dabhi, Sarita Singh, Hongpeng Fu
 Lab: Intelligent Automation (IoT) Research Group
 
 ## Overview

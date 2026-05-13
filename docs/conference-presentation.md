@@ -5,7 +5,7 @@
 **Slot assumption:** 15-minute parallel-session talk
 **Format:** ~6 min slides + ~5 min live demo + ~3 min Q&A
 **Presenter:** An Nguyen
-**Co-authors:** Hong Peng, Madhu Babu Cherukuri, Sarita Singh
+**Co-authors:** Madhu Babu Cherukuri, Vatsalya Rohitbhai Dabhi, Sarita Singh, Hongpeng Fu
 **Presentation deadline:** 12 May 2026
 
 ## Audience
@@ -43,6 +43,7 @@ Images already in the repo at `images/`:
 | `edge_to_cloud_architecture.png` | Optional Slide 3 alternate visual |
 | `pd_glove_circuit.png` | Optional Backup B3 visual |
 | `pd_glove_dashboard_example.png` | Optional Backup B1 visual |
+| `flex_bench_scatter.png` | Optional Backup B1 sub-panel — flex thumb 0°/30°/60° distribution |
 
 Build-side assets to create:
 
@@ -61,7 +62,7 @@ Build-side assets to create:
 > Sensing-to-Decision: A Low-Cost, Privacy-Centric Edge Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification
 
 **Subtitle (on slide):**
-> An Nguyen · Hong Peng · Madhu Babu Cherukuri · Sarita Singh
+> An Nguyen · Madhu Babu Cherukuri · Vatsalya Rohitbhai Dabhi · Sarita Singh · Hongpeng Fu
 > Northeastern University — Khoury College of Computer Sciences
 > IEEE World AI IoT Congress 2026
 
@@ -69,7 +70,7 @@ Build-side assets to create:
 
 **Script:**
 
-> "Good afternoon. I'm An Nguyen, from Northeastern University. This is joint work with Hong Peng, Madhu Babu Cherukuri, and Sarita Singh.
+> "Good afternoon. I'm An Nguyen, from Northeastern University. This is joint work with Madhu Babu Cherukuri, Vatsalya Rohitbhai Dabhi, Sarita Singh, and Hongpeng Fu.
 >
 > What I'm going to show you today isn't really a sensor paper. It's an architectural argument — that continuous, privacy-preserving monitoring of Parkinson's disease, the fastest-growing neurological disorder in the world, can be done entirely on low-cost commodity edge hardware. And we built a working prototype to back it up."
 
@@ -177,13 +178,13 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **On-slide text — single spec strip across the bottom of the photo:**
 
-> **5 IMU mounts** (4 operational; CH4 hardware fault under investigation) · **TCA9548A** I²C mux · **MCP3008** SPI ADC ready · **Flex sensor channels designed** (hardware pending arrival) · **All processing local on Pi 5**
+> **5 IMU mounts** (4 operational; CH4 hardware fault under investigation) · **TCA9548A** I²C mux · **MCP3008** SPI ADC ready · **Flex sensor channels validated** · **All processing local on Pi 5**
 
 **Visual:** Full-bleed photo of the assembled glove on the table next to the Pi 5 and the laptop running the demo dashboard (`images/prototype_photo.jpg`, or stage a fresh photo if the existing one doesn't show the full setup). Subtitle sits at the top in smaller type. The spec strip overlays the bottom edge of the photo in a translucent dark band — readable but doesn't fight the image.
 
 **Script:**
 
-> "I want to show you the prototype rather than describe it. Five IMU mounts, one per finger — four operational today, with the fifth-channel hardware fault still under investigation. Five flex-sensor channels are wired into the design; the sensors themselves are pending arrival. All capture, filtering, and feature extraction runs on a single Raspberry Pi 5. Every component is off the commodity supply chain — no proprietary parts.
+> "I want to show you the prototype rather than describe it. Five IMU mounts, one per finger — four operational today, with the fifth-channel hardware fault still under investigation. Five SparkFun flex sensors are mounted on the same PLA rings; the thumb channel is bench-validated off-platform on an Arduino Nano 33 BLE Sense Lite, and the Pi 5 plus MCP3008 path described in the paper is the target host integration. All capture, filtering, and feature extraction runs on a single Raspberry Pi 5. Every component is off the commodity supply chain — no proprietary parts.
 >
 > So instead of walking through the architecture diagram, I'm going to step over to the demo here for the next few minutes — what you'll see is a real assessment, end-to-end, on the actual hardware. Then I'll come back and tell you what we've validated and where this is going."
 
@@ -191,7 +192,8 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 - Brief transition slide. Don't read the spec strip — the audience can.
 - Walk to the demo setup as you finish speaking.
 - The "no proprietary parts" line is intentional — it sets up the equity argument on Slide 7 ahead of time, so when you say "designed for where PD is growing fastest," the audience already knows the parts are commodity.
-- Honesty on CH4 + flex disarms the obvious "where's the fifth channel / where's the bradykinesia data" question before someone asks it in Q&A.
+- Flex scope on stage matches paper §V-D exactly: five sensors mounted on PLA rings, single thumb bench characterization, Pi 5 + MCP3008 host integration pending. Do **not** quote angles or Cohen's d in the live script — those numbers are in Backup B1 if asked. Naming the Arduino Nano early also seeds Slide 7's cost-reduction story without pre-empting it.
+- Honesty on CH4 disarms the obvious "where's the fifth channel" question before someone asks it in Q&A.
 
 ---
 
@@ -254,6 +256,7 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 - This is the "we built it and it works" slide. Confidence, not modesty.
 - The "30× to 895×" is the strongest number in the talk — speak it slowly.
 - If asked in Q&A for raw numbers per channel or per subject, you have Backup B1.
+- Flex was already stated as "validated" on Slide 4 — do not repeat the bench numbers here. If someone asks, the honest framing is "thumb channel bench-characterized; Pi 5 multi-finger integration is the next step" (paper §V-D, §VIII).
 - Closing line ties back to Slide 3 — the privacy commitment isn't just a diagram, it's measurable in this prototype right now.
 
 ---
@@ -285,7 +288,7 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 > "Here's why I think this is more than a research artifact.
 >
-> The architecture we built doesn't depend on expensive proprietary hardware. It doesn't depend on recurring cloud costs. It doesn't depend on always-on broadband. Today's prototype runs on a Raspberry Pi 5. Because the pipeline operates on compact INT8-quantized DSP feature vectors rather than raw waveforms, it ports directly to a Pi Zero 2W at around fifteen dollars, an ESP32 in the five-to-ten-dollar range, or an Arduino Nano 33 BLE Sense at around thirty dollars. The framework's deployment target is under thirty-five dollars per device — continuous, privacy-preserving Parkinson's monitoring, at the price of a phone charger.
+> The architecture we built doesn't depend on expensive proprietary hardware. It doesn't depend on recurring cloud costs. It doesn't depend on always-on broadband. Today's prototype runs on a Raspberry Pi 5. Because the pipeline operates on compact INT8-quantized DSP feature vectors rather than raw waveforms, it ports directly to a Pi Zero 2W at around fifteen dollars, an ESP32 in the five-to-ten-dollar range, or an Arduino Nano 33 BLE Sense at around thirty dollars — a single board that carries both an ADC and an IMU, covering both sensing modalities. The framework's deployment target is under thirty-five dollars per device — continuous, privacy-preserving Parkinson's monitoring, at the price of a phone charger.
 >
 > And that's the part that I think matters most. The populations expected to see the biggest growth in Parkinson's over the next 25 years are not the populations with the most neurologists, or the best broadband, or the budget for proprietary clinical devices. If the answer to continuous monitoring depends on any of those, it doesn't reach the people who need it most. This framework was designed so it can."
 
@@ -352,7 +355,7 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 - If you don't know, say so. "Honest answer — that's outside what we've tested. My intuition is X, but I'd want to verify it." Beats bluffing.
 - Three questions you should expect:
   1. "How does this compare to a PD diagnosis from a neurologist?" → Backup B2.
-  2. "What about the parts you said are pending — flex sensors, the ML model?" → "Fair question. The sensing layer and the privacy architecture are validated today. The scoring model and the bradykinesia channel are next-stage work, with the dataset we showed already collected as the training input." Don't apologize.
+  2. "What about the parts you said are pending — flex sensors, the ML model?" → "Fair question. The five-finger flex prototype is mounted, and the thumb channel has bench data behind it — Cohen's d of 2.15 separating flat from bent on the Arduino Nano. What is still ahead is the Pi 5 plus MCP3008 multi-finger integration, and the scoring model. The tremor dataset we showed is the training input for that model." Don't apologize.
   3. "Why not just use an Apple Watch?" → Backup B3.
 
 ---
@@ -363,14 +366,13 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 **Title (on slide):** "Validation Numbers"
 
-**On-slide text:** Table I from the paper (Person A and B, tremor vs rest, min/max/median band power) and a strapline:
+**On-slide text:** Table I from the paper (Person A and B, tremor vs rest, min/max/median band power), a slim flex-bench sub-panel (Table II: 0° mean 1036.08, 30° mean 961.89, 60° mean 924.91, N=10 per angle), and a strapline:
 
-> **30× to 895× rest-to-tremor separation across all channels and subjects.**
+> **30× to 895× rest-to-tremor separation across all IMU channels and subjects · flex thumb: d = 2.15 between 0° and 60°.**
 
 **Talking points:**
-- Nine validation tests across two subjects, 72 per-finger feature vectors total.
-- All tremor captures landed in the 4–6 Hz Parkinsonian band.
-- Rest band power stayed below 70 across every channel and subject; tremor band power ranged from ~670 up to ~26,000.
+- Tremor: nine validation tests across two subjects, 72 per-finger feature vectors total. All tremor captures landed in the 4–6 Hz Parkinsonian band. Rest band power stayed below 70 across every channel and subject; tremor band power ranged from ~670 up to ~26,000.
+- Flex: single thumb sensor, 10 trials × 3 angles (0/30/60°) off-platform on Arduino Nano 33 BLE Sense Lite at 12-bit ADC. Monotonic decrease in ADC mean with bend; 0°/60° cleanly separable (d = 2.15); 30°/60° envelopes overlap (d = 0.68) — i.e., flat-vs-bent works, fine-grained graded angle does not on this rig.
 - Healthy volunteers performing simulated tremor — clinical PD-cohort validation is the next stage (Section VIII of the paper).
 
 ### Backup B2 — Clinical Validation Status

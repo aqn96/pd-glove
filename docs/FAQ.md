@@ -75,7 +75,7 @@ In practice: a fully straight finger produces a low resistance reading; a fully 
 - How fast each tap cycle is (velocity)
 - Whether amplitude decreases across the session (decremental pattern = bradykinesia signal)
 
-> **Note:** Flex sensor hardware integration is the next phase of this project. The sensors and ADC are acquired but not yet wired into the active pipeline.
+> **Note:** Five SparkFun SEN-10264 flex sensors are now physically mounted on the glove (one per finger, on the PLA rings), and the thumb channel has been bench-characterized off-platform on an Arduino Nano 33 BLE Sense Lite (12-bit ADC, 3.3 V rail, 10 trials × 3 angles). The bench data cleanly separates flat from bent (Cohen's d = 2.15 between 0° and 60°). Pi 5 + MCP3008 host integration of the live multi-finger flex pipeline is the next phase. See `docs/flex-bench-characterization.md` for the full protocol and results.
 
 ---
 
@@ -192,7 +192,7 @@ By running the Butterworth filter, FFT, and eventually the TFLite Transformer mo
 | 5× MPU6050 GY-521 | IMU sensors — measure 6-axis acceleration + rotation at ~89 Hz |
 | TCA9548A I2C Multiplexer | Resolves I2C address conflict — gates each of 5 IMUs onto its own channel |
 | MCP3008 SPI ADC | Converts analog flex sensor voltage to 10-bit digital value (0–1023) |
-| 5× SparkFun 2.2" Flex Sensor | Resistive bend sensors — measure finger joint angle (pending integration) |
+| 5× SparkFun 2.2" Flex Sensor | Resistive bend sensors — measure finger joint angle (mounted on glove; thumb bench-validated on Arduino Nano; Pi 5 + MCP3008 multi-finger integration pending) |
 | 2× 4.7kΩ Pull-up Resistors | Maintain I2C signal integrity on SDA and SCL lines |
 | 5× 10kΩ Pull-down Resistors | Voltage dividers for flex sensor signal conditioning |
 | 3D-printed PLA rings | Custom per-finger sensor mounts (elastic band + hot glue) |
@@ -234,7 +234,7 @@ Its intended role is longitudinal symptom tracking: giving clinicians objective,
 ### What are the current limitations?
 
 - **Dataset size:** 9 tests across 2 healthy subjects performing simulated tremor. A validated dataset requires diagnosed PD patients across the full clinical severity spectrum.
-- **Flex sensors not yet integrated:** Bradykinesia measurement is designed and wired in the schematic but not yet active.
+- **Flex sensors bench-validated, not yet on the Pi 5 pipeline:** All five SEN-10264 sensors are mounted on the glove and the thumb channel is bench-characterized off-platform on an Arduino Nano 33 BLE Sense Lite (flat-vs-bent separable, Cohen's d = 2.15). The Pi 5 + MCP3008 multi-finger live bradykinesia pipeline is next. See `docs/flex-bench-characterization.md`.
 - **Threshold-based scoring:** Current severity thresholds are empirically derived from this small dataset. The planned Transformer model will generalize better across subjects.
 - **Channel 4 (pinky) hardware fault:** Suspected wiring crossover preventing stable operation on the fifth finger.
 - **Sampling rate:** Measured 89 Hz vs. 100 Hz design target — 4-channel round-robin polling introduces minor overhead.

@@ -28,7 +28,7 @@ The two symptoms we target are **tremor** — that involuntary 4 to 6 Hz shaking
 
 Each finger has its own **MPU6050 IMU** — that small blue board. IMU stands for Inertial Measurement Unit. It's a 6-axis chip: three axes of accelerometer, three axes of gyroscope. It measures how fast and in what direction each finger is moving, at about 89 times per second.
 
-Each finger also has a **flex sensor** running along the back — a thin strip whose electrical resistance changes as the finger bends. That's how we measure bradykinesia: tracking how far and how fast each finger opens and closes. *(Flex integration is the next hardware phase.)*
+Each finger also has a **flex sensor** running along the back — a thin strip whose electrical resistance changes as the finger bends. That's how we measure bradykinesia: tracking how far and how fast each finger opens and closes. *(All five sensors are mounted on the glove, and we've bench-validated the thumb channel off-platform on an Arduino Nano — flat-vs-bent cleanly separable. Pi 5 + MCP3008 multi-finger integration is the next hardware step.)*
 
 All of that connects to a **Raspberry Pi 5** — this is the brain. Everything runs locally on this board. Signal processing, ML inference, all of it. No raw data ever leaves.
 
@@ -83,7 +83,7 @@ These are early numbers — two subjects is not a clinical trial — but the sig
 
 Three things on the roadmap:
 
-1. **Flex sensor integration** — wiring in the bradykinesia pipeline so we can measure finger tapping speed and amplitude decay, not just tremor
+1. **Flex sensor integration on the Pi 5 host** — the five SEN-10264 sensors are mounted on the glove and the thumb is bench-validated on an Arduino Nano (Cohen's d = 2.15, flat vs. bent); next step is wiring the MCP3008 SPI path on the Pi so the live bradykinesia pipeline can measure finger tapping speed and amplitude decay, not just tremor
 2. **Transformer model training** — moving from these manually-tuned severity thresholds to a learned model, trained on this validation dataset, that outputs an MDS-UPDRS score directly
 3. **Larger cohort** — validating against more subjects, eventually including diagnosed PD patients
 

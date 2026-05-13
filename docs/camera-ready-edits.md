@@ -186,8 +186,8 @@ A re-read for length surfaced some redundancy that adds words without adding inf
 | Fig. 5 left panel: full five-finger flex prototype photo | ⏳ to combine | User has the photo of the assembled five-finger flex prototype. Combine with the scatter plot into one side-by-side PNG (e.g., via Photopea, Keynote, or Cmd+Shift+4 screenshot of both Preview windows aligned). |
 | Fig. 5 caption | ✅ updated | Caption now honestly scopes both panels: "(Left) Assembled five-finger flex sensor prototype… integration with the Pi 5 + MCP3008 host is pending. (Right) ADC distribution from a single thumb-mounted sensor sampled off-platform…" |
 | Fig. 5 filename in LaTeX | ⚠️ check | Paper `\includegraphics` should point at the new combined PNG (suggest `images/flex_bench_combined.png`). |
-| Author block: add Vatsalya Cherukuri | ⏳ pending | Add to manuscript author list, position after An Nguyen. |
-| EDAS / manuscript author reconciliation | ⏳ pending | EDAS lists Madhu Babu Cherukuri; manuscript does not. Confirm with chair before camera-ready. |
+| Author block: add Vatsalya Rohitbhai Dabhi | ✅ landed | Manuscript now lists An Nguyen, Madhu Babu Cherukuri, Vatsalya Rohitbhai Dabhi, Sarita Singh, Hongpeng Fu (in that order). |
+| EDAS / manuscript author reconciliation | ✅ landed | Manuscript and EDAS both list Madhu Babu Cherukuri; reconciled in the final author block. |
 
 ---
 
