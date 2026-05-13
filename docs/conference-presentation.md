@@ -29,7 +29,7 @@ Frame the talk around **what this enables in the world**, not what we soldered. 
 | 4 | The Prototype | 0:30 |
 | 5 | Live Demo | 5:00 |
 | 6 | What the Prototype Proves | 1:00 |
-| 7 | Designed for Where PD Is Growing Fastest | 1:00 |
+| 7 | Accessible by Design | 1:00 |
 | 8 | Limitations & Future Work | 0:50 |
 | 9 | Conclusion | 0:30 |
 | 10 | Questions? | 3:00 |
@@ -193,7 +193,7 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 **Notes:**
 - Brief transition slide. Don't read the spec strip — the audience can.
 - Walk to the demo setup as you finish speaking.
-- The "no proprietary parts" line is intentional — it sets up the equity argument on Slide 7 ahead of time, so when you say "designed for where PD is growing fastest," the audience already knows the parts are commodity.
+- The "no proprietary parts" line is intentional — it sets up the equity argument on Slide 7 ahead of time, so when you say "accessible by design," the audience already knows the parts are commodity.
 - Flex scope on stage matches paper §V-D exactly: five sensors mounted on PLA rings, single thumb bench characterization, Pi 5 + MCP3008 host integration pending. Do **not** quote angles or Cohen's d in the live script — those numbers are in Backup B1 if asked. Naming the Arduino Nano early also seeds Slide 7's cost-reduction story without pre-empting it.
 - Honesty on CH4 disarms the obvious "where's the fifth channel" question before someone asks it in Q&A.
 
@@ -264,13 +264,13 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 ---
 
-## Slide 7 — Designed for Where PD Is Growing Fastest (1:00)
+## Slide 7 — Accessible by Design (1:00)
 
 **Title (on slide):**
-> Designed for Where PD Is Growing Fastest
+> Accessible by Design
 
 **Subtitle (on slide):**
-> Continuous PD monitoring at the price of a phone charger.
+> Continuous clinical monitoring at the price of a phone charger.
 
 **On-slide text — cost progression, two stages:**
 
@@ -283,7 +283,7 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 > **No proprietary hardware.** Off-the-shelf components, accessible supply chain.
 > **No cloud dependency.** Processing stays local — no recurring cloud costs by architecture.
-> **Built for resource-constrained settings.** Where PD is projected to grow the fastest.
+> **Built for resource-constrained settings.** Where chronic-disease burden is projected to grow fastest.
 
 **Visual:** Simple horizontal arrow going left-to-right. Pi 5 icon on the left under "Today." Pi Zero 2W, ESP32, and Arduino icons on the right under "Near future." The `<$35` figure rendered large in your accent color. The strapline ("phone charger") sits in the subtitle slot at the top of the slide. The three impact bullets sit below the cost progression, each anchored by a bold lead phrase.
 
@@ -291,12 +291,13 @@ The three impact lines sit in the middle band; the 25.2 M stat block anchors the
 
 > "Here's why I think this is more than a research artifact.
 >
-> The architecture we built doesn't depend on expensive proprietary hardware. It doesn't depend on recurring cloud costs. It doesn't depend on always-on broadband. Today's prototype runs on a Raspberry Pi 5. Because the pipeline operates on compact INT8-quantized DSP feature vectors rather than raw waveforms, it ports directly to a Pi Zero 2W at around fifteen dollars, an ESP32 in the five-to-ten-dollar range, or an Arduino Nano 33 BLE Sense at around thirty dollars — a single board that carries both an ADC and an IMU, covering both sensing modalities. The framework's deployment target is under thirty-five dollars per device — continuous, privacy-preserving Parkinson's monitoring, at the price of a phone charger.
+> Just like privacy on Slide 3, accessibility here is a design principle — not a feature we layered on. The architecture doesn't depend on expensive proprietary hardware. It doesn't depend on recurring cloud costs. It doesn't depend on always-on broadband. Today's prototype runs on a Raspberry Pi 5. Because the pipeline operates on compact INT8-quantized DSP feature vectors rather than raw waveforms, it ports directly to a Pi Zero 2W at around fifteen dollars, an ESP32 in the five-to-ten-dollar range, or an Arduino Nano 33 BLE Sense at around thirty dollars — a single board that carries both an ADC and an IMU, covering both sensing modalities. The framework's deployment target is under thirty-five dollars per device — continuous, privacy-preserving clinical monitoring, at the price of a phone charger.
 >
-> And that's the part that I think matters most. The populations expected to see the biggest growth in Parkinson's over the next 25 years are not the populations with the most neurologists, or the best broadband, or the budget for proprietary clinical devices. If the answer to continuous monitoring depends on any of those, it doesn't reach the people who need it most. This framework was designed so it can."
+> And that's the part that I think matters most. The populations expected to see the biggest growth in chronic-disease burden over the next 25 years are not the populations with the most specialists, or the best broadband, or the budget for proprietary clinical devices. If the answer to continuous monitoring depends on any of those, it doesn't reach the people who need it most. This framework was designed so it can."
 
 **Notes:**
 - This is the impact slide. Speak slower here.
+- "Accessible by Design" intentionally parallels "Privacy by architecture, not by promise" on Slide 3 — the talk argues for *two* design principles, privacy and accessibility, both as architectural properties rather than features. Lean into the parallel verbally; the structural pun is the deck's strongest rhetorical move.
 - The "phone charger" line is the punchline — let it sit for a beat before continuing.
 - The closing line ("the people who need it most") is the moral case of the entire talk. Don't rush past it.
 - If asked about latency or model size: TFLite INT8 quantization reduces footprint by 70–85% and gets sub-5 ms inference on comparable ARM (cited in paper §II-D, ref [10]). On-device benchmark on the Pi 5 is forthcoming.
