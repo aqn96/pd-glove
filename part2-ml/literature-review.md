@@ -228,3 +228,47 @@ Synthesizing across these twenty sources, the machine-learning literature on han
 **Fairness evidence remains thin and primarily framed around demographics.** Only Tumpa et al. (2025) and Muhammad et al. (2026) provide formal fairness audits, and both surface bias categories — hardware platform, handedness, adversarial robustness — that the canonical age, sex, and race stratification misses. PPMI itself, used by Muhammad et al. and central to the Part II training pipeline, is a relatively homogeneous specialist-recruited cohort; demographic generalization claims drawn from PPMI-only training therefore require explicit external validation. None of the reviewed work pairs MDS-UPDRS severity prediction with both demographic and hardware-stratified fairness reporting.
 
 **Contribution against this gap.** The Part II program advances four claims that, taken together, are not jointly addressed by any single paper in this review. First, five-finger IMU placement captures the spatial signature of pill-rolling tremor, drawing on the WaveGlove design rationale but moving the methodology from gesture recognition to clinical scoring. Second, a Transformer encoder predicts calibrated, MDS-UPDRS-aligned 0–4 severity with uncertainty intervals, addressing the binary-versus-ordinal gap. Third, INT8 TFLite deployment on a Raspberry Pi 5 edge device produces documented inference latency, addressing the missing-deployment-numbers gap. Fourth, MQTT publication of derived scores only, with raw IMU data never leaving the device, addresses the privacy-by-design gap. A Deliverable-3 fairness audit across PPMI demographic splits plus handedness — the latter motivated directly by Tumpa et al. (2025) — closes the audit loop. Each individual element of this stack is anticipated somewhere in the prior literature; their integration into a single reproducible, edge-deployable pipeline is not.
+
+---
+
+## References
+
+Adeli, V., Klabucar, I., Rajabi, J., Filtjens, B., Mehraban, S., Wang, D., Seo, H., Hoang, T.-H., Do, M. N., Muller, C., Oliveira, C., Coelho, D. B., Ginis, P., Gilat, M., Nieuwboer, A., Spildooren, J., McKay, L., Kwon, H., Clifford, G., … Taati, B. (2025). CARE-PD: A multi-site anonymized clinical dataset for Parkinson's disease gait assessment. *arXiv* (NeurIPS 2025 Datasets & Benchmarks Track). https://arxiv.org/abs/2510.04312
+
+Atri, R., Urban, K., Marebwa, B., Simuni, T., Tanner, C., Siderowf, A., Frasier, M., Haas, M., & Lancashire, L. (2022). Deep learning for daily monitoring of Parkinson's disease outside the clinic using wearable sensors. *Sensors, 22*(18), Article 6831. https://doi.org/10.3390/s22186831
+
+Bachlin, M., Plotnik, M., Roggen, D., Maidan, I., Hausdorff, J. M., Giladi, N., & Tröster, G. (2010). Wearable assistant for Parkinson's disease patients with the freezing of gait symptom. *IEEE Transactions on Information Technology in Biomedicine, 14*(2), 436–446. https://doi.org/10.1109/TITB.2009.2036165
+
+Bot, B. M., Suver, C., Chaibub Neto, E., Kellen, M., Klein, A., Bare, C., Doerr, M., Pratap, A., Wilbanks, J., Dorsey, E. R., Friend, S. H., & Trister, A. D. (2016). The mPower study, Parkinson disease mobile data collected using ResearchKit. *Scientific Data, 3*, Article 160011. https://doi.org/10.1038/sdata.2016.11
+
+Das, A. M., Tang, C. I., Kawsar, F., & Malekzadeh, M. (2024). PRIMUS: Pretraining IMU encoders with multimodal self-supervision. *arXiv* (NeurIPS 2024 TSALM Workshop; subsequently ICASSP 2025). https://arxiv.org/abs/2411.15127
+
+Duque-Quiceno, F., Sarapata, G., Dushin, Y., Allen, M., & O'Keeffe, J. (2024). Deep learning for objective estimation of Parkinsonian tremor severity. *arXiv*. https://arxiv.org/abs/2409.02011
+
+Evers, L. J. W., Raykov, Y. P., Heskes, T. M., Krijthe, J. H., Bloem, B. R., & Little, M. A. (2025). Passive monitoring of Parkinson tremor in daily life: A prototypical network approach. *Sensors, 25*(2), Article 366. https://doi.org/10.3390/s25020366
+
+Güney, G., Jansen, T. S., Dill, S., Schulz, J. B., Dafotakis, M., Hoog Antink, C., & Braczynski, A. K. (2022). Video-based hand movement analysis of Parkinson patients before and after medication using high-frame-rate videos and MediaPipe. *Sensors, 22*(20), Article 7992. https://doi.org/10.3390/s22207992
+
+Hemmerling, D., Dudek, M., Krzywdziak, J., Żbik, M., Szecowka, W., Daniol, M., Wodzinski, M., Rudzinska-Bar, M., & Wojcik-Pedziwiatr, M. (2026). GRU-based deep multimodal fusion of speech and head-IMU signals in mixed reality for Parkinson's disease detection. *Sensors, 26*(1), Article 269. https://doi.org/10.3390/s26010269
+
+Králik, M., & Šuppa, M. (2021). WaveGlove: Transformer-based hand gesture recognition using multiple inertial sensors. In *Proceedings of the 2021 29th European Signal Processing Conference (EUSIPCO)* (pp. 1576–1580). IEEE. https://arxiv.org/abs/2105.01753
+
+Liu, W., Lin, X., Chen, X., Wang, Q., Wang, X., Yang, B., Cai, N., Chen, R., Chen, G., & Lin, Y. (2023). Vision-based estimation of MDS-UPDRS scores for quantifying Parkinson's disease tremor severity. *Medical Image Analysis, 85*, Article 102754. https://doi.org/10.1016/j.media.2023.102754
+
+Muhammad, J., Ghergherehchi, M., Ali, S., Song, H. S., & Rahim, N. (2026). Trustworthy AI for medical decisions: Adversarially robust and fair machine learning prediction for Parkinson's disease. *PLOS ONE*. https://doi.org/10.1371/journal.pone.0342062
+
+Nanayakkara, G. R. R., & Chan, P. Y. (2025). Subclinical tremor differentiation using long short-term memory networks. *Physical and Engineering Sciences in Medicine*. https://doi.org/10.1007/s13246-025-01526-0
+
+Paneru, B. (2025). Prediction of freezing of gait in Parkinson's disease using explainable AI and federated deep learning for wearable sensors. *arXiv*. https://arxiv.org/abs/2507.01068
+
+Papadopoulos, A., Kyritsis, K., Klingelhoefer, L., Bostanjopoulou, S., Chaudhuri, K. R., & Delopoulos, A. (2020). Detecting Parkinsonian tremor from IMU data collected in-the-wild using deep multiple-instance learning. *IEEE Journal of Biomedical and Health Informatics, 24*(9), 2559–2569. https://doi.org/10.1109/JBHI.2019.2961748
+
+Paucar-Escalante, J., Alves da Silva, M., Sanches, B. D. L., Soriano-Vargas, A., Moriyama, L. S., & Colombini, E. L. (2025). Machine learning strategies for Parkinson tremor classification using wearable sensor data. *arXiv*. https://arxiv.org/abs/2501.18671
+
+Rodriguez, F., Krauss, P., Kluckert, J., Ryser, F., Stieglitz, L., Baumann, C., Gassert, R., Imbach, L., & Bichsel, O. (2024). Continuous and unconstrained tremor monitoring in Parkinson's disease using supervised machine learning and wearable sensors. *Parkinson's Disease, 2024*, Article 5787563. https://doi.org/10.1155/2024/5787563
+
+Timmermans, N. A., Terranova, R., Soriano, D. C., Cagnan, H., Raykov, Y. P., Bucur, I. G., Bloem, B. R., Helmich, R. C., & Evers, L. J. W. (2025). A generalizable and open-source algorithm for real-life monitoring of tremor in Parkinson's disease. *npj Parkinson's Disease, 11*, Article 205. https://doi.org/10.1038/s41531-025-01056-2
+
+Tumpa, Z. N., Zawad, M. R. S., Sollis, L., Parab, S., Chen, I. Y., & Washington, P. (2025). Quantifying device type and handedness biases in a remote Parkinson's disease AI-powered assessment. *npj Digital Medicine, 8*, Article 550. https://doi.org/10.1038/s41746-025-01934-2
+
+Xing, X., Luo, N., Li, S., Zhou, L., Song, C., & Liu, J. (2022). Identification and classification of Parkinsonian and essential tremors for diagnosis using machine learning algorithms. *Frontiers in Neuroscience, 16*, Article 701632. https://doi.org/10.3389/fnins.2022.701632
