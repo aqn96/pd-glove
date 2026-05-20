@@ -183,7 +183,7 @@ For PD-glove, this study is the closest free-living analogue to my own protocol 
 
 ### 18. Timmermans et al. (2025)
 
-Timmermans, N. A., Terranova, R., Soriano, D. C., Cagnan, H., Raykov, Y. P., Bucur, I. G., Bloem, B. R., Helmich, R. C., & Evers, L. J. W. (2025). A generalizable and open-source algorithm for real-life monitoring of tremor in Parkinson's disease. *npj Parkinson's Disease, 11*, Article 1056. https://doi.org/10.1038/s41531-025-01056-2
+Timmermans, N. A., Terranova, R., Soriano, D. C., Cagnan, H., Raykov, Y. P., Bucur, I. G., Bloem, B. R., Helmich, R. C., & Evers, L. J. W. (2025). A generalizable and open-source algorithm for real-life monitoring of tremor in Parkinson's disease. *npj Parkinson's Disease, 11*, Article 205. https://doi.org/10.1038/s41531-025-01056-2
 
 Timmermans and colleagues build a logistic-regression classifier on cepstral coefficients extracted from wrist gyroscope data and pair it with a two-dataset training strategy: a small, extensively video-labeled at-home dataset (24 PD + 24 controls) for supervised training and a large unsupervised cohort (517 PD + 50 controls) collected on different hardware for external validation. The algorithm achieves 0.61 (±0.20) sensitivity and 0.97 (±0.05) specificity on real-life recordings and generalizes across two distinct wearable devices. The code is released as the open-source Paradigma toolbox.
 
@@ -193,7 +193,7 @@ For PD-glove, Paradigma is the single most useful comparator for my own real-wor
 
 ### 19. Tumpa et al. (2025)
 
-Tumpa, Z. N., Zawad, M. R. S., Sollis, L., Parab, S., Chen, I. Y., & Washington, P. (2025). Quantifying device type and handedness biases in a remote Parkinson's disease AI-powered assessment. *npj Digital Medicine, 8*, Article 1934. https://doi.org/10.1038/s41746-025-01934-2
+Tumpa, Z. N., Zawad, M. R. S., Sollis, L., Parab, S., Chen, I. Y., & Washington, P. (2025). Quantifying device type and handedness biases in a remote Parkinson's disease AI-powered assessment. *npj Digital Medicine, 8*, Article 550. https://doi.org/10.1038/s41746-025-01934-2
 
 Tumpa and colleagues evaluate a web-based remote PD assessment that uses mouse-tracing and keyboard-pressing tasks on 251 participants (99 PD, 152 non-PD) and audit it across demographic, device, and handedness strata. They find no statistically significant F1 disparities by sex or race (after race resampling), but quantify a substantial unexpected bias: Windows users and left-handed individuals are 38–70% less likely to receive a PD-positive diagnosis than Mac users and right-handed individuals respectively. The paper traces these gaps to platform-specific input behavior and dataset-level handedness imbalance.
 
