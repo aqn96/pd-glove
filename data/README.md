@@ -1,8 +1,8 @@
 # Data Directory
 
-This directory contains validated datasets for the PD-glove sensing-to-decision framework.
+This directory contains validated datasets for the PD-glove sensing-to-decision framework, plus external clinical corpora downloaded for CS 8674 Part II model training.
 
-## Files
+## Local files (committed)
 
 ### `flex_bench_thumb_2026-05-07.csv`
 
@@ -49,6 +49,26 @@ Per-finger IMU placement enables isolation of the thumb-index interaction charac
 import pandas as pd
 df = pd.read_csv('data/tremor_validation_master.csv')
 ```
+
+## External datasets (not committed)
+
+External clinical corpora live in per-dataset subdirectories under `data/`. The raw bundles are gitignored (too large, reproducible from source); each subdirectory ships a committed `README.md` documenting provenance, layout, file format, citation, and a one-shot restore command.
+
+Canonical long-term storage for cross-environment access (Kaggle, EC2) is the AWS S3 bucket per the Part II syllabus; the local `data/<dataset>/` copies are for offline EDA and notebook development.
+
+### `daphnet/` — Daphnet Freezing of Gait
+
+10 PD patients, 17 sessions, ~86 MB unzipped, 64 Hz triaxial accelerometer at ankle/thigh/trunk with freeze annotation labels. Downloaded 2026-05-31 from UCI for D1 FOG baselines (syllabus Week 3) and D2 auxiliary input (syllabus Week 7).
+
+See [`daphnet/README.md`](daphnet/README.md) for layout, column spec, quick-load snippet, and citation.
+
+| Dataset | Status | Notes |
+|---|---|---|
+| Daphnet FOG | ✅ Downloaded 2026-05-31 | Open access (UCI), no approval needed |
+| ALAMEDA Tremor | ⏳ Pending download | Open access (Zenodo CC BY 4.0), no approval needed |
+| PPMI MDS-UPDRS + Roche PD App v2 | ⏳ Awaiting LONI DUA approval | Per-collection approval, 3–10 days typical |
+| mPower walking + tapping | ⏳ Awaiting Synapse approval | Qualified-researcher application |
+| CARE-PD 3D mesh gait | ⏳ Pending | GitHub / HuggingFace; large download |
 
 ## Adding Data
 

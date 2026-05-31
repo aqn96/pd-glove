@@ -2,6 +2,10 @@
 *.csv
 !data/tremor_validation_master.csv
 !data/flex_bench_thumb_*.csv
+
+# External datasets — track only the per-dataset README, not the raw bundle.
+data/daphnet/*
+!data/daphnet/README.md
 .venv/
 venv/
 .DS_Store
