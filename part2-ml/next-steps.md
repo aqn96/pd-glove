@@ -15,9 +15,9 @@ This document translates the syllabus into a concrete week-by-week execution pla
 |---|---|
 | Pre-Planning P1 (Apr 26 – May 6) — Transformer/MDS-UPDRS reading | Likely covered by AIIoT 2026 paper preparation |
 | Pre-Planning P2 (May 7 – May 13) — PPMI dictionary, mPower, Daphnet, VGRF, MediaPipe docs | Partially covered by the literature review (Bot, Bachlin, Güney) |
-| Pre-Planning P3 (May 14 – May 18) — dataset downloads, AWS S3 + IAM, Kaggle env | **Not done** |
-| Week 1 (May 19 – May 25) — PPMI + Roche joins, splits, Daphnet EDA | **Not done** |
-| Week 2 (May 26 – Jun 1) — ALAMEDA alignment, unified schema, S3 upload | **In progress (today is the last weekend)** |
+| Pre-Planning P3 (May 14 – May 18) — dataset downloads, AWS S3 + IAM, Kaggle env | **Partially done.** Open-access datasets downloaded (Daphnet, ALAMEDA); AWS S3 + IAM and Kaggle env still pending — blocked on the professor meeting and PPMI/Synapse approval requests. |
+| Week 1 (May 19 – May 25) — PPMI + Roche joins, splits, Daphnet EDA | **Daphnet EDA starting today on Colab** (see §5 item 8); PPMI/Roche join blocked on DUA approval. |
+| Week 2 (May 26 – Jun 1) — ALAMEDA alignment, unified schema, S3 upload | **In progress.** ALAMEDA columns mapped onto glove DSP schema in `data/alameda/README.md`; full schema notebook starts on Colab this weekend; S3 upload waits on AWS. |
 
 **Net position:** ~1.5 weeks of technical work has been deferred while the literature review was completed. D1 is in 16 days. This is recoverable but the gating risk is **dataset-access lead time** — LONI/PPMI and Synapse/mPower approvals can take days, and they have to start today.
 
@@ -181,17 +181,27 @@ The literature review is done; the next 16 days belong to D1. The five papers wo
 
 These are not in the syllabus week-grid because the syllabus assumed Pre-Planning was already done. They are blockers — start today.
 
-| # | Action | Why it's blocking | Time estimate |
-|---|---|---|---|
-| 1 | Confirm LONI/PPMI account active and request the **Part III motor exam** and **Roche PD App v2** collections | Without approval, D1 dataset join cannot start. Approvals take 3–10 days. | 30 min today, then wait |
-| 2 | Submit Synapse mPower access application (`syn4993293`) | Required for D2 walking-task auxiliary input. Approval is a separate qualified-researcher review. | 30 min today, then wait |
-| 3 | Verify AWS school account access; create `pd-glove-data` S3 bucket; document IAM policy in `aws_setup.md` | Required by D1, D2, D3 (artifact storage). Also surfaces any GPU quota issue early. | 1–2 hours |
-| 4 | Set up Kaggle account, enable GPU, verify pandas/scipy/torch/tflite versions match what notebooks will need | Free GPU is the prototyping environment per syllabus. | 30 min |
-| 5 | Download Daphnet (UCI, immediate, no approval) | Smallest dataset, gets Week 1 EDA unblocked today. | 30 min download + unzip |
-| 6 | Download ALAMEDA (Zenodo, CC BY 4.0, immediate, no approval) | Required for Week 2 feature alignment. | 30 min |
-| 7 | Confirm `tremor_validation_master.csv` schema is documented (units, sampling rate, channel order) — this is the schema other datasets get aligned **to** | Week 2 unified-schema task depends on this. | Already documented in repo README; just verify. |
+| # | Action | Why it's blocking | Time estimate | Status |
+|---|---|---|---|---|
+| 1 | Confirm LONI/PPMI account active and request the **Part III motor exam** and **Roche PD App v2** collections | Without approval, D1 dataset join cannot start. Approvals take 3–10 days. | 30 min today, then wait | ⏳ |
+| 2 | Submit Synapse mPower access application (`syn4993293`) | Required for D2 walking-task auxiliary input. Approval is a separate qualified-researcher review. | 30 min today, then wait | ⏳ |
+| 3 | Verify AWS school account access; create `pd-glove-data` S3 bucket; document IAM policy in `aws_setup.md` | Required by D1, D2, D3 (artifact storage). Also surfaces any GPU quota issue early. | 1–2 hours | ⏳ blocked on professor meeting (see [professor-meeting.md](professor-meeting.md) §1) |
+| 4 | Set up Kaggle account, enable GPU, verify pandas/scipy/torch/tflite versions match what notebooks will need | Free GPU is the prototyping environment per syllabus. Needed before D2 (Week 5). | 30 min | ⏳ |
+| 5 | Download Daphnet (UCI, immediate, no approval) | Smallest dataset, gets Week 1 EDA unblocked today. | 30 min download + unzip | ✅ Done 2026-05-31 (commit `5d06ec8`) |
+| 6 | Download ALAMEDA (Zenodo, CC BY 4.0, immediate, no approval) | Required for Week 2 feature alignment. | 30 min | ✅ Done 2026-05-31 (commit `439ef39`) |
+| 7 | Confirm `tremor_validation_master.csv` schema is documented (units, sampling rate, channel order) — this is the schema other datasets get aligned **to** | Week 2 unified-schema task depends on this. | Already documented in repo README; just verify. | ✅ Done (verified in `data/README.md`) |
+| 8 | **Start Daphnet + ALAMEDA EDA on Google Colab.** Open colab.research.google.com → new notebook (T4 GPU runtime). Upload Daphnet zip + ALAMEDA CSV. Run the Quick-load snippets from each dataset's README. Per-subject freeze-event counts (Daphnet), per-subject window distributions and label-column structure (ALAMEDA). | Unblocks Week 2 syllabus work today without waiting on AWS or Kaggle setup. | 2–3 hours | ⏳ Ready to start |
 
-**Day-of-Jun-1 milestone:** Daphnet and ALAMEDA on local disk and in S3; PPMI and Synapse approvals pending; AWS bucket live; Kaggle ready. That puts you formally caught up to the end of Week 2 by Monday night.
+### Compute environment: where to work this week
+
+The syllabus names Kaggle as the prototyping environment (chosen for its no-session-timeout policy) and AWS EC2 for full training. Neither is set up yet, and PPMI/AWS access is blocked on the professor meeting. **Use Google Colab in the gap.**
+
+- **This week (May 31 – Jun 7):** Colab free tier — Daphnet + ALAMEDA EDA, schema-alignment notebook, any toy baseline runs. Daphnet ≈ 86 MB and ALAMEDA ≈ 6 MB both upload trivially.
+- **Week 3 – Week 4 (D1 baselines, Jun 2 – Jun 16):** Migrate to Kaggle once the account is set up. SVM/RF/1D-CNN baselines run fine on Kaggle's free T4/P100 — keep notebooks here for the no-timeout property.
+- **Week 5+ (D2 Transformer training, Jun 17+):** AWS EC2 (`g4dn.xlarge` or `p3.2xlarge`) for full training runs; Kaggle still useful for hyperparameter prototyping.
+- **Storage from the start:** all final notebooks live in `aqn96/pd-glove` regardless of environment (Colab has File → Save a copy in GitHub). Raw datasets land in the S3 bucket once AWS is on; until then, local disk + Colab uploads are fine.
+
+**Day-of-Jun-1 milestone:** Daphnet + ALAMEDA EDA notebook drafted in Colab and committed to GitHub as `Dataset_Pipeline.ipynb` (initial version); PPMI and Synapse access requests filed; AWS and Kaggle accounts queued behind the professor meeting. That puts you operationally back on the syllabus week-grid by Monday night, even though the AWS-dependent items still sit in the holding pattern.
 
 ---
 
