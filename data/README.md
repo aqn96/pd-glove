@@ -62,13 +62,19 @@ Canonical long-term storage for cross-environment access (Kaggle, EC2) is the AW
 
 See [`daphnet/README.md`](daphnet/README.md) for layout, column spec, quick-load snippet, and citation.
 
+### `alameda/` — ALAMEDA PD Tremor
+
+11 subjects, 4,152 pre-extracted accelerometer feature windows (44 Magnitude + 48 PC1 descriptors, 4 MDS-UPDRS tremor-task label columns), 5.77 MB single CSV. Downloaded 2026-05-31 from Zenodo for D1 tremor/bradykinesia track (syllabus Week 2 feature alignment). Feature granularity maps directly onto the glove DSP output schema (`dominant_freq_hz`, `dominant_amp`, `band_power`).
+
+See [`alameda/README.md`](alameda/README.md) for layout, schema-alignment table, and citation.
+
 | Dataset | Status | Notes |
 |---|---|---|
 | Daphnet FOG | ✅ Downloaded 2026-05-31 | Open access (UCI), no approval needed |
-| ALAMEDA Tremor | ⏳ Pending download | Open access (Zenodo CC BY 4.0), no approval needed |
+| ALAMEDA Tremor | ✅ Downloaded 2026-05-31 | Open access (Zenodo CC BY 4.0), no approval needed |
 | PPMI MDS-UPDRS + Roche PD App v2 | ⏳ Awaiting LONI DUA approval | Per-collection approval, 3–10 days typical |
 | mPower walking + tapping | ⏳ Awaiting Synapse approval | Qualified-researcher application |
-| CARE-PD 3D mesh gait | ⏳ Pending | GitHub / HuggingFace; large download |
+| CARE-PD 3D mesh gait | ⏸ Deferred to S3-via-EC2 in Week 7 | 2.24 GB on HuggingFace; license is CC BY-NC-ND 4.0 (syllabus says CC BY — note discrepancy). Not needed locally. |
 
 ## Adding Data
 

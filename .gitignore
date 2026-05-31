@@ -6,6 +6,8 @@
 # External datasets — track only the per-dataset README, not the raw bundle.
 data/daphnet/*
 !data/daphnet/README.md
+data/alameda/*
+!data/alameda/README.md
 .venv/
 venv/
 .DS_Store
