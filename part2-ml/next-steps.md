@@ -72,11 +72,36 @@ The literature review is organized alphabetically — useful for citing but not 
 
 **Read in 30 seconds.** Wearable PD-tremor ML is mature on the easy version of the problem (tremor-vs-no-tremor on a wrist accelerometer) and brittle on every harder version (severity scoring, cross-site generalization, edge deployment, fairness). The PD-glove framework targets the harder version on every axis at once: per-finger placement instead of wrist, ordinal MDS-UPDRS severity instead of binary, INT8 TFLite on a Pi 5 instead of a server, and a privacy boundary that almost no published wearable system enforces. The four "research gap" claims in the lit review *are* the contribution surface D2–D3 will produce evidence for — everything else in the timeline is execution.
 
-**Read in 5 minutes.** Skim §4.1 (ground rules — what to take as given), §4.7 (your contribution — what you're proving), and §4.9 (this week's action paragraph). That's the minimum.
+**Read in 5 minutes.** Skim §4.1 (the 20-paper cheatsheet — who's who), §4.8 (your contribution surface), and §4.10 (this week's action paragraph). That's the minimum.
 
-**Read in 15 minutes.** All of §4.1 through §4.9 — the full action-reorganization.
+**Read in 15 minutes.** All of §4.1 through §4.10 — the full action-reorganization.
 
-### 4.1 What the field has settled on (ground rules)
+### 4.1 Paper-by-paper at a glance (the 20-source cheatsheet)
+
+Before §4.2 through §4.10 start naming papers in different contexts (templates, comparators, warnings, fairness, gap), this subsection gives you the **one-line "what it does + why you care"** for each of the 20 entries in `literature-review.md`. Entry numbers match the lit-review order, so you can jump straight to the full annotated bibliography for any paper.
+
+1. **Adeli et al. 2025 (CARE-PD).** Released the largest multi-site 3D-mesh PD gait dataset (9 cohorts) and benchmarked motion-encoder baselines; MotionBERT scores drop from 0.49 to 0.25 across sites. **Why you care:** D2 Week 7 gait-branch backbone candidate + the canonical example of why cross-site drift forces external-validation caveats.
+2. **Atri et al. 2022 (1D-CNN canonical pattern).** Activity-gated 1D-CNN over wrist Verily Watch data; ~90% per-segment accuracy and 100% per-day after aggregation, 11 subjects. **Why you care:** defines the third D1 baseline architecture you copy directly; the activity-gating idea is the conceptual ancestor of your D3 compliance gate.
+3. **Bachlin et al. 2010 (Daphnet + freeze-index).** Foundational FOG dataset and a threshold rule on freeze-band / locomotion-band power ratio reaching ~73/82 sens/spec. **Why you care:** the dataset itself is your D1 FOG track; the threshold is the must-beat floor for any FOG model.
+4. **Bot et al. 2016 (mPower foundational).** First iPhone-based PD study (9,000+ enrollees) with finger-tapping, gait, voice, and memory tasks; self-selection and weak-diagnosis biases are well-documented. **Why you care:** syllabus-listed auxiliary corpus for the D2 gait branch — and a cautionary template not to replicate when extending the protocol.
+5. **Das et al. 2024 (PRIMUS pretraining).** Multimodal self-supervised pretraining recipe for IMU encoders; up to +15% on low-label downstream tasks; open-source weights from Nokia Bell Labs. **Why you care:** D2 Week 5 — your pretrain-then-fine-tune path on a generic motion corpus before specialising on the small PD-glove labeled cohort.
+6. **Duque-Quiceno et al. 2024 (pixel video severity).** Deep pixel model on 2,742 videos predicts MDS-UPDRS tremor sub-scores; cross-cohort, recovers dose-response signal. **Why you care:** sets a video-only severity ceiling; reinforces your structured-landmark-over-raw-pixel design choice.
+7. **Evers et al. 2025 (prototypical RBF network).** Tremor encoded as a mixture over 7 sub-prototypes; designed for low-label, phenotype-robust deployment; 66% sens / 95% spec. **Why you care:** D2 fallback architecture if end-to-end Transformer fine-tune underperforms on the n=2-subject labeled base.
+8. **Güney et al. 2022 (MediaPipe validation).** 240 fps video + MediaPipe Hand Landmarker; tremor frequency recovered within 0.229 Hz MAE against simultaneous accelerometer. **Why you care:** the strongest direct evidence that the D3 MediaPipe compliance module is kinematically valid for rest and postural tremor.
+9. **Hemmerling et al. 2026 (multimodal fusion).** HoloLens 2 captures speech + head IMU on 165 subjects; gated early fusion adds only ~0.01 AUC over speech alone. **Why you care:** quantitative argument against over-investing in IMU+video fusion in D2 — let the per-finger IMU carry the scoring load.
+10. **Králik & Šuppa 2021 (WaveGlove).** Five-finger IMU Transformer for hand gestures; multi-sensor ablation shows clear lift over single-wrist; >11,000 samples. **Why you care:** your direct architecture donor for the D2 main model; their ablation methodology is exactly what you replicate in Week 6.
+11. **Liu et al. 2023 (GTSN video MDS-UPDRS).** Pixel model + temporal-difference module on Eulerian-magnified video; 90.6% on 4-class rest hand tremor severity. **Why you care:** the video-only MDS-UPDRS performance ceiling your IMU-plus-video architecture should be positioned to match or exceed.
+12. **Muhammad et al. 2026 (trustworthy AI / fairness).** Adversarial-robust and fairness-aware ML on PPMI; subgroup disparities surface under both attack and aggregation. **Why you care:** the fairness preprocessing recipes apply directly to D3 Week 11; surfaces the rule that subgroup metrics must be reported alongside aggregates.
+13. **Nanayakkara & Chan 2025 (subclinical LSTM).** LSTM over STFT features handles low-amplitude PD-vs-ET classification; 95% binary, 93% three-class. **Why you care:** explains why your Butterworth + FFT pipeline is weakest in the subclinical regime — flag this in D2 error analysis.
+14. **Paneru 2025 (federated FOG).** Federated learning across wearable clients with stacking ensemble; ~99% accuracy on FOG. **Why you care:** single-author preprint — treat the accuracy claim skeptically; useful only as conceptual precedent if a future phase scales the deployment to multiple devices.
+15. **Papadopoulos et al. 2020 (MIL for in-the-wild tremor).** Multiple Instance Learning over smartphone IMU bags with session-level labels; 45 subjects, real-world deployment. **Why you care:** D2 fallback when per-window labels prove unreliable; also names subject-level splits as a non-negotiable.
+16. **Paucar-Escalante et al. 2025 (survey).** Survey of wearable PD-tremor ML methods; explicitly names methodological pitfalls — leakage, weak external validation, inconsistent label conventions. **Why you care:** justifies your D1 baseline-trio choice (SVM/RF/1D-CNN) and is the most useful single citation for the D1 report's "method-choice" framing.
+17. **Rodriguez et al. 2024 (SVM + class rebalance).** SVM on 67-hour free-living IMU corpus (24 subjects); 0.88 accuracy, 0.90 sensitivity; class rebalancing was the critical engineering choice. **Why you care:** the closest small-cohort analog in the field; the rebalancing-first lesson is the single most actionable D1 takeaway.
+18. **Timmermans et al. 2025 (Paradigma cross-device).** Logistic regression on wrist gyroscope cepstral features, cross-device validated on 565+ subjects; open-source Paradigma toolbox. **Why you care:** the most useful comparator for D3 cross-device generalization — and an external reference implementation against which to sanity-check your DSP pipeline.
+19. **Tumpa et al. 2025 (handedness bias).** Audits a remote PD assessment across handedness and device platform on 251 subjects; 38–70% diagnostic disparity by handedness. **Why you care:** motivates the handedness section in your D3 fairness audit — even with synthetic mirroring, the audit cannot skip this axis.
+20. **Xing et al. 2022 (RF/XGBoost ceiling).** Seven classifiers on 398 PD/ET subjects with accel + surface EMG; RF and XGBoost reach >0.84 accuracy and >0.90 AUC; the CNN entry underperforms. **Why you care:** the classical-ML performance ceiling for D1; concrete evidence that RF/XGBoost benchmarks must come *before* any Transformer claim.
+
+### 4.2 What the field has settled on (ground rules)
 
 Six findings recur across multiple sources in the lit review. Treat them as ground rules and let them shape D1 from the start rather than re-deriving them later. Each one ends with the practical consequence in italics.
 
@@ -87,7 +112,7 @@ Six findings recur across multiple sources in the lit review. Treat them as grou
 - **The Daphnet freeze-band / locomotion-band ratio is a must-beat baseline for FOG.** Bachlin et al. (2010) hit ~73% sensitivity / ~82% specificity from a threshold rule on a hand-engineered power ratio. *Any FOG model in D1 or D2 that does not exceed this on Daphnet has a defect somewhere in the pipeline, not a real result.*
 - **Subject-level splits are non-negotiable.** Papadopoulos (2020) and the Paucar-Escalante (2025) survey both call out leakage when PD time-series gets randomly split. The syllabus also names this explicitly. *Verify with a one-line assertion at the top of `Dataset_Pipeline.ipynb` — don't rely on it being implicit.*
 
-### 4.2 What the field is still arguing about (your forks in the road)
+### 4.3 What the field is still arguing about (your forks in the road)
 
 Four design questions are still open. You don't have to resolve them, but you do have to pick a fork in each and document why. The fork you take in D2 should be defensible against the alternative — that is the actual cost of these being unresolved.
 
@@ -96,7 +121,7 @@ Four design questions are still open. You don't have to resolve them, but you do
 - **Fork 3: subclinical (low-amplitude) regime is harder.** Nanayakkara & Chan (2025) argue STFT + LSTM is needed because frequency-domain peaks blur at low amplitude. The current Butterworth + FFT pipeline is most vulnerable here. You don't need to fix this for D1/D2, but the D2 error-analysis section should flag subclinical performance as a known weakness.
 - **Fork 4: cross-site / cross-device generalization is brittle.** Adeli et al. (2025) report MotionBERT dropping from 0.49 to 0.25 across CARE-PD sites; Timmermans et al. (2025) get 0.61 sensitivity in real-life cross-device evaluation. Translation: any single-cohort number in D2/D3 ships with an external-validation caveat, not as a stand-alone claim.
 
-### 4.3 Architecture templates (papers to copy from)
+### 4.4 Architecture templates (papers to copy from)
 
 You don't need to invent the encoder. Seven papers in the lit review provide proven templates, and each maps cleanly to a syllabus deliverable. Start each week by reading the corresponding row before writing code.
 
@@ -110,7 +135,7 @@ You don't need to invent the encoder. Seven papers in the lit review provide pro
 | Evers et al. 2025 | Prototypical RBF network when end-to-end Transformer underperforms | D2 fallback architecture |
 | Adeli et al. 2025 (CARE-PD) | MotionBERT / POTR backbone for gait branch | D2 Week 7 |
 
-### 4.4 Performance numbers to beat or match
+### 4.5 Performance numbers to beat or match
 
 These are the published numbers your D2/D3 results will be read against. Two caveats before reading the table:
 
@@ -129,7 +154,7 @@ These are the published numbers your D2/D3 results will be read against. Two cav
 | FOG (classical threshold) | 73/82 sens/spec | Bachlin et al. 2010 | The must-beat floor on Daphnet |
 | Multimodal PD detection (speech + head IMU) | AUC 0.875 | Hemmerling et al. 2026 | Gated early fusion; modest IMU lift |
 
-### 4.5 Cautionary patterns — do not replicate
+### 4.6 Cautionary patterns — do not replicate
 
 Six published patterns look attractive on the surface but will hurt your work if copied uncritically. Reading them once now will save a self-inflicted bug in D2 or D3.
 
@@ -140,7 +165,7 @@ Six published patterns look attractive on the surface but will hurt your work if
 - **Paneru's ~99% FOG accuracy.** Sole-author preprint, sparse validation detail. Cite as conceptual precedent for federation if you discuss federation, but never as a performance target.
 - **PPMI's relative cohort homogeneity.** PPMI is recruited from specialty clinics and is less diverse than its size suggests (Muhammad et al. 2026). Any demographic-generalization claim drawn from PPMI alone needs an external-validation hedge in the D3 fairness report.
 
-### 4.6 Fairness obligations the lit review forces into D3
+### 4.7 Fairness obligations the lit review forces into D3
 
 Two papers — Muhammad et al. (2026) and Tumpa et al. (2025) — push the following into the D3 protocol whether or not the syllabus names them explicitly. Skip these and the D3 audit is incomplete.
 
@@ -149,7 +174,7 @@ Two papers — Muhammad et al. (2026) and Tumpa et al. (2025) — push the follo
 - **Hardware-platform bias is bounded but worth a sentence.** The Pi 5 + MPU6050 stack is fixed across the deployment, so platform drift is a smaller concern than in Tumpa's mouse/keyboard study. Note this explicitly in the D3 report rather than ignoring the question.
 - **Fairness preprocessing trades absolute accuracy for parity.** Muhammad et al. document this directly. Report both the unconstrained and fairness-aware numbers — the comparison is the point, not just the parity number.
 
-### 4.7 The PD-glove research gap (your contribution surface)
+### 4.8 The PD-glove research gap (your contribution surface)
 
 **This is the most important subsection.** The lit review's Research Gap section is not a scholarly exercise — it *is* the contribution thesis for D2 and D3, in four claims, each defensible against the surveyed corpus and each tied to a specific week's work. If a week ships on time, the corresponding contribution is supported; if a week slips, the contribution shrinks. That is the entire purpose of the timeline.
 
@@ -160,7 +185,7 @@ Two papers — Muhammad et al. (2026) and Tumpa et al. (2025) — push the follo
 
 The lit review has framed the argument — the rest of the course produces the evidence.
 
-### 4.8 Reading priority (what to read, and when)
+### 4.9 Reading priority (what to read, and when)
 
 If reading time is scarce, prioritize papers the week before they become load-bearing rather than reading the whole bibliography up-front. Entry numbers below match the order in `literature-review.md`.
 
@@ -171,9 +196,9 @@ If reading time is scarce, prioritize papers the week before they become load-be
 - **Week 10 → Week 11 (D3 fairness):** #19 Tumpa 2025 (handedness audit motivation), #12 Muhammad 2026 (fairness preprocessing on PPMI).
 - **Skim only, conceptual context:** #4 Bot 2016 (mPower foundational), #9 Hemmerling 2026 (fusion ceiling), #13 Nanayakkara 2025 (subclinical regime), #14 Paneru 2025 (federation conceptual).
 
-### 4.9 What to do this week, in one paragraph
+### 4.10 What to do this week, in one paragraph
 
-The literature review is done; the next 16 days belong to D1. The five papers worth your reading time before Week 3 starts are the D1-prep entries in §4.8 (Bachlin, Atri, Xing, Rodriguez, Paucar-Escalante). The two most actionable lessons from those five are *use class rebalancing aggressively* (Rodriguez) and *RF/XGBoost will likely beat a small CNN on your cohort* (Xing). The single most important defensive measure in the D1 notebooks is **subject-level splits with an explicit leakage assertion**. Everything else in §4 either supports those choices or sets up D2/D3 work that doesn't start until late June.
+The literature review is done; the next 16 days belong to D1. The five papers worth your reading time before Week 3 starts are the D1-prep entries in §4.9 (Bachlin, Atri, Xing, Rodriguez, Paucar-Escalante). The two most actionable lessons from those five are *use class rebalancing aggressively* (Rodriguez) and *RF/XGBoost will likely beat a small CNN on your cohort* (Xing). The single most important defensive measure in the D1 notebooks is **subject-level splits with an explicit leakage assertion**. Everything else in §4 either supports those choices or sets up D2/D3 work that doesn't start until late June.
 
 ---
 
