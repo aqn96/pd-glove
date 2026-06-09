@@ -50,31 +50,23 @@ import pandas as pd
 df = pd.read_csv('data/tremor_validation_master.csv')
 ```
 
-## External datasets (not committed)
+## External datasets — moved to `part2-ml/data/`
 
-External clinical corpora live in per-dataset subdirectories under `data/`. The raw bundles are gitignored (too large, reproducible from source); each subdirectory ships a committed `README.md` documenting provenance, layout, file format, citation, and a one-shot restore command.
+The Part II clinical corpora (Daphnet, ALAMEDA, PPMI Part III, Roche, Demographics) now
+live under **`part2-ml/data/`** so the ML deliverables are self-contained. This repo-root
+`data/` directory keeps **only the Part 1 glove/flex data** above.
 
-Canonical long-term storage for cross-environment access (Kaggle, EC2) is the AWS S3 bucket per the Part II syllabus; the local `data/<dataset>/` copies are for offline EDA and notebook development.
+See [`../part2-ml/data/README.md`](../part2-ml/data/README.md) for the Part II dataset
+layout, the `organize_data.py` stager/verifier, and per-dataset provenance
+(`part2-ml/data/{alameda,daphnet}/README.md`).
 
-### `daphnet/` — Daphnet Freezing of Gait
-
-10 PD patients, 17 sessions, ~86 MB unzipped, 64 Hz triaxial accelerometer at ankle/thigh/trunk with freeze annotation labels. Downloaded 2026-05-31 from UCI for D1 FOG baselines (syllabus Week 3) and D2 auxiliary input (syllabus Week 7).
-
-See [`daphnet/README.md`](daphnet/README.md) for layout, column spec, quick-load snippet, and citation.
-
-### `alameda/` — ALAMEDA PD Tremor
-
-11 subjects, 4,152 pre-extracted accelerometer feature windows (44 Magnitude + 48 PC1 descriptors, 4 MDS-UPDRS tremor-task label columns), 5.77 MB single CSV. Downloaded 2026-05-31 from Zenodo for D1 tremor/bradykinesia track (syllabus Week 2 feature alignment). Feature granularity maps directly onto the glove DSP output schema (`dominant_freq_hz`, `dominant_amp`, `band_power`).
-
-See [`alameda/README.md`](alameda/README.md) for layout, schema-alignment table, and citation.
-
-| Dataset | Status | Notes |
+| Dataset | Status | Location |
 |---|---|---|
-| Daphnet FOG | ✅ Downloaded 2026-05-31 | Open access (UCI), no approval needed |
-| ALAMEDA Tremor | ✅ Downloaded 2026-05-31 | Open access (Zenodo CC BY 4.0), no approval needed |
-| PPMI MDS-UPDRS + Roche PD App v2 | ⏳ Awaiting LONI DUA approval | Per-collection approval, 3–10 days typical |
-| mPower walking + tapping | ⏳ Awaiting Synapse approval | Qualified-researcher application |
-| CARE-PD 3D mesh gait | ⏸ Deferred to S3-via-EC2 in Week 7 | 2.24 GB on HuggingFace; license is CC BY-NC-ND 4.0 (syllabus says CC BY — note discrepancy). Not needed locally. |
+| Daphnet FOG | ✅ Downloaded | `part2-ml/data/daphnet/` |
+| ALAMEDA Tremor | ✅ Downloaded | `part2-ml/data/alameda/` |
+| PPMI Part III + Demographics + Roche v2 | ✅ Downloaded 2026-06-08 | `part2-ml/data/ppmi/` (DUA-restricted) |
+| mPower walking + tapping | ⏳ Awaiting Synapse approval (D2) | — |
+| CARE-PD 3D mesh gait | ⏸ Deferred to S3-via-EC2 (D2 Week 7) | — |
 
 ## Adding Data
 

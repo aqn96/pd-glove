@@ -58,7 +58,7 @@ cols = ['time_ms',
         'trunk_x', 'trunk_y', 'trunk_z',
         'label']
 
-session_files = sorted(Path('data/daphnet/dataset_fog_release/dataset').glob('S*R*.txt'))
+session_files = sorted(Path('part2-ml/data/daphnet/dataset_fog_release/dataset').glob('S*R*.txt'))
 df = pd.concat(
     [pd.read_csv(f, sep=r'\s+', header=None, names=cols).assign(session=f.stem)
      for f in session_files],
@@ -80,7 +80,7 @@ df['is_freeze'] = (df['label'] == 2).astype(int)
 Raw session files and the paper PDF are not committed (86 MB; reproducible via UCI). Only this README is tracked. To restore the data locally:
 
 ```bash
-cd data/daphnet
+cd part2-ml/data/daphnet
 curl -sSL -o daphnet.zip "https://archive.ics.uci.edu/static/public/245/daphnet+freezing+of+gait.zip"
 unzip -q daphnet.zip && rm daphnet.zip
 ```

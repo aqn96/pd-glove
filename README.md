@@ -168,6 +168,11 @@ scripts/
 
 ## Documentation
 
+**Part II — ML pipeline (CS 8674 Part II):**
+- `part2-ml/` — Deliverable 1+ work: dataset pipeline, baseline classifiers, unified feature
+  schema, and the week-by-week plan. Start at `part2-ml/README.md`; the plain-English plan is
+  `part2-ml/next-steps.md`. Part II datasets live under `part2-ml/data/` (gitignored).
+
 **Demo day:**
 - `docs/DEMO_SCRIPT.md` — ~5-minute spoken walkthrough for presenting at the booth
 - `docs/FAQ.md` — answers to common questions: what are IMUs, what is bradykinesia, how was the Pi set up, what does the circuit do, and more

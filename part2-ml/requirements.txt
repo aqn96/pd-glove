@@ -1,0 +1,13 @@
+# CS 8674 Part II — Deliverable 1 (Dataset Pipeline + Baseline Classifiers)
+# Kaggle has all of these preinstalled; this file is for local/EC2 reproduction.
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+scikit-learn>=1.3
+matplotlib>=3.7
+seaborn>=0.12
+pyarrow>=12.0          # parquet I/O for cleaned splits
+torch>=2.0            # 1D-CNN baseline (CPU is fine for D1)
+boto3>=1.28           # AWS S3 upload of cleaned datasets
+jupytext>=1.15        # .py <-> .ipynb (notebook source is versioned as .py)
+ucimlrepo>=0.0.7      # optional: in-notebook Daphnet fetch (alt to local files)

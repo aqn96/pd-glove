@@ -16,7 +16,7 @@ ALAMEDA (Bridging the Early Diagnosis and Treatment Gap of Brain Diseases via Sm
 ## Layout
 
 ```
-data/alameda/
+part2-ml/data/alameda/
 └── ALAMEDA_PD_tremor_dataset.csv   # 5.77 MB, 4152 rows, 99 columns
 ```
 
@@ -40,7 +40,7 @@ Subject distribution (11 subjects): 392/84/350/350/175/700/350/1050/175/175/350 
 ```python
 import pandas as pd
 
-df = pd.read_csv('data/alameda/ALAMEDA_PD_tremor_dataset.csv')
+df = pd.read_csv('part2-ml/data/alameda/ALAMEDA_PD_tremor_dataset.csv')
 print(df.shape)                 # (4152, 99)
 print(df['subject_id'].nunique())  # 11
 
@@ -67,7 +67,7 @@ This is the schema-alignment work the syllabus calls for in Week 2 ("ALAMEDA fea
 Raw CSV is not committed (5.77 MB; reproducible from Zenodo). Only this README is tracked. To restore:
 
 ```bash
-mkdir -p data/alameda && cd data/alameda
+mkdir -p part2-ml/data/alameda && cd part2-ml/data/alameda
 curl -sSL -o ALAMEDA_PD_tremor_dataset.csv \
   "https://zenodo.org/api/records/10782573/files/ALAMEDA_PD_tremor_dataset.csv/content"
 ```

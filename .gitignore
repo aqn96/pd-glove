@@ -8,6 +8,15 @@ data/daphnet/*
 !data/daphnet/README.md
 data/alameda/*
 !data/alameda/README.md
+
+# Part II ML — keep code/docs and dataset READMEs, ignore raw data and outputs.
+part2-ml/data/**
+!part2-ml/data/**/
+!part2-ml/data/README.md
+!part2-ml/data/**/README.md
+part2-ml/results/
+part2-ml/.venv/
+
 .venv/
 venv/
 .DS_Store
