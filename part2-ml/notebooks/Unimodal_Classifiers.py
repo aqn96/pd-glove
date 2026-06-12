@@ -63,8 +63,9 @@ def _find_clean_dir():
     if p.exists() and any(p.glob("*.parquet")):
         return p
     # 2. Notebook output attached as input (Add Input → Notebook Outputs)
-    for candidate in sorted(Path("/kaggle/input").glob("*/cleaned")):
-        if any(candidate.glob("*.parquet")):
+    # Path is /kaggle/input/notebooks/<user>/<notebook-slug>/cleaned/
+    for candidate in sorted(Path("/kaggle/input").glob("**/cleaned")):
+        if candidate.is_dir() and any(candidate.glob("*.parquet")):
             return candidate
     # 3. Local repo path
     if "__file__" in globals():
