@@ -165,7 +165,12 @@ def save_splits(prefix, train, val, test):
 # %%
 ALAMEDA_LABELS = ["Constancy_of_rest", "Kinetic_tremor", "Postural_tremor", "Rest_tremor"]
 
-alameda_path = locate("ALAMEDA_PD_tremor_dataset.csv")
+alameda_path = locate(
+    "ALAMEDA_PD_tremor_dataset.csv",   # original Zenodo name
+    "*ALAMEDA*tremor*.csv",            # e.g. ALAMEDA_tremor_features.csv
+    "*alameda*.csv",                   # any lowercase variant
+    "*PD_tremor*.csv",                 # e.g. PD_tremor_dataset.csv
+)
 alameda = pd.read_csv(alameda_path)
 print("ALAMEDA shape:", alameda.shape, "from", alameda_path)
 
@@ -262,10 +267,9 @@ def _window_feats(window):
 
 
 def load_daphnet():
-    daphnet_dir = locate("dataset", required=False)
-    # The .txt files live in .../dataset_fog_release/dataset/SxxRyy.txt
-    # Dedupe by resolved path — search roots can overlap (e.g. ../data and parents[2]/data
-    # resolve to the same dir), which would otherwise double-count every session file.
+    # Accepted folder names on Kaggle: daphnet_dataset/, daphnet_fog_dataset/,
+    # daphnet_fog_release/, or the original dataset/ — the search below finds
+    # S*R*.txt files regardless of folder name, so any of these work.
     seen, files = set(), []
     for root in SEARCH_ROOTS:
         if not root.exists():
@@ -278,7 +282,11 @@ def load_daphnet():
                     files.append(p)
     files = sorted(files, key=lambda p: p.name)
     if not files:
-        raise FileNotFoundError("No Daphnet S*R*.txt files found. Attach the Daphnet dataset.")
+        raise FileNotFoundError(
+            "No Daphnet S*R*.txt files found. "
+            "On Kaggle: upload the session .txt files inside a folder named "
+            "daphnet_dataset/ (or any name) and attach as input."
+        )
     print(f"Daphnet: {len(files)} session files")
 
     feat_rows, raw_windows, raw_labels, raw_subjects = [], [], [], []
@@ -384,9 +392,27 @@ PPMI_TREMOR_BRADY_PREFIXES = ("NP3PTRM", "NP3KTRM", "NP3RTA", "NP3RTCON", "NP3BR
 PPMI_STAGE_COL = "NHY"          # Hoehn & Yahr stage
 PPMI_STATE_COL = "PDSTATE"      # ON/OFF medication state
 
-p3_path = locate("*Part_III*.csv", "*UPDRS*Part*III*.csv", "*NUPDRS3*.csv", required=False)
-demo_path = locate("*Demographics*.csv", "Demographics.csv", required=False)
-roche_path = locate("*Roche*App*.csv", "*Roche*Monitoring*.csv", "*Roche*.csv", required=False)
+p3_path = locate(
+    "*Part_III*.csv",              # e.g. MDS_UPDRS_Part_III.csv
+    "*UPDRS*Part*III*.csv",        # e.g. UPDRS_Part_III_Scores.csv
+    "*NUPDRS3*.csv",               # PPMI export default name
+    "*MDS*UPDRS*3*.csv",           # e.g. MDS_UPDRS_3_motor_exam.csv
+    "*motor*exam*.csv",            # e.g. ppmi_motor_exam.csv
+    required=False,
+)
+demo_path = locate(
+    "*Demographics*.csv",          # e.g. PPMI_Demographics.csv
+    "Demographics.csv",            # exact PPMI export name
+    "*ppmi*demo*.csv",             # e.g. ppmi_demographic_data.csv
+    required=False,
+)
+roche_path = locate(
+    "*Roche*App*.csv",             # e.g. Roche_PD_Monitoring_App_v2.csv
+    "*Roche*Monitoring*.csv",      # e.g. Roche_Monitoring_Data.csv
+    "*Roche*digital*.csv",         # e.g. Roche_digital_features.csv
+    "*Roche*.csv",                 # any Roche file
+    required=False,
+)
 
 if p3_path:
     p3 = pd.read_csv(p3_path, low_memory=False)
