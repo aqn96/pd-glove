@@ -55,15 +55,29 @@ from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix
 RS = 42
 np.random.seed(RS)
 
-CLEAN_CANDIDATES = [
-    Path("/kaggle/working/cleaned"),
-    (Path(__file__).resolve().parents[1] / "results" / "cleaned"
-     if "__file__" in globals() else Path("results/cleaned")),
-    Path("results/cleaned"),
-]
-CLEAN_DIR = next((p for p in CLEAN_CANDIDATES if p.exists()), CLEAN_CANDIDATES[0])
-RESULTS_DIR = CLEAN_DIR.parent / "metrics"; RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-FIG_DIR = CLEAN_DIR.parent / "figures"; FIG_DIR.mkdir(parents=True, exist_ok=True)
+# Search for cleaned parquet files — check /kaggle/working first, then any
+# notebook-output dataset attached via Add Input (mounted under /kaggle/input/).
+def _find_clean_dir():
+    # 1. Same-session working dir (pipeline ran in this session)
+    p = Path("/kaggle/working/cleaned")
+    if p.exists() and any(p.glob("*.parquet")):
+        return p
+    # 2. Notebook output attached as input (Add Input → Notebook Outputs)
+    for candidate in sorted(Path("/kaggle/input").glob("*/cleaned")):
+        if any(candidate.glob("*.parquet")):
+            return candidate
+    # 3. Local repo path
+    if "__file__" in globals():
+        p = Path(__file__).resolve().parents[1] / "results" / "cleaned"
+        if p.exists():
+            return p
+    return Path("/kaggle/working/cleaned")  # fallback — will error with a clear message
+
+CLEAN_DIR = _find_clean_dir()
+RESULTS_DIR = Path("/kaggle/working/metrics") if Path("/kaggle/working").exists() else CLEAN_DIR.parent / "metrics"
+FIG_DIR = Path("/kaggle/working/figures") if Path("/kaggle/working").exists() else CLEAN_DIR.parent / "figures"
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+FIG_DIR.mkdir(parents=True, exist_ok=True)
 print("Reading cleaned data from:", CLEAN_DIR)
 
 try:
