@@ -105,27 +105,21 @@ The course instructions specify joining the PPMI and Roche datasets using both a
 
 Before training any models, the data was examined visually to check for potential issues.
 
----
-> **[INSERT FIGURE HERE]**
-> File: `results/eda/alameda_label_balance.png`
-> Caption: **Figure 1.** How often each tremor label is positive across ALAMEDA's 4,151 windows. Constancy of rest occurs in 76% of windows; Kinetic tremor in only 4%.
----
+![Figure 1. How often each tremor label is positive across ALAMEDA's 4,151 windows. Constancy of rest occurs in 76% of windows; Kinetic tremor in only 4%.](../results/eda/alameda_label_balance.png)
+
+**Figure 1.** How often each tremor label is positive across ALAMEDA's 4,151 windows. Constancy of rest occurs in 76% of windows; Kinetic tremor in only 4%.
 
 **Imbalanced labels in ALAMEDA.** Figure 1 shows that the four tremor labels appear at very different rates. A model could score 96% accuracy on Kinetic tremor simply by always predicting "no tremor," since that label is only positive 4% of the time. To avoid this, all models use macro-F1 as the main metric (which treats rare and common classes equally) and are configured to penalize mistakes on rare classes more heavily.
 
----
-> **[INSERT FIGURE HERE]**
-> File: `results/eda/alameda_dom_freq.png`
-> Caption: **Figure 2.** Distribution of dominant vibration frequency for tremor-positive vs. tremor-negative windows. Tremor windows cluster in the 4 to 6 Hz range, which is consistent with Parkinsonian tremor.
----
+![Figure 2. Distribution of dominant vibration frequency for tremor-positive vs. tremor-negative windows. Tremor windows cluster in the 4 to 6 Hz range.](../results/eda/alameda_dom_freq.png)
+
+**Figure 2.** Distribution of dominant vibration frequency for tremor-positive vs. tremor-negative windows. Tremor windows cluster in the 4 to 6 Hz range, which is consistent with Parkinsonian tremor.
 
 **Frequency check.** Figure 2 confirms that when tremor is present, the hand vibrates mainly in the 4 to 6 Hz range, consistent with what is documented in the medical literature. This validates that the frequency-based features being used as model inputs are capturing real physiological information.
 
----
-> **[INSERT FIGURE HERE]**
-> File: `results/eda/daphnet_fog_per_subject.png`
-> Caption: **Figure 3.** Fraction of walking windows labeled as a freeze episode, per patient. Some patients freeze in less than 5% of windows; others in over 20%.
----
+![Figure 3. Fraction of walking windows labeled as a freeze episode, per patient.](../results/eda/daphnet_fog_per_subject.png)
+
+**Figure 3.** Fraction of walking windows labeled as a freeze episode, per patient. Some patients freeze in less than 5% of windows; others in over 20%.
 
 **FOG varies a lot by patient.** Figure 3 shows that freeze episodes are not evenly distributed across patients. Some patients barely freeze during the recording session, while others freeze frequently. This is why subject-grouped cross-validation is used: a random split could accidentally put all the rarely-freezing patients in the test set and make the results unreliable.
 
@@ -170,17 +164,13 @@ All AUROC values are between 0.39 and 0.54, which is essentially the same as ran
 
 The Random Forest achieves AUROC = 0.90, beating the published benchmark from Bachlin et al. (2010), the original Daphnet paper, which reported approximately 73% sensitivity and 82% specificity. The 1D-CNN on raw sensor windows reaches AUROC = 0.95, a clear improvement over the feature-based models.
 
----
-> **[INSERT FIGURE HERE]**
-> File: `results/figures/fi_fog_FOG.png`
-> Caption: **Figure 4.** The 20 most important features used by the Random Forest for FOG detection. Features based on the Bachlin freeze index rank highest, confirming that the frequency-based freeze signal is real and measurable.
----
+![Figure 4. The 20 most important features used by the Random Forest for FOG detection.](../results/figures/fi_fog_FOG.png)
 
----
-> **[INSERT FIGURE HERE]**
-> File: `results/figures/cm_fog_FOG_RandomForest.png`
-> Caption: **Figure 5.** Confusion matrix for the Random Forest on Daphnet FOG (out-of-fold). Each cell shows how many windows were predicted correctly or incorrectly. Rows = true label, columns = predicted label.
----
+**Figure 4.** The 20 most important features used by the Random Forest for FOG detection. Features based on the Bachlin freeze index rank highest, confirming that the frequency-based freeze signal is real and measurable.
+
+![Figure 5. Confusion matrix for the Random Forest on Daphnet FOG.](../results/figures/cm_fog_FOG_RandomForest.png)
+
+**Figure 5.** Confusion matrix for the Random Forest on Daphnet FOG (out-of-fold). Each cell shows how many windows were predicted correctly or incorrectly. Rows = true label, columns = predicted label.
 
 ---
 
