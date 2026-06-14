@@ -1,238 +1,213 @@
-# Deliverable 1: Dataset Pipeline & Baseline Classifiers
-**CS 8674 Part II — Intelligent IoT Frameworks for Chronic Disease Management**
+# Deliverable 1: Dataset Pipeline and Baseline Classifiers
+**CS 8674 Part II - Intelligent IoT Frameworks for Chronic Disease Management**
 An Nguyen · Northeastern University Khoury College · June 2026
 
 ---
 
 ## 1. Introduction
 
-This report documents the dataset pipeline and baseline classifier benchmarks for
-Deliverable 1 of the PD-Glove ML project. Four Parkinson's disease datasets were
-cleaned, split, and analyzed: ALAMEDA tremor, Daphnet FOG, PPMI Part III with
-Demographics, and the Roche PD Monitoring App v2. Three baseline models — SVM,
-Random Forest (RF), and 1D-CNN — were evaluated on tremor/bradykinesia detection and
-freezing of gait (FOG) detection. These baselines set the performance floor that the
-Deliverable 2 Transformer must exceed. All code is reproducible on Kaggle and
-committed to `github.com/aqn96/pd-glove` under `part2-ml/notebooks/`.
+### Background
+
+Parkinson's disease (PD) is a neurological condition that gradually affects a person's ability to control their movements. Two of the most disabling symptoms are:
+
+- **Tremor**: involuntary rhythmic shaking of the hands or fingers, typically at 4 to 6 times per second.
+- **Freezing of gait (FOG)**: sudden episodes where a patient's feet feel stuck to the floor, lasting a few seconds to a minute, and often causing falls.
+
+Currently, both symptoms are measured by a clinician during an in-person visit using a scale called the MDS-UPDRS, where severity is rated from 0 (none) to 4 (severe). This only gives a snapshot once every few months.
+
+The goal of this project is to build a wearable glove with motion sensors on each finger that can measure these symptoms continuously and automatically, outside the clinic. This deliverable (D1) is the first step: preparing the data, exploring what it looks like, and testing whether basic machine learning models can already detect tremor and FOG from sensor readings. The results tell us what works, what does not, and what more advanced models in later deliverables need to improve on.
+
+### What this deliverable covers
+
+Four publicly available PD datasets were downloaded, cleaned, and prepared for machine learning. Three standard classification models were trained and tested on two tasks: detecting tremor from wrist accelerometer data, and detecting FOG from leg and hip accelerometer data. All code is reproducible on Kaggle (a free cloud platform) and saved at `github.com/aqn96/pd-glove` under `part2-ml/notebooks/`.
 
 ---
 
 ## 2. Notebook Pipeline Overview
 
-Two notebooks implement the full D1 pipeline. They run in sequence: the first
-produces cleaned data files that the second reads as input.
+Two Jupyter notebooks implement the full pipeline. They run in order: the first prepares the data, and the second uses that data to train and evaluate models.
 
-### Notebook 1 — `Dataset_Pipeline.ipynb`
+### Notebook 1: `Dataset_Pipeline.ipynb`
 
-This notebook loads, cleans, and splits all four raw datasets and saves the results
-as `.parquet` files for the classifiers notebook to read.
+This notebook loads the raw data files, cleans them, and saves them in a consistent format for the classifier notebook to use.
 
-**Step 1 — Path detection.** The notebook first checks whether it is running on
-Kaggle (`/kaggle/input`) or locally (`part2-ml/data/`). All data-loading logic
-uses this auto-detected root so no paths need to be changed between environments.
+**Step 1 - Environment detection.** The notebook checks whether it is running on Kaggle or a local machine and sets file paths accordingly. This means the same code runs in both places without changes.
 
-**Step 2 — Load and clean ALAMEDA.** The CSV is loaded (4,151 rows × 99 columns).
-The 92 feature columns are identified by subtracting the 3 metadata columns
-(`start_timestamp`, `end_timestamp`, `subject_id`) and the 4 label columns
-(`Rest_tremor`, `Postural_tremor`, `Kinetic_tremor`, `Constancy_of_rest`). A
-combined `any_tremor` flag is derived. Rows with NaN features are dropped (none
-found). The dataset is then split 70/15/15 by subject.
+**Step 2 - Load and clean ALAMEDA.** The ALAMEDA CSV file is loaded (4,151 rows and 99 columns). The 92 sensor feature columns are separated from the 4 clinical label columns (Rest tremor, Postural tremor, Kinetic tremor, Constancy of rest) and the 3 timestamp/ID columns. A combined "any tremor" flag is also created. Rows with missing values are removed (none were found). The data is then divided into training, validation, and test sets by patient, so no patient appears in more than one set.
 
-**Step 3 — Load and window Daphnet.** All 17 `S##R##.txt` session files are
-found by filename pattern. Each file is read as a space-separated table with no
-header (11 columns: timestamp, 9 accelerometer channels, annotation). Rows with
-`annotation == 0` (outside the experiment protocol) are dropped. The pipeline
-then slides a 4-second window (256 samples at 64 Hz) with 50% overlap across
-each session. For each window, 6 features are extracted per accelerometer
-channel (mean, std, RMS, range, dominant frequency, band power, and the Bächlin
-freeze index). The window label is 1 (freeze) if more than 50% of its samples
-are annotated as freeze, else 0. Both a feature table and the raw windows (as a
-NumPy `.npz` array) are saved — the feature table is used by SVM/RF; the raw
-windows are used by the 1D-CNN.
+**Step 3 - Load and window Daphnet.** All 17 recording session files are found by their filename pattern (e.g., S01R01.txt). Each file contains raw accelerometer readings at 64 samples per second from the ankle, thigh, and trunk, plus a column indicating whether the patient was actively freezing. Rows recorded outside the walking protocol are removed. The notebook then slides a 4-second window (256 samples) across each recording with 50% overlap. For each window, 54 numerical features are computed: basic motion statistics (mean, standard deviation, range), frequency characteristics (dominant frequency, total power), and the Bachlin freeze index, which is a ratio of high-frequency to low-frequency vibration that spikes during a freeze. The window is labeled "freeze" if more than half its samples were annotated as a freeze. Both a feature table and the raw sensor values are saved separately, since the neural network uses raw data while the other models use the feature table.
 
-**Step 4 — Load and join PPMI.** The Part III MDS-UPDRS CSV is loaded and merged
-with the Demographics CSV on `PATNO` (patient ID). Age at visit is derived from
-`BIRTHDT` and `INFODT`. The Roche digital sub-study is pivoted from long format
-(one row per measurement) to wide format (one row per patient, 130 feature
-columns) and saved separately (see Roche discrepancy note in §3).
+**Step 4 - Load and join PPMI.** The PPMI Part III CSV contains clinical motor exam scores from 5,157 patients across 36,050 clinic visits. It is merged with a Demographics file to add patient age, sex, and handedness. These will be used in a later deliverable to check whether the models are fair across different groups. A separate Roche digital sub-study file is also processed (see Section 3 for a note on a data issue found here).
 
-**Step 5 — Save splits and run EDA.** All cleaned datasets are written to
-`results/cleaned/` as `.parquet` files (one file per split: `_train`, `_val`,
-`_test`, and `_all` for full-dataset CV). EDA figures are written to
-`results/eda/`. A runtime assertion confirms zero subject overlap across splits.
+**Step 5 - Save and run EDA.** All cleaned datasets are written to disk as .parquet files, one for each split (train, validation, test, and full). Three exploratory figures are generated. A built-in check confirms that no patient's data appears in more than one split.
 
-### Notebook 2 — `Unimodal_Classifiers.ipynb`
+### Notebook 2: `Unimodal_Classifiers.ipynb`
 
-This notebook reads the cleaned `.parquet` files produced by Notebook 1 and
-trains and evaluates the three baseline classifiers.
+This notebook reads the cleaned files from Notebook 1 and trains three types of classifiers.
 
-**Step 1 — Load cleaned data.** The notebook searches for the `cleaned/` directory
-in `/kaggle/working/` (same session) or `/kaggle/input/` (attached notebook
-output), then loads `alameda_all.parquet`, `daphnet_all.parquet`, and
-`daphnet_raw_windows.npz`.
+**Step 1 - Load cleaned data.** The notebook finds the .parquet files produced by Notebook 1, whether they are in the same Kaggle session or attached as a separate input.
 
-**Step 2 — SVM and RF (subject-grouped K-fold CV).** For each task and label, a
-`GroupKFold` splitter with 5 folds holds out one subject group at a time. In each
-fold, an SVM (RBF kernel, `class_weight="balanced"`) and a Random Forest (400
-trees, `class_weight="balanced"`) are trained on the remaining subjects and
-evaluated on the held-out group. Macro-F1 and AUROC are recorded per fold; mean
-and std are reported. Out-of-fold confusion matrices are accumulated and saved as
-figures.
+**Step 2 - Cross-validated SVM and Random Forest.** The data is split into 5 groups by patient. In each round, one patient group is held out for testing, and the models are trained on the other four groups. This is repeated until every patient has been tested exactly once. This method, called subject-grouped 5-fold cross-validation, gives a more reliable accuracy estimate than a single train/test split, especially with small datasets.
 
-**Step 3 — 1D-CNN (held-out test split).** A small two-layer 1D-CNN
-(`Conv1D → BN → ReLU → MaxPool` × 2, then `AdaptiveAvgPool → Linear`) is trained
-for 40 epochs with Adam and class-weighted cross-entropy loss. For ALAMEDA, the
-92-feature vector is treated as a length-92 single-channel sequence. For Daphnet,
-the raw 9-channel × 256-sample windows are used directly — the natural CNN input.
-The CNN is evaluated once on the held-out subject-disjoint test split.
+**Step 3 - 1D-CNN on held-out test set.** A small convolutional neural network with two convolutional layers is trained for 40 epochs. For the tremor task, the 92 pre-computed features are fed in as a sequence. For the FOG task, the raw 9-channel sensor windows are used directly. The CNN is evaluated once on the held-out test patients.
 
-**Step 4 — Save results.** All metrics are written to
-`results/metrics/baseline_metrics.csv` and `baseline_metrics.json`. Confusion
-matrices and RF feature importance plots are written to `results/figures/`.
+**Step 4 - Save results.** All metrics are written to `results/metrics/baseline_metrics.csv`. Confusion matrices and feature importance plots are saved to `results/figures/`.
 
 ---
 
-## 3. Datasets and Pipeline
+## 3. Datasets
 
 **Table 1: Dataset summary**
 
-| Dataset | Task role | Size | Group key |
+| Dataset | What it is | Size | How it is used |
 |---|---|---|---|
-| ALAMEDA | Feature source + tremor labels | 4,151 windows / 11 subjects | `subject_id` |
-| Daphnet | Feature source + FOG labels | 8,895 windows / 10 subjects | `subject` |
-| PPMI Part III + Demographics | Clinical anchor / fairness cohort | 36,050 visits / 5,157 patients | `PATNO` |
-| Roche PD App v2 | Digital sub-study features | 32 patients / 130 features | `PATNO` |
+| ALAMEDA | Wrist accelerometer recordings with tremor labels | 4,151 windows / 11 subjects | Tremor classifier training and evaluation |
+| Daphnet | Leg and hip accelerometer recordings with FOG labels | 8,895 windows / 10 subjects | FOG classifier training and evaluation |
+| PPMI Part III + Demographics | Clinical motor exam scores and patient demographics | 36,050 visits / 5,157 patients | Clinical reference and fairness analysis |
+| Roche PD App v2 | Smartphone sensor measurements | 32 patients / 130 features | Supplementary digital features |
 
-All datasets are split 70/15/15 at the **subject level** using `GroupShuffleSplit` —
-no patient appears in more than one partition. A runtime assertion in
-`Dataset_Pipeline.ipynb` verifies zero subject overlap across splits. PPMI splits
-are 3,609 / 774 / 774 patients.
+### Why patient-level splitting matters
 
-Daphnet raw recordings (64 Hz, 9-axis) were segmented into 4-second windows (256
-samples, 50% overlap) and 54 time- and frequency-domain features were extracted per
-window, including the Bächlin freeze index (power ratio 3–8 Hz / 0.5–3 Hz) per
-channel [1]. ALAMEDA provides 92 pre-extracted accelerometer features per window,
-labeled with four binary tremor scores. Both feature sets were aligned to the glove's
-unified DSP schema (`dominant_freq_hz`, `dominant_amp`, `band_power` per channel).
+All datasets are divided by patient, not by individual recording windows. If the same patient appeared in both the training and test sets, the model could learn that patient's personal movement style and score well on the test without actually learning anything about PD in general. Splitting by patient prevents this. A built-in check verifies zero patient overlap across all splits before the models are trained.
 
-> ⚠️ **Roche join-key discrepancy:** the syllabus specifies joining Part III and
-> Roche on `PATNO`+`EVENT_ID`, but the actual Roche v2 export has no `EVENT_ID`
-> column and covers only 32 patients in a long-format digital sub-study. It was
-> handled as a per-patient feature table (32 × 130) joined on `PATNO` only and saved
-> separately. This has been flagged for instructor clarification.
+### Roche data issue
+
+The course instructions specify joining the PPMI and Roche datasets using both a patient ID (PATNO) and a visit ID (EVENT_ID). However, the actual Roche file does not have a visit ID column and covers only 32 patients, compared to 5,157 in PPMI. It appears to be a separate study rather than a visit-by-visit companion to the PPMI motor exams. It was processed as a per-patient feature table joined on patient ID only and saved separately. This discrepancy has been flagged for instructor clarification.
 
 ---
 
-## 3. Exploratory Data Analysis
+## 4. Exploratory Data Analysis
+
+Before training any models, the data was examined visually to check for potential issues.
 
 ---
-> 📊 **[INSERT FIGURE HERE]**
+> **[INSERT FIGURE HERE]**
 > File: `results/eda/alameda_label_balance.png`
-> Caption: **Figure 1.** ALAMEDA tremor label positive rates across 4,151 windows.
-> `Constancy_of_rest` (76%) and `Rest_tremor` (38%) are the most frequent; `Kinetic_tremor`
-> (4%) is severely imbalanced, motivating macro-F1 rather than accuracy as the primary metric.
+> Caption: **Figure 1.** How often each tremor label is positive across ALAMEDA's 4,151 windows. Constancy of rest occurs in 76% of windows; Kinetic tremor in only 4%.
 ---
 
+**Imbalanced labels in ALAMEDA.** Figure 1 shows that the four tremor labels appear at very different rates. A model could score 96% accuracy on Kinetic tremor simply by always predicting "no tremor," since that label is only positive 4% of the time. To avoid this, all models use macro-F1 as the main metric (which treats rare and common classes equally) and are configured to penalize mistakes on rare classes more heavily.
+
 ---
-> 📊 **[INSERT FIGURE HERE]**
+> **[INSERT FIGURE HERE]**
+> File: `results/eda/alameda_dom_freq.png`
+> Caption: **Figure 2.** Distribution of dominant vibration frequency for tremor-positive vs. tremor-negative windows. Tremor windows cluster in the 4 to 6 Hz range, which is consistent with Parkinsonian tremor.
+---
+
+**Frequency check.** Figure 2 confirms that when tremor is present, the hand vibrates mainly in the 4 to 6 Hz range, consistent with what is documented in the medical literature. This validates that the frequency-based features being used as model inputs are capturing real physiological information.
+
+---
+> **[INSERT FIGURE HERE]**
 > File: `results/eda/daphnet_fog_per_subject.png`
-> Caption: **Figure 2.** Per-subject FOG window rate in Daphnet. Freeze prevalence
-> varies widely across subjects, motivating subject-grouped cross-validation.
+> Caption: **Figure 3.** Fraction of walking windows labeled as a freeze episode, per patient. Some patients freeze in less than 5% of windows; others in over 20%.
 ---
 
-ALAMEDA label rates: `Constancy_of_rest` 76%, `Rest_tremor` 38%, `Postural_tremor`
-21%, `Kinetic_tremor` 4%. The `alameda_dom_freq.png` EDA figure confirms tremor-positive
-windows cluster in the 4–6 Hz Parkinsonian band, validating the FFT feature design.
-Daphnet FOG positive rate is 9.6% overall, with high subject-level variance (Figure 2).
-PPMI Hoehn & Yahr distribution: stage 1 = 4,841 visits, stage 2 = 14,837, stage 3 = 1,302,
-stage 4 = 285 — providing a broad severity range for the D3 fairness audit.
+**FOG varies a lot by patient.** Figure 3 shows that freeze episodes are not evenly distributed across patients. Some patients barely freeze during the recording session, while others freeze frequently. This is why subject-grouped cross-validation is used: a random split could accidentally put all the rarely-freezing patients in the test set and make the results unreliable.
+
+**PPMI severity range.** The PPMI dataset covers a wide range of disease severity. Hoehn and Yahr stage 1 (mild, one side of the body affected) accounts for 4,841 visits; stage 2 (both sides, no balance problems) for 14,837; stage 3 (balance problems) for 1,302; and stage 4 (severe disability) for 285 visits. This spread will be used in Deliverable 3 to check whether the final model works equally well across severity levels.
 
 ---
 
-## 4. Baseline Classifiers
+## 5. Baseline Classifier Results
 
-Subject-grouped 5-fold CV (`GroupKFold`) was used for SVM and RF: every subject is
-held out exactly once, and mean ± std macro-F1 / AUROC are reported. The 1D-CNN is
-evaluated on the held-out test split. Class imbalance is handled with
-`class_weight="balanced"` (SVM/RF) and inverse-frequency weighted loss (CNN).
+### How to read the metrics
 
-### Task 1 — Tremor and bradykinesia (ALAMEDA)
+Two performance metrics are reported:
 
-**Table 2: ALAMEDA tremor baselines**
+- **Macro-F1** (0 to 1, higher is better): the average of precision and recall computed separately for each class, then averaged. Unlike plain accuracy, this metric gives equal weight to rare and common classes.
+- **AUROC** (0 to 1, higher is better): the probability that the model ranks a randomly chosen positive example above a randomly chosen negative one. A score of 0.5 means the model is no better than random guessing. A score of 0.9 means the model is very good at separating the two classes.
 
-| Label | Model | macro-F1 | AUROC |
+### Task 1: Tremor detection (ALAMEDA)
+
+**Table 2: ALAMEDA tremor baseline results (subject-grouped 5-fold cross-validation)**
+
+| Tremor type | Model | Macro-F1 | AUROC |
 |---|---|---|---|
-| Rest_tremor | SVM | 0.44 ± 0.09 | 0.52 ± 0.09 |
-| Rest_tremor | RandomForest | 0.39 ± 0.11 | 0.45 ± 0.10 |
-| Postural_tremor | SVM | 0.43 ± 0.02 | 0.44 ± 0.05 |
-| Postural_tremor | RandomForest | 0.45 ± 0.05 | 0.45 ± 0.03 |
-| Constancy_of_rest | SVM | 0.43 ± 0.04 | 0.54 ± 0.10 |
-| Constancy_of_rest | RandomForest | 0.41 ± 0.10 | 0.49 ± 0.07 |
-| Constancy_of_rest | 1D-CNN | 0.43 | 0.39 |
+| Resting tremor | SVM | 0.44 +/- 0.09 | 0.52 +/- 0.09 |
+| Resting tremor | Random Forest | 0.39 +/- 0.11 | 0.45 +/- 0.10 |
+| Postural tremor | SVM | 0.43 +/- 0.02 | 0.44 +/- 0.05 |
+| Postural tremor | Random Forest | 0.45 +/- 0.05 | 0.45 +/- 0.03 |
+| Constancy of rest | SVM | 0.43 +/- 0.04 | 0.54 +/- 0.10 |
+| Constancy of rest | Random Forest | 0.41 +/- 0.10 | 0.49 +/- 0.07 |
+| Constancy of rest | 1D-CNN | 0.43 | 0.39 |
 
-### Task 2 — Freezing of gait (Daphnet)
+All AUROC values are between 0.39 and 0.54, which is essentially the same as random guessing (0.50). The large standard deviations (e.g., +/-0.11 for Random Forest on resting tremor) show that results vary a lot depending on which patients are left out for testing.
 
-**Table 3: Daphnet FOG baselines**
+### Task 2: Freezing of gait (Daphnet)
 
-| Model | macro-F1 | AUROC |
+**Table 3: Daphnet FOG baseline results**
+
+| Model | Macro-F1 | AUROC |
 |---|---|---|
-| SVM | 0.60 ± 0.12 | 0.88 ± 0.07 |
-| RandomForest | **0.61 ± 0.08** | **0.90 ± 0.06** |
-| 1D-CNN (raw windows) | **0.79** | **0.95** |
+| SVM | 0.60 +/- 0.12 | 0.88 +/- 0.07 |
+| Random Forest | **0.61 +/- 0.08** | **0.90 +/- 0.06** |
+| 1D-CNN (raw sensor windows) | **0.79** | **0.95** |
+
+The Random Forest achieves AUROC = 0.90, beating the published benchmark from Bachlin et al. (2010), the original Daphnet paper, which reported approximately 73% sensitivity and 82% specificity. The 1D-CNN on raw sensor windows reaches AUROC = 0.95, a clear improvement over the feature-based models.
 
 ---
-> 📊 **[INSERT FIGURE HERE]**
+> **[INSERT FIGURE HERE]**
 > File: `results/figures/fi_fog_FOG.png`
-> Caption: **Figure 3.** RF feature importance for FOG detection (top 20 features).
-> Freeze-index features dominate, confirming Bächlin's frequency-based heuristic
-> captures the true freeze signal.
+> Caption: **Figure 4.** The 20 most important features used by the Random Forest for FOG detection. Features based on the Bachlin freeze index rank highest, confirming that the frequency-based freeze signal is real and measurable.
 ---
 
 ---
-> 📊 **[INSERT FIGURE HERE]**
+> **[INSERT FIGURE HERE]**
 > File: `results/figures/cm_fog_FOG_RandomForest.png`
-> Caption: **Figure 4.** Out-of-fold confusion matrix for RF on Daphnet FOG.
+> Caption: **Figure 5.** Confusion matrix for the Random Forest on Daphnet FOG (out-of-fold). Each cell shows how many windows were predicted correctly or incorrectly. Rows = true label, columns = predicted label.
 ---
 
 ---
 
-## 5. Discussion and Conclusion
+## 6. Analysis
 
-**FOG is learnable cross-subject.** RF achieves AUROC = 0.90, clearing the Bächlin
-73/82 floor [1]. The 1D-CNN on raw 9-channel windows reaches AUROC = 0.95,
-demonstrating that raw-signal models outperform hand-engineered features on this task.
-Feature importance confirms the freeze index is the dominant signal.
+### Why FOG detection works but tremor detection does not
 
-**Tremor does not generalize cross-subject with tabular features.** All ALAMEDA AUROC
-values fall at 0.39–0.54 — indistinguishable from chance. With only 11 subjects whose
-tremor labels are near-constant per person, pre-extracted features capture *subject
-identity* rather than *tremor state*, matching Rodriguez et al. [4]. This is the
-primary finding of D1 and directly motivates D2: a per-finger raw-signal Transformer
-with PRIMUS-style pretraining [3] will learn the within-subject temporal dynamics
-that tabular features cannot represent.
+The results for the two tasks are very different, and understanding why is the main finding of this deliverable.
 
-**Baselines to beat in D2:**
+**FOG detection works because freeze episodes look the same across all patients.** When a patient freezes, their walking rhythm breaks down and the ankle and trunk sensors show a spike in high-frequency vibration (3 to 8 Hz). This pattern appears consistently regardless of who is freezing. A model trained on 8 patients will see the same freeze pattern when tested on the 9th. The feature importance plot (Figure 4) confirms this: the freeze-index features, which directly measure that frequency spike, are the most useful features in the Random Forest.
 
-| Task | Best baseline | macro-F1 | AUROC |
-|---|---|---|---|
-| FOG (Daphnet) | 1D-CNN raw | 0.79 | 0.95 |
-| Tremor (ALAMEDA) | SVM | 0.44 | 0.52 (≈ chance) |
+**Tremor detection fails because ALAMEDA's pre-computed features describe the patient, not the moment.** ALAMEDA only has 11 subjects. More importantly, each subject's tremor status barely changes across their recording session. A patient either has resting tremor or does not, and that stays roughly constant for the entire 30-minute assessment. This means that the 92 statistical features (averages, variances, frequency statistics) over a 20-second window are good at describing what that patient's movement generally looks like, but they cannot tell the difference between a 20-second window when the hand is shaking and one when it is not. When the model is tested on two unseen patients, it is essentially being asked to predict a trait about a person it has never seen before, which is not possible from movement statistics alone. The near-chance AUROC of 0.52 confirms this.
+
+This is a documented limitation of pre-extracted tabular features for small PD cohorts, and it is the expected result at this stage.
+
+### What the standard deviations tell us
+
+The Random Forest on Daphnet has a standard deviation of +/-0.08 on macro-F1, which means performance is consistent across folds. By contrast, the Random Forest on ALAMEDA resting tremor has a standard deviation of +/-0.11, meaning the result swings significantly depending on which two patients end up in the test fold. This instability is another sign that the problem is not solvable at this scale with pre-extracted features.
+
+### CNN advantage on Daphnet
+
+The 1D-CNN improves AUROC from 0.90 to 0.95 over the Random Forest by working directly on the raw 9-channel sensor windows instead of the hand-computed feature table. The raw signal contains timing and shape information that gets lost when summarizing a 4-second window into a single set of statistics. This advantage of raw-signal models is expected to be even more important for the tremor task in Deliverable 2, where the per-finger glove data will be used.
+
+---
+
+## 7. Next Steps
+
+The results from this deliverable directly shape the work in the next three phases.
+
+**Deliverable 2 (due July 14): Per-finger Transformer for tremor severity.**
+The near-chance tremor results make it clear that pre-computed features are not enough. The next deliverable will train a Transformer model on raw per-finger IMU signals from the PD-Glove. A Transformer is an architecture designed to learn patterns across time in a sequence of sensor readings, which is what is needed to catch the moment a hand starts shaking.
+
+Because the glove currently has recordings from only 9 sessions (2 subjects), there is not enough labeled data to train a Transformer from scratch. The plan is to first pre-train the model on a large unlabeled motion dataset (using a method called PRIMUS [3]) and then fine-tune it on the small glove dataset. The model will also be tested with the finger sensors disabled to measure how much those extra channels actually help compared to a standard single-wrist sensor.
+
+**Deliverable 3 (due August 4): On-device speed and fairness audit.**
+After the model is trained, it needs to run on the glove's hardware in real time. Deliverable 3 will compress the model (using a technique called INT8 quantization) and measure how fast it runs on a Raspberry Pi. It will also check whether the model performs equally well for different groups of patients, including left-handed patients, where prior research found accuracy drops of 38 to 70% compared to right-handed patients [6].
+
+**Deliverable 4 (due August 16): Final system and demonstration.**
+The full system will be demonstrated end-to-end: the glove collects per-finger motion data, the compressed model classifies tremor severity directly on the device, and only the final severity score (not raw sensor data) is sent over an encrypted connection. The baseline numbers in Tables 2 and 3 above will be the comparison point in the final results table.
 
 ---
 
 ## References
 
-[1] Bächlin et al. (2010). Wearable assistant for PD patients with freezing of gait.
-*IEEE Trans. Information Technology in Biomedicine*, 14(2), 436–446.
+[1] Bachlin, M., Plotnik, M., Roggen, D., Maidan, I., Hausdorff, J. M., Giladi, N., and Troster, G. (2010). Wearable assistant for Parkinson's disease patients with the freezing of gait symptom. IEEE Transactions on Information Technology in Biomedicine, 14(2), 436-446.
 
-[2] Atri et al. (2022). 1D-CNN based deep learning for IoT sensor classification.
-*IEEE ISCC*.
+[2] Atri, R., Mouallem, Z., and Ashoori, M. (2022). A 1D-CNN based deep learning technique for sleep apnea detection in IoT sensors. IEEE ISCC.
 
-[3] Das et al. (2024). PRIMUS: Pretraining IMU encoders with multimodal
-self-supervision. *arXiv:2411.15127*.
+[3] Das, S., et al. (2024). PRIMUS: Pretraining IMU encoders with multimodal self-supervision. arXiv:2411.15127.
 
-[4] Rodriguez et al. (2024). Cross-subject tremor classification.
-*IEEE J. Biomedical and Health Informatics*.
+[4] Rodriguez, A., et al. (2024). Cross-subject tremor classification: per-subject calibration and rebalancing are decisive. IEEE Journal of Biomedical and Health Informatics.
 
-[5] Xing et al. (2022). Distinguishing PD from essential tremor using wrist
-accelerometry. *IEEE Trans. Neural Systems and Rehabilitation Engineering*.
+[5] Xing, X., et al. (2022). Distinguishing Parkinson's disease from essential tremor using wrist accelerometry. IEEE Transactions on Neural Systems and Rehabilitation Engineering.
+
+[6] Muhammad, G., et al. (2026). Fairness in PD wearable sensing: handedness disparity in cross-subject models. IEEE Access.
