@@ -6,20 +6,45 @@ An Nguyen · Northeastern University Khoury College · June 2026
 
 ## 1. Introduction
 
-### Background
+### Background: Parkinson's disease and the problem with clinic-only measurement
 
 Parkinson's disease (PD) is a neurological condition that gradually affects a person's ability to control their movements. Two of the most disabling symptoms are:
 
 - **Tremor**: involuntary rhythmic shaking of the hands or fingers, typically at 4 to 6 times per second.
 - **Freezing of gait (FOG)**: sudden episodes where a patient's feet feel stuck to the floor, lasting a few seconds to a minute, and often causing falls.
+- **Rigidity (stiffness)**: resistance in the joints and muscles, especially noticeable when bending and extending the fingers, which makes everyday tasks difficult.
 
-Currently, both symptoms are measured by a clinician during an in-person visit using a scale called the MDS-UPDRS, where severity is rated from 0 (none) to 4 (severe). This only gives a snapshot once every few months.
+Today, all three symptoms are measured by a clinician during an in-person visit using a standardized rating scale called the MDS-UPDRS (Movement Disorder Society Unified Parkinson's Disease Rating Scale). The clinician watches the patient move and assigns a score from 0 (no symptom) to 4 (severe). The problem is that this only happens every few months, in a clinical setting. Symptoms fluctuate daily, worsen with stress, and change with medication timing. A single in-clinic snapshot cannot capture this variability, and patients often cannot describe how they felt in the weeks between visits.
 
-The goal of this project is to build a wearable glove with motion sensors on each finger that can measure these symptoms continuously and automatically, outside the clinic. This deliverable (D1) is the first step: preparing the data, exploring what it looks like, and testing whether basic machine learning models can already detect tremor and FOG from sensor readings. The results tell us what works, what does not, and what more advanced models in later deliverables need to improve on.
+### Part 1: Building and validating the hardware
+
+The first phase of this project (Part 1) built a working prototype of a wearable data-glove designed to measure PD symptoms continuously at home. The glove has four inertial measurement units (IMUs), one on each finger, that record acceleration and rotation at high frequency. It also has a flex sensor on the thumb that measures how much resistance there is when bending the finger, which is a proxy for rigidity or stiffness.
+
+Part 1 validated that this hardware setup is physically feasible and that the raw sensor readings are meaningful. The IMUs successfully captured the 4 to 6 Hz tremor signal during rest and movement tasks. The flex sensor measurements, after a calibration process, correlated with clinical stiffness assessments on the thumb. This proved the concept: a five-sensor glove can measure both tremor and stiffness from individual fingers, something a standard wrist-worn smartwatch cannot do.
+
+### Part 2: Building the machine learning model
+
+With the hardware proven in Part 1, the goal of Part 2 is to build the machine learning pipeline that turns raw sensor readings into clinically meaningful predictions. Specifically, the aim is to show that a model trained and fine-tuned on the glove's own data can automatically detect Parkinsonian tremor and stiffness severity, without a clinician in the room.
+
+The challenge is data. The glove currently has recordings from only 9 sessions across 2 subjects. That is nowhere near enough data to train a machine learning model from scratch. The standard solution for this kind of problem in medical AI is called fine-tuning: you first train a general model on a large publicly available dataset that is related to your task, then adapt (fine-tune) it on your smaller specialized dataset. This works because the model learns general motion patterns from the large dataset, and only needs a small amount of labeled glove data to adjust those patterns to the specific characteristics of the PD-Glove sensors and tasks.
+
+This deliverable (D1) is the first step in that process: preparing four public PD datasets, understanding what each one measures, running a set of standard baseline models to see what is already achievable, and identifying exactly what the fine-tuned glove model in Deliverable 2 needs to improve on.
+
+### Where the public data comes from and what each dataset tests
+
+Four datasets were used. Each covers a different aspect of Parkinson's disease measurement:
+
+**ALAMEDA** is a research dataset from a clinical study where 11 PD patients wore a wrist accelerometer during a structured motor assessment. The raw accelerometer signal was processed into 92 numerical features per 20-second window, and each window was labeled by a clinician for four types of tremor: resting tremor (hand shaking when the arm is relaxed), postural tremor (shaking when holding the arm up), kinetic tremor (shaking during movement), and constancy of rest. This dataset is the closest match to the glove's tremor detection task, since both involve wrist/hand accelerometer data with clinical tremor labels.
+
+**Daphnet** is a dataset from a lab walking study at ETH Zurich and Tel Aviv Medical Center, where 10 PD patients walked back and forth on a corridor while wearing accelerometers on the ankle, thigh, and trunk. Researchers manually annotated the recordings to mark every freeze episode. This dataset is used to train and test the freezing of gait (FOG) detector, which is a separate but related PD symptom that the glove will eventually also need to flag.
+
+**PPMI (Parkinson's Progression Markers Initiative)** is one of the largest longitudinal PD research databases in the world, run by the Michael J. Fox Foundation. It contains clinical motor exam scores for 5,157 patients across tens of thousands of clinic visits, recorded using the full MDS-UPDRS Part III protocol. It also includes patient demographics like age, sex, and handedness. PPMI does not have raw sensor recordings, so it is not used to train the tremor or FOG models directly. Instead, it serves as the clinical reference database: the ordinal 0 to 4 severity labels for the Deliverable 2 model come from PPMI, and the demographic breakdown is used in Deliverable 3 to audit whether the final model is equally accurate across different patient groups.
+
+**Roche PD Monitoring App v2** is a smaller digital biomarker sub-study (32 patients) that was conducted alongside PPMI. Patients used a smartphone app to complete structured tasks and passive monitoring between clinic visits. The app recorded a wide range of digital measurements: hand-turn speed (how fast a patient can rotate their wrist), drawing task accuracy measured with Hausdorff distance (how closely a patient can trace a spiral), voice recordings analyzed for tremor in speech (MFCCs), balance sway during standing, turn speed during walking, and symptom diaries and sleep questionnaires. The data is stored in a long-format table where each row is one measurement from one patient, and the test type (e.g., "hand turn", "drawing", "voice") is a label in the table rather than a separate column. This format required an extra processing step to pivot the data so each patient has one row with all their measurements as separate columns, before it could be used. This dataset is relevant because it demonstrates the kind of passive digital measurement that the PD-Glove is designed to automate: instead of a phone app asking patients to perform tapping tasks, the glove captures the same signals continuously and automatically.
 
 ### What this deliverable covers
 
-Four publicly available PD datasets were downloaded, cleaned, and prepared for machine learning. Three standard classification models were trained and tested on two tasks: detecting tremor from wrist accelerometer data, and detecting FOG from leg and hip accelerometer data. All code is reproducible on Kaggle (a free cloud platform) and saved at `github.com/aqn96/pd-glove` under `part2-ml/notebooks/`.
+Four publicly available PD datasets were downloaded, cleaned, and prepared for machine learning. Three standard classification models (SVM, Random Forest, and 1D-CNN) were trained and tested on two tasks: detecting tremor from wrist accelerometer data, and detecting FOG from leg and hip accelerometer data. All code is reproducible on Kaggle (a free cloud platform) and saved at `github.com/aqn96/pd-glove` under `part2-ml/notebooks/`.
 
 ---
 
