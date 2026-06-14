@@ -17,7 +17,82 @@ committed to `github.com/aqn96/pd-glove` under `part2-ml/notebooks/`.
 
 ---
 
-## 2. Datasets and Pipeline
+## 2. Notebook Pipeline Overview
+
+Two notebooks implement the full D1 pipeline. They run in sequence: the first
+produces cleaned data files that the second reads as input.
+
+### Notebook 1 — `Dataset_Pipeline.ipynb`
+
+This notebook loads, cleans, and splits all four raw datasets and saves the results
+as `.parquet` files for the classifiers notebook to read.
+
+**Step 1 — Path detection.** The notebook first checks whether it is running on
+Kaggle (`/kaggle/input`) or locally (`part2-ml/data/`). All data-loading logic
+uses this auto-detected root so no paths need to be changed between environments.
+
+**Step 2 — Load and clean ALAMEDA.** The CSV is loaded (4,151 rows × 99 columns).
+The 92 feature columns are identified by subtracting the 3 metadata columns
+(`start_timestamp`, `end_timestamp`, `subject_id`) and the 4 label columns
+(`Rest_tremor`, `Postural_tremor`, `Kinetic_tremor`, `Constancy_of_rest`). A
+combined `any_tremor` flag is derived. Rows with NaN features are dropped (none
+found). The dataset is then split 70/15/15 by subject.
+
+**Step 3 — Load and window Daphnet.** All 17 `S##R##.txt` session files are
+found by filename pattern. Each file is read as a space-separated table with no
+header (11 columns: timestamp, 9 accelerometer channels, annotation). Rows with
+`annotation == 0` (outside the experiment protocol) are dropped. The pipeline
+then slides a 4-second window (256 samples at 64 Hz) with 50% overlap across
+each session. For each window, 6 features are extracted per accelerometer
+channel (mean, std, RMS, range, dominant frequency, band power, and the Bächlin
+freeze index). The window label is 1 (freeze) if more than 50% of its samples
+are annotated as freeze, else 0. Both a feature table and the raw windows (as a
+NumPy `.npz` array) are saved — the feature table is used by SVM/RF; the raw
+windows are used by the 1D-CNN.
+
+**Step 4 — Load and join PPMI.** The Part III MDS-UPDRS CSV is loaded and merged
+with the Demographics CSV on `PATNO` (patient ID). Age at visit is derived from
+`BIRTHDT` and `INFODT`. The Roche digital sub-study is pivoted from long format
+(one row per measurement) to wide format (one row per patient, 130 feature
+columns) and saved separately (see Roche discrepancy note in §3).
+
+**Step 5 — Save splits and run EDA.** All cleaned datasets are written to
+`results/cleaned/` as `.parquet` files (one file per split: `_train`, `_val`,
+`_test`, and `_all` for full-dataset CV). EDA figures are written to
+`results/eda/`. A runtime assertion confirms zero subject overlap across splits.
+
+### Notebook 2 — `Unimodal_Classifiers.ipynb`
+
+This notebook reads the cleaned `.parquet` files produced by Notebook 1 and
+trains and evaluates the three baseline classifiers.
+
+**Step 1 — Load cleaned data.** The notebook searches for the `cleaned/` directory
+in `/kaggle/working/` (same session) or `/kaggle/input/` (attached notebook
+output), then loads `alameda_all.parquet`, `daphnet_all.parquet`, and
+`daphnet_raw_windows.npz`.
+
+**Step 2 — SVM and RF (subject-grouped K-fold CV).** For each task and label, a
+`GroupKFold` splitter with 5 folds holds out one subject group at a time. In each
+fold, an SVM (RBF kernel, `class_weight="balanced"`) and a Random Forest (400
+trees, `class_weight="balanced"`) are trained on the remaining subjects and
+evaluated on the held-out group. Macro-F1 and AUROC are recorded per fold; mean
+and std are reported. Out-of-fold confusion matrices are accumulated and saved as
+figures.
+
+**Step 3 — 1D-CNN (held-out test split).** A small two-layer 1D-CNN
+(`Conv1D → BN → ReLU → MaxPool` × 2, then `AdaptiveAvgPool → Linear`) is trained
+for 40 epochs with Adam and class-weighted cross-entropy loss. For ALAMEDA, the
+92-feature vector is treated as a length-92 single-channel sequence. For Daphnet,
+the raw 9-channel × 256-sample windows are used directly — the natural CNN input.
+The CNN is evaluated once on the held-out subject-disjoint test split.
+
+**Step 4 — Save results.** All metrics are written to
+`results/metrics/baseline_metrics.csv` and `baseline_metrics.json`. Confusion
+matrices and RF feature importance plots are written to `results/figures/`.
+
+---
+
+## 3. Datasets and Pipeline
 
 **Table 1: Dataset summary**
 
