@@ -4,10 +4,10 @@ Model-training, validation, and system-integration work for **Part II** of the
 Sensing-to-Decision framework. This folder is self-contained: code, data, docs, and
 generated results all live under `part2-ml/`.
 
-> **Status (2026-06-08):** Deliverable 1 (Dataset Pipeline & Baseline Classifiers, due
-> **Jun 16**) — code **complete and verified end-to-end on all four datasets**
-> (ALAMEDA, Daphnet, PPMI Part III, Roche). All data staged and verified under
-> `part2-ml/data/`. Remaining for D1: run on Kaggle, optional S3 upload, write the report.
+> **Status (2026-06-14):** Deliverable 1 **complete** — both notebooks verified on Kaggle
+> (GPU T4), report written at `docs/D1_report.md`. Key results: FOG 1D-CNN AUROC 0.95,
+> tremor AUROC ~0.50 (chance cross-subject, expected). **D2 starts Jun 17** — adds glove
+> data augmentation (9 sessions → ~8k windows) before fine-tuning the Transformer.
 
 ## Layout
 
@@ -24,7 +24,9 @@ part2-ml/
 ├── results/                          # generated: cleaned/ eda/ figures/ metrics/ (gitignored)
 ├── docs/
 │   ├── unified-feature-schema.md     # the one schema; feature/label roles per task
-│   └── D1_report_outline.md          # report skeleton with the actual baseline numbers
+│   ├── D1_report_outline.md          # report skeleton with the actual baseline numbers
+│   ├── D1_report.md                  # final D1 report (figures embedded)
+│   └── figures/                      # report figures committed here (results/ is gitignored)
 ├── aws_setup.md                      # S3 bucket layout, IAM policy, EC2 config
 ├── requirements.txt
 ├── literature-review.md              # 20-paper annotated review (done)
@@ -113,6 +115,11 @@ to confirm integrity (ALAMEDA md5 matches Zenodo; 17 Daphnet sessions; PPMI pres
 
 ## Where this is going (D2–D4)
 
-`next-steps.md` has the full week-by-week plan. In short: D2 = per-finger Transformer
-encoder + INT8 TFLite + uncertainty; D3 = MQTT (AES-256-GCM/TLS 1.3) + MediaPipe
-compliance + fairness audit; D4 = final report + demo.
+`next-steps.md` has the full week-by-week plan. In short:
+
+- **D2 (due Jul 14):** Glove data augmentation (9 sessions → ~8k windows) + pretrain
+  Transformer on ALAMEDA + fine-tune on augmented glove sessions + leave-session-out
+  validation + per-finger vs. single-wrist ablation + INT8 TFLite compression.
+- **D3 (due Aug 4):** MQTT (AES-256-GCM/TLS 1.3) + MediaPipe compliance check +
+  on-device latency benchmark + fairness audit (age/sex/stage/handedness).
+- **D4 (due Aug 16):** Final report + clean repo + 15-min talk + live demo.
