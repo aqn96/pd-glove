@@ -200,10 +200,19 @@ The 1D-CNN improves AUROC from 0.90 to 0.95 over the Random Forest by working di
 
 The results from this deliverable directly shape the work in the next three phases.
 
-**Deliverable 2 (due July 14): Per-finger Transformer for tremor severity.**
+**Deliverable 2 (due July 14): Per-finger Transformer with augmentation and fine-tuning.**
+
 The near-chance tremor results make it clear that pre-computed features are not enough. The next deliverable will train a Transformer model on raw per-finger IMU signals from the PD-Glove. A Transformer is an architecture designed to learn patterns across time in a sequence of sensor readings, which is what is needed to catch the moment a hand starts shaking.
 
-Because the glove currently has recordings from only 9 sessions (2 subjects), there is not enough labeled data to train a Transformer from scratch. The plan is to first pre-train the model on a large unlabeled motion dataset (using a method called PRIMUS [3]) and then fine-tune it on the small glove dataset. The model will also be tested with the finger sensors disabled to measure how much those extra channels actually help compared to a standard single-wrist sensor.
+The glove currently has recordings from only 9 sessions across 2 subjects. That is not enough to train a Transformer from scratch. The D2 plan addresses this in two steps:
+
+**Step 1: Data augmentation.** Before any training, the 9 glove sessions are expanded into approximately 8,000 training windows by applying five transforms to each original window: adding small random noise to the IMU channels, scaling the signal amplitude up or down slightly, shifting the window start position by a few samples, randomly dropping one IMU channel to simulate a loose sensor, and mirroring left and right channel pairs. This is called data augmentation. It increases the volume of training data without creating genuinely new patients. Augmented windows are only used for training and are never included in the validation set.
+
+**Step 2: Pretrain then fine-tune.** A Transformer model is first pretrained on the larger ALAMEDA dataset to learn general motion patterns from 11 subjects. It is then fine-tuned on the augmented glove sessions so it adapts to the specific characteristics of the per-finger sensor hardware. Validation uses leave-session-out cross-validation on the original (non-augmented) glove recordings to give an honest estimate of performance.
+
+The model is also tested with the finger channels disabled to simulate a single-wrist sensor. The drop in performance between the full per-finger model and the single-wrist version is the direct measurement of what the glove's hardware adds over a standard smartwatch.
+
+It is important to note that with only 2 subjects, this validation is a proof of concept. It shows that fine-tuning improves performance on held-out sessions from these subjects, but confirming that the model generalizes to new patients would require a future clinical study with 15 to 20 subjects.
 
 **Deliverable 3 (due August 4): On-device speed and fairness audit.**
 After the model is trained, it needs to run on the glove's hardware in real time. Deliverable 3 will compress the model (using a technique called INT8 quantization) and measure how fast it runs on a Raspberry Pi. It will also check whether the model performs equally well for different groups of patients, including left-handed patients, where prior research found accuracy drops of 38 to 70% compared to right-handed patients [6].
