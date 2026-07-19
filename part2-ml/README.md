@@ -4,28 +4,32 @@ Model-training, validation, and system-integration work for **Part II** of the
 Sensing-to-Decision framework. This folder is self-contained: code, data, docs, and
 generated results all live under `part2-ml/`.
 
-> **Status (2026-06-14):** Deliverable 1 **complete** — both notebooks verified on Kaggle
-> (GPU T4), report written at `docs/D1_report.md`. Key results: FOG 1D-CNN AUROC 0.95,
-> tremor AUROC ~0.50 (chance cross-subject, expected). **D2 starts Jun 17** — adds glove
-> data augmentation (9 sessions → ~8k windows) before fine-tuning the Transformer.
+> **Status (2026-07-19):** Deliverable 2 **complete** — three D2 notebooks verified on Kaggle
+> (GPU T4), report written at `docs/D2_report.md`. Key results: SVM macro-F1 0.564 / AUROC 0.693
+> on PADS (best baseline); MOMENT linear probe F1 0.502 (frozen encoder insufficient, expected).
+> **D3 starts next** — on-device latency + fairness audit.
 
 ## Layout
 
 ```
 part2-ml/
 ├── notebooks/
-│   ├── Dataset_Pipeline.ipynb        # load · clean · subject-split · unified schema · EDA · S3
-│   ├── Unimodal_Classifiers.ipynb    # SVM · RF · 1D-CNN baselines (subject-grouped CV)
-│   └── *.py                          # jupytext source of the notebooks (version-controlled)
+│   ├── Dataset_Pipeline.ipynb              # D1: load · clean · subject-split · EDA
+│   ├── Unimodal_Classifiers.ipynb          # D1: SVM · RF · 1D-CNN baselines
+│   ├── D2_PADS_Pipeline.py                 # D2: PADS cleaning + feature extraction
+│   ├── D2_PADS_Baseline_Classifiers.py     # D2: SVM · RF · CNN on PADS
+│   ├── D2_PADS_Transformer_MOMENT.py       # D2: MOMENT fine-tuning on PADS
+│   └── *.py                                # jupytext source (version-controlled)
 ├── scripts/
 │   └── organize_data.py              # verify/unzip/organize a pasted data folder
 ├── data/                             # datasets (gitignored; READMEs tracked) — see data/README.md
-│   ├── alameda/  daphnet/  ppmi/  glove/
+│   ├── alameda/  daphnet/  ppmi/  pad/  glove/
 ├── results/                          # generated: cleaned/ eda/ figures/ metrics/ (gitignored)
 ├── docs/
 │   ├── unified-feature-schema.md     # the one schema; feature/label roles per task
 │   ├── D1_report_outline.md          # report skeleton with the actual baseline numbers
 │   ├── D1_report.md                  # final D1 report (figures embedded)
+│   ├── D2_report.md                  # final D2 report — PADS pipeline + MOMENT results
 │   └── figures/                      # report figures committed here (results/ is gitignored)
 ├── aws_setup.md                      # S3 bucket layout, IAM policy, EC2 config
 ├── requirements.txt
@@ -33,6 +37,29 @@ part2-ml/
 ├── next-steps.md                     # plain-English plan + week-by-week timeline
 └── professor-meeting.md
 ```
+
+## Deliverable 2 — PADS + MOMENT (complete)
+
+Three notebooks, all run on Kaggle (GPU T4):
+
+1. **`D2_PADS_Pipeline.py`** — loads PADS PhysioNet dataset (469 subjects, wrist acc+gyro 100 Hz), excludes DD group, extracts 42 features (7 × 6 channels), subject-level splits. Saves `pads_all.parquet`, `pads_raw_windows.npz`, train/val/test splits.
+2. **`D2_PADS_Baseline_Classifiers.py`** — SVM, Random Forest, 1D-CNN on PADS for PD vs HC classification (5-fold subject-grouped CV). Saves `pads_baseline_metrics.json`.
+3. **`D2_PADS_Transformer_MOMENT.py`** — fine-tunes MOMENT-1-large (CMU time series foundation model) on PADS raw windows. Linear probing (freeze_encoder=True). Resample 1024→512 samples via F.interpolate.
+
+### D2 Results (PADS, 276 PD / 79 HC, 10,318 windows)
+
+| Model | Macro-F1 | AUROC |
+|---|---|---|
+| SVM | **0.564 ± 0.023** | 0.693 ± 0.018 |
+| Random Forest | 0.498 ± 0.011 | **0.726 ± 0.014** |
+| 1D-CNN | 0.562 ± 0.039 | 0.700 ± 0.031 |
+| MOMENT (linear probe) | 0.502 ± 0.012 | 0.622 ± 0.012 |
+
+SVM is the strongest classifier for fixed-threshold deployment (Pi). Random Forest has the best AUROC for risk ranking. MOMENT linear probing does not improve over SVM — frozen encoder representations do not adapt to PD wrist kinematics without full fine-tuning.
+
+Full write-up at `docs/D2_report.md`.
+
+---
 
 ## Deliverable 1 — what it produces
 
@@ -117,9 +144,6 @@ to confirm integrity (ALAMEDA md5 matches Zenodo; 17 Daphnet sessions; PPMI pres
 
 `next-steps.md` has the full week-by-week plan. In short:
 
-- **D2 (due Jul 14):** Glove data augmentation (9 sessions → ~8k windows) + pretrain
-  Transformer on ALAMEDA + fine-tune on augmented glove sessions + leave-session-out
-  validation + per-finger vs. single-wrist ablation + INT8 TFLite compression.
-- **D3 (due Aug 4):** MQTT (AES-256-GCM/TLS 1.3) + MediaPipe compliance check +
-  on-device latency benchmark + fairness audit (age/sex/stage/handedness).
+- **D2 (complete):** PADS pipeline + SVM/RF/CNN/MOMENT baselines on PD vs HC. Best: SVM F1=0.564. Full fine-tuning of MOMENT (freeze_encoder=False) in progress.
+- **D3 (due Aug 4):** On-device latency benchmark (TFLite INT8 on Pi) + fairness audit (handedness, severity subgroups using PPMI).
 - **D4 (due Aug 16):** Final report + clean repo + 15-min talk + live demo.
