@@ -179,9 +179,23 @@ X_t = F.interpolate(X_t, size=512, mode='linear', align_corners=False)
 
 ## 6. Results
 
+### How to read the metrics
+
+The dataset is 78% PD and 22% HC. A model that predicts PD for everyone would score 78% accuracy but would be clinically useless — it would never flag a healthy person. Both metrics below are designed to catch that failure.
+
+- **HC and PD in the figures:** HC = Healthy Control (no Parkinson's diagnosis). PD = Parkinson's Disease. In the confusion matrix, rows are the true label and columns are what the model predicted. A large number in the HC row / PD column means the model is calling healthy people sick.
+
+- **Macro-F1** (0 to 1, higher is better): measures how well the model correctly identifies both groups. It gives equal weight to PD and HC, so a model that only ever predicts PD scores around 0.44 — roughly the floor on this dataset. A score of 0.564 means the model is meaningfully catching both groups, not just defaulting to the majority class.
+
+- **AUROC** (0 to 1, higher is better): measures how well the model ranks PD subjects above HC subjects. A score of 0.5 is random guessing. A score of 0.73 means that if you picked one PD patient and one healthy person at random, the model would rank the PD patient higher 73% of the time. AUROC does not depend on a fixed threshold — it tells you how good the model's underlying signal is regardless of where you draw the line.
+
+- **Why SVM beats Random Forest on F1 but not AUROC:** Random Forest outputs a probability ("73% chance of PD") which is well-calibrated across the full range — that's why AUROC is high. But when you force a hard yes/no decision at a fixed threshold, Random Forest gets thrown off by the 78% PD imbalance in training and misclassifies more HC subjects. SVM skips probabilities entirely and directly optimizes the yes/no boundary — so it makes fewer mistakes on the final call. For the Pi, you need a hard yes/no decision in real time, so SVM is the better deployment choice.
+
+- **Why not deploy MOMENT on the Pi:** MOMENT-1-large is 1.4 GB. The Pi runs inference in milliseconds with SVM. MOMENT belongs on the cloud for batch retraining and periodic scoring; SVM or a compressed CNN belongs on the Pi for real-time local inference. Raw sensor data never leaves the device — only the final severity score is sent to the cloud.
+
 ![Figure 1. D2 model comparison — PADS PD vs HC. Left: MOMENT average confusion matrix across 5 folds. Right: macro-F1 bar chart for all four models.](figures/moment_vs_baselines.png)
 
-**Figure 1.** D2 model comparison on PADS (355 subjects, 7,810 windows). Left: MOMENT average confusion matrix across 5 folds. Right: macro-F1 for all four models. SVM and CNN1D are the strongest classifiers; MOMENT does not improve over them.
+**Figure 1.** D2 model comparison on PADS (355 subjects, 7,810 windows). Left: MOMENT average confusion matrix across 5 folds — rows are true labels (HC/PD), columns are predicted labels. The model correctly identified 234 PD windows but only 28 of 79 HC windows, showing the majority-class bias of linear probing. Right: macro-F1 for all four models. SVM and CNN1D are the strongest classifiers; MOMENT linear probing does not improve over them.
 
 ### Baseline classifiers
 
@@ -222,13 +236,19 @@ Both models see the same underlying signal — tremor-band power and frequency p
 
 ### Why MOMENT linear probing underperforms
 
-MOMENT's encoder was pre-trained on general time series data across many domains. When only the classification head is trained (linear probing), the encoder produces fixed representations that are not adapted to wrist IMU tremor data. The head has only 5 epochs to learn a linear mapping from these fixed representations to PD/HC labels — an underconstrained problem given the class imbalance and inter-subject variability.
+MOMENT's encoder was pre-trained on general time series data across many domains. Linear probing means the encoder is completely frozen — only a small classification layer on top is trained. Think of it like using a general-purpose brain without letting it adapt to PD data specifically. The classification layer has only 5 training epochs to map fixed, unadapted representations to PD vs. HC labels, which is not enough given the class imbalance and the fact that these representations were never tuned for wrist tremor.
 
-This result is consistent with published findings in time series transfer learning: linear probing on frozen Transformer encoders frequently underperforms classical models unless the pre-training domain closely matches the target domain (Ye et al., 2024). Full fine-tuning (training the encoder end-to-end) is expected to improve MOMENT's performance.
+Full fine-tuning (training the entire encoder end-to-end) is expected to improve MOMENT's performance because the model can actually adjust its internal representations to recognize PD-specific wrist motion patterns.
+
+This result is consistent with published findings in time series transfer learning: linear probing on frozen Transformer encoders frequently underperforms classical models unless the pre-training domain closely matches the target domain (Ye et al., 2024).
 
 ### Why AUROC is higher for Random Forest than SVM
 
-SVM optimizes a decision boundary and produces hard class predictions at a fixed threshold. Random Forest produces probability estimates that are better calibrated across the full threshold range, which is what AUROC measures. If the goal is a fixed-threshold classifier for the Pi (binary decision), SVM is preferable. If the goal is risk-ranking patients, Random Forest is preferable.
+Random Forest outputs a probability for each prediction — "this subject has a 73% chance of PD." That probability is well-calibrated across the full range, which is what AUROC rewards. SVM does not output probabilities — it just draws a boundary and makes a hard call.
+
+However, Random Forest's probabilities are influenced by the training distribution. Since 78% of subjects are PD, even a relatively healthy-looking subject might get a high PD probability just because PD is so dominant in training. When you force a hard 50% threshold, those miscalibrated probabilities cause more HC subjects to get misclassified as PD, which hurts macro-F1.
+
+SVM directly optimizes the yes/no boundary with class weighting, which handles the imbalance more robustly for the final binary call. For real-time Pi deployment where the output must be "PD" or "not PD," SVM is the right choice. If the goal were a clinical risk score that a doctor interprets, Random Forest's probability output would be more useful.
 
 ### Comparison to D1
 
