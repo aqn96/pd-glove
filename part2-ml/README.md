@@ -46,24 +46,34 @@ part2-ml/
 └── professor-meeting.md
 ```
 
-## Deliverable 2 — PADS + MOMENT (complete)
+## Deliverable 2 — PADS Baselines + MOMENT Transformer (complete)
 
-Three notebooks, all run on Kaggle (GPU T4):
+### How this fits together
 
-1. **`D2_PADS_Pipeline.py`** — loads PADS PhysioNet dataset (469 subjects, wrist acc+gyro 100 Hz), excludes DD group, extracts 42 features (7 × 6 channels), subject-level splits. Saves `pads_all.parquet`, `pads_raw_windows.npz`, train/val/test splits.
-2. **`D2_PADS_Baseline_Classifiers.py`** — SVM, Random Forest, 1D-CNN on PADS for PD vs HC classification (5-fold subject-grouped CV). Saves `pads_baseline_metrics.json`.
-3. **`D2_PADS_Transformer_MOMENT.py`** — fine-tunes MOMENT-1-large (CMU time series foundation model) on PADS raw windows. Linear probing (freeze_encoder=True). Resample 1024→512 samples via F.interpolate.
+Work proceeded in three stages:
 
-### D2 Results (PADS, 276 PD / 79 HC, 10,318 windows)
+1. **D1** — SVM/RF/1D-CNN on ALAMEDA (tremor) and Daphnet (FOG). Tremor was near-chance; FOG worked well but is irrelevant to the glove hardware (ankle/leg sensors only).
+2. **D1 extended (PADS baselines)** — Reran the same SVM/RF/CNN pipeline on PADS, a better dataset with raw wrist IMU signals and PD vs HC labels matching the glove's sensor axes. This established the baseline the Transformer needs to beat.
+3. **D2 (Transformer)** — Fine-tuned MOMENT-1-large on PADS raw windows for PD vs HC classification.
+
+The original D2 plan (glove data augmentation + fine-tuning on glove recordings) is blocked pending IRB approval for human subjects data collection. PADS pre-training is the foundation that glove fine-tuning will build on post-IRB.
+
+### Notebooks (all run on Kaggle GPU T4)
+
+1. **`D2_PADS_Pipeline.py`** — loads PADS (469 subjects, wrist acc+gyro 100 Hz), excludes DD group, extracts 42 features (7 × 6 channels), subject-level splits. Saves `pads_all.parquet`, `pads_raw_windows.npz`, train/val/test splits.
+2. **`D2_PADS_Baseline_Classifiers.py`** — SVM, RF, 1D-CNN on PADS (5-fold subject-grouped CV).
+3. **`D2_PADS_Transformer_MOMENT.py`** — fine-tunes MOMENT-1-large on PADS raw windows (974→512 samples via F.interpolate). V3 used linear probing (freeze_encoder=True); V4 full fine-tuning in progress.
+
+### Results (PADS, 276 PD / 79 HC, 7,810 windows)
 
 | Model | Macro-F1 | AUROC |
 |---|---|---|
-| SVM | **0.564 ± 0.023** | 0.693 ± 0.018 |
-| Random Forest | 0.498 ± 0.011 | **0.726 ± 0.014** |
-| 1D-CNN | 0.562 ± 0.039 | 0.700 ± 0.031 |
+| SVM | **0.564 ± 0.023** | 0.693 ± 0.021 |
+| Random Forest | 0.498 ± 0.011 | **0.726 ± 0.020** |
+| 1D-CNN | 0.565 ± 0.022 | 0.702 ± 0.022 |
 | MOMENT (linear probe) | 0.502 ± 0.012 | 0.622 ± 0.012 |
 
-SVM is the strongest classifier for fixed-threshold deployment (Pi). Random Forest has the best AUROC for risk ranking. MOMENT linear probing does not improve over SVM — frozen encoder representations do not adapt to PD wrist kinematics without full fine-tuning.
+SVM makes the best hard yes/no calls (best for Pi deployment, no GPU needed). Random Forest ranks patients better by risk (best AUROC) but makes more HC misclassifications on the final binary decision. MOMENT linear probing did not beat SVM — frozen encoder representations don't adapt to PD wrist data without full fine-tuning.
 
 Full write-up at `docs/D2_report.md`.
 
