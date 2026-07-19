@@ -8,6 +8,14 @@ generated results all live under `part2-ml/`.
 > (GPU T4), report written at `docs/D2_report.md`. Key results: SVM macro-F1 0.564 / AUROC 0.693
 > on PADS (best baseline); MOMENT linear probe F1 0.502 (frozen encoder insufficient, expected).
 > **D3 starts next** — on-device latency + fairness audit.
+>
+> **Why PADS (D2 pivot):** D1 showed ALAMEDA tremor detection was near-chance cross-subject
+> (best SVM F1=0.510, AUROC=0.572) because pre-computed tabular features describe a patient's
+> average motion, not moment-to-moment tremor state. Daphnet FOG worked well (1D-CNN F1=0.785,
+> AUROC=0.951) but FOG is a different symptom from the glove's primary target. D2 pivoted to
+> PADS — raw wrist IMU signals (same sensor axes as the glove) with PD vs. HC labels — as the
+> pre-training foundation before glove fine-tuning post-IRB. The original D2 plan (glove
+> augmentation + fine-tuning) is blocked pending IRB approval for human subjects data collection.
 
 ## Layout
 
