@@ -106,9 +106,11 @@ EPOCHS   = 5
 BATCH    = 32
 LR_MAX   = 1e-4
 
-# /kaggle/working is wiped between notebook versions, so a prior run's
-# checkpoint only survives if its Output was attached as an input dataset.
-# Search /kaggle/input for it and copy into place before checking.
+# /kaggle/working resets on every new notebook version, so a checkpoint from
+# a prior (e.g. timed-out) run only survives if uploaded as its own Kaggle
+# dataset and attached as input (self-referencing this notebook's own output
+# was tried first but Kaggle doesn't mount it — a real dataset does).
+# rglob over /kaggle/input finds it regardless of the dataset's mount path.
 if not scores_path.exists():
     found = list(pathlib.Path("/kaggle/input").rglob("moment_fold_scores.csv"))
     if found:

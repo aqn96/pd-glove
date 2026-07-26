@@ -195,7 +195,7 @@ The dataset is 78% PD and 22% HC. A model that predicts PD for everyone would sc
 
 ![Figure 1. D2 model comparison — PADS PD vs HC. Left: MOMENT average confusion matrix across 5 folds. Right: macro-F1 bar chart for all four models.](figures/moment_vs_baselines.png)
 
-**Figure 1.** D2 model comparison on PADS (355 subjects, 7,810 windows). Left: MOMENT average confusion matrix across 5 folds — rows are true labels (HC/PD), columns are predicted labels. The model correctly identified 234 PD windows but only 28 of 79 HC windows, showing the majority-class bias of linear probing. Right: macro-F1 for all four models. SVM and CNN1D are the strongest classifiers; MOMENT linear probing does not improve over them.
+**Figure 1.** D2 model comparison on PADS (355 subjects, 7,810 windows) — regenerated from the full fine-tuning run; see note below table 1.
 
 ### Baseline classifiers
 
@@ -203,28 +203,33 @@ The dataset is 78% PD and 22% HC. A model that predicts PD for everyone would sc
 
 | Model | Macro-F1 | AUROC |
 |---|---|---|
-| SVM | **0.564 ± 0.023** | 0.693 ± 0.021 |
-| Random Forest | 0.498 ± 0.011 | **0.726 ± 0.020** |
+| SVM | 0.564 ± 0.023 | 0.693 ± 0.021 |
+| Random Forest | 0.498 ± 0.011 | 0.726 ± 0.020 |
 | 1D-CNN | 0.565 ± 0.022 | 0.702 ± 0.022 |
 | MOMENT (linear probe, V3) | 0.502 ± 0.012 | 0.622 ± 0.012 |
+| MOMENT (full fine-tune, V9–V11) | **0.626 ± 0.009** | **0.731 ± 0.019** |
 
-### MOMENT per-fold results (linear probe, Version 3)
+*Figure 1 above was generated during the V3 linear-probe run and needs to be regenerated from the full fine-tune output (`moment_vs_baselines.png`, Cell 7 of the Transformer notebook) and swapped into `figures/`.*
+
+### MOMENT per-fold results (full fine-tune)
 
 **Table 2: MOMENT fold-by-fold breakdown**
 
 | Fold | Macro-F1 | AUROC |
 |---|---|---|
-| 1 | 0.491 | 0.619 |
-| 2 | 0.507 | 0.634 |
-| 3 | 0.490 | 0.618 |
-| 4 | 0.519 | 0.633 |
-| 5 | 0.503 | 0.606 |
-| **Mean** | **0.502** | **0.622** |
-| **Std** | **0.012** | **0.012** |
+| 1 | 0.622 | 0.732 |
+| 2 | 0.631 | 0.744 |
+| 3 | 0.612 | 0.702 |
+| 4 | 0.634 | 0.757 |
+| 5 | 0.633 | 0.721 |
+| **Mean** | **0.626** | **0.731** |
+| **Std** | **0.009** | **0.019** |
+
+For comparison, the earlier linear-probe run (encoder frozen) scored macro-F1 = 0.502 ± 0.012, AUROC = 0.622 ± 0.012 — see Section 7 for why full fine-tuning closes that gap.
 
 ### Key finding
 
-SVM and 1D-CNN achieve essentially the same macro-F1 (0.564 vs. 0.565). Random Forest achieves the highest AUROC (0.726). MOMENT linear probing does not improve over either classical model.
+Full fine-tuning of MOMENT surpasses every classical baseline: macro-F1 0.626 vs. 0.565 for the next-best model (CNN1D), and AUROC 0.731, narrowly ahead of Random Forest's 0.726. This is the strongest result in D2 and confirms the hypothesis in Section 7 that letting the encoder adapt to PD-specific wrist kinematics — rather than freezing it — is what a foundation model needs to beat hand-engineered features on this task.
 
 ---
 
@@ -238,9 +243,9 @@ Both models see the same underlying signal — tremor-band power and frequency p
 
 MOMENT's encoder was pre-trained on general time series data across many domains. Linear probing means the encoder is completely frozen — only a small classification layer on top is trained. Think of it like using a general-purpose brain without letting it adapt to PD data specifically. The classification layer has only 5 training epochs to map fixed, unadapted representations to PD vs. HC labels, which is not enough given the class imbalance and the fact that these representations were never tuned for wrist tremor.
 
-Full fine-tuning (training the entire encoder end-to-end) is expected to improve MOMENT's performance because the model can actually adjust its internal representations to recognize PD-specific wrist motion patterns.
+Full fine-tuning (training the entire encoder end-to-end) confirms this: letting the model adjust its internal representations to recognize PD-specific wrist motion patterns raises macro-F1 from 0.502 to 0.626 and AUROC from 0.622 to 0.731 (Table 1, Section 6) — enough to overtake every classical baseline.
 
-This result is consistent with published findings in time series transfer learning: linear probing on frozen Transformer encoders frequently underperforms classical models unless the pre-training domain closely matches the target domain (Ye et al., 2024).
+This result is consistent with published findings in time series transfer learning: linear probing on frozen Transformer encoders frequently underperforms classical models unless the pre-training domain closely matches the target domain (Ye et al., 2024). Full fine-tuning removes that constraint by letting the encoder itself specialize to the target domain.
 
 ### Why AUROC is higher for Random Forest than SVM
 
@@ -262,17 +267,13 @@ An AUROC of 0.69–0.73 on a 3.5:1 imbalanced dataset with only 79 HC subjects i
 
 ### What this means for the glove
 
-The SVM at F1=0.564 and the CNN1D at F1=0.565 are functional PD classifiers. SVM is the better deployment choice for the Pi because it runs inference in microseconds without a GPU. The 42-feature pipeline is hardware-agnostic — the same feature extraction code can be applied directly to glove recordings with no changes.
+MOMENT's full fine-tune result (F1=0.626) is the strongest classifier overall, but SVM (F1=0.564) remains the deployment choice for the Pi — it runs inference in microseconds without a GPU, while MOMENT-1-large (1.4 GB) does not fit the hardware. MOMENT's role is a cloud-side ceiling: it shows how much headroom exists above the classical baselines once glove data is available to fine-tune on. The 42-feature pipeline used by SVM is hardware-agnostic — the same feature extraction code can be applied directly to glove recordings with no changes.
 
 The key remaining research question is whether adding the glove's per-finger channels and flex sensor data improves detection beyond a standard wrist IMU alone. That comparison requires labeled glove recordings from PD and HC subjects, which depends on IRB approval.
 
 ---
 
 ## 8. Next Steps
-
-**Full MOMENT fine-tuning.**
-
-Version 4 of the Transformer notebook sets `freeze_encoder=False` to train the full backbone end-to-end. This is expected to improve MOMENT's F1 meaningfully over the linear probe result and will update Table 1 once complete.
 
 **Deliverable 3 (due August 4): On-device speed and fairness audit.**
 

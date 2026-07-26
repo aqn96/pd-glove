@@ -69,9 +69,9 @@ Same SVM/RF/CNN pipeline rerun on PADS for PD vs HC classification:
 MOMENT-1-large (Yi et al., 2024 — CMU open-source time series foundation model) fine-tuned on PADS raw windows (974 samples, 6 channels, resampled to 512 for MOMENT's fixed sequence length).
 
 - **V3 (linear probing, freeze_encoder=True):** F1=0.502 ± 0.012, AUROC=0.622 ± 0.012
-- **V4 (full fine-tuning, freeze_encoder=False):** currently running on Kaggle T4 GPU
+- **V9–V11 (full fine-tuning, freeze_encoder=False):** F1=0.626 ± 0.009, AUROC=0.731 ± 0.019 — beats every baseline (SVM, RF, CNN1D)
 
-Linear probing result is below SVM, which is expected — a frozen encoder pre-trained on general time series cannot adapt to PD wrist kinematics without updating its weights. Full fine-tuning results will be added to the report once V4 completes.
+Linear probing result is below SVM, as expected — a frozen encoder pre-trained on general time series cannot adapt to PD wrist kinematics without updating its weights. Full fine-tuning confirms the fix: letting the encoder adapt closes the gap and surpasses the classical baselines. The V9 run timed out mid-fold-5 after a 12-hour Kaggle session limit; folds 1–4 were checkpointed and V11 resumed from a manually uploaded checkpoint dataset (`moment-d2-fold-checkpoint`) to finish fold 5 without redoing the first four.
 
 **Notebooks:** `pd-glove-d2-pads-pipeline`, `pd-glove-d2-pads-baseline-classifiers`, `pd-glove-d2-pads-transformer-moment` (all on Kaggle, source in `part2-ml/notebooks/`)
 
