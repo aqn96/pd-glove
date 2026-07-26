@@ -4,9 +4,12 @@ Model-training, validation, and system-integration work for **Part II** of the
 Sensing-to-Decision framework. This folder is self-contained: code, data, docs, and
 generated results all live under `part2-ml/`.
 
-> **Status (2026-07-19):** Deliverable 2 **complete** — three D2 notebooks verified on Kaggle
-> (GPU T4), report written at `docs/D2_report.md`. Key results: SVM macro-F1 0.564 / AUROC 0.693
-> on PADS (best baseline); MOMENT linear probe F1 0.502 (frozen encoder insufficient, expected).
+> **Status (2026-07-26):** Deliverable 2 **complete** — three D2 notebooks verified on Kaggle
+> (GPU T4), report written at `docs/D2_report.md`. Key result: MOMENT full fine-tuning
+> (encoder + embedder + head all trainable) reaches macro-F1 0.626 / AUROC 0.731, beating
+> every classical baseline (best baseline SVM F1=0.564, best baseline AUROC RF 0.726). The
+> linear-probe version (frozen encoder) underperformed the baselines at F1=0.502, confirming
+> that a frozen foundation-model encoder needs full fine-tuning to adapt to PD wrist data.
 > **D3 starts next** — on-device latency + fairness audit.
 >
 > **Why PADS (D2 pivot):** D1 showed ALAMEDA tremor detection was near-chance cross-subject
@@ -62,18 +65,19 @@ The original D2 plan (glove data augmentation + fine-tuning on glove recordings)
 
 1. **`D2_PADS_Pipeline.py`** — loads PADS (469 subjects, wrist acc+gyro 100 Hz), excludes DD group, extracts 42 features (7 × 6 channels), subject-level splits. Saves `pads_all.parquet`, `pads_raw_windows.npz`, train/val/test splits.
 2. **`D2_PADS_Baseline_Classifiers.py`** — SVM, RF, 1D-CNN on PADS (5-fold subject-grouped CV).
-3. **`D2_PADS_Transformer_MOMENT.py`** — fine-tunes MOMENT-1-large on PADS raw windows (974→512 samples via F.interpolate). V3 used linear probing (freeze_encoder=True); V4 full fine-tuning in progress.
+3. **`D2_PADS_Transformer_MOMENT.py`** — fine-tunes MOMENT-1-large on PADS raw windows (974→512 samples via F.interpolate). V3 used linear probing (freeze_encoder=True); V9–V11 ran full fine-tuning (freeze_encoder=False), resuming across a 12hr Kaggle timeout via a checkpoint dataset.
 
 ### Results (PADS, 276 PD / 79 HC, 7,810 windows)
 
 | Model | Macro-F1 | AUROC |
 |---|---|---|
-| SVM | **0.564 ± 0.023** | 0.693 ± 0.021 |
-| Random Forest | 0.498 ± 0.011 | **0.726 ± 0.020** |
+| SVM | 0.564 ± 0.023 | 0.693 ± 0.021 |
+| Random Forest | 0.498 ± 0.011 | 0.726 ± 0.020 |
 | 1D-CNN | 0.565 ± 0.022 | 0.702 ± 0.022 |
 | MOMENT (linear probe) | 0.502 ± 0.012 | 0.622 ± 0.012 |
+| MOMENT (full fine-tune) | **0.626 ± 0.009** | **0.731 ± 0.019** |
 
-SVM makes the best hard yes/no calls (best for Pi deployment, no GPU needed). Random Forest ranks patients better by risk (best AUROC) but makes more HC misclassifications on the final binary decision. MOMENT linear probing did not beat SVM — frozen encoder representations don't adapt to PD wrist data without full fine-tuning.
+MOMENT full fine-tuning beats every classical baseline, but SVM remains the Pi deployment choice — it's the best hard yes/no classifier that needs no GPU, while MOMENT-1-large (1.4 GB) only runs in the cloud. MOMENT's role here is showing the accuracy ceiling once the encoder is allowed to fully adapt to PD wrist data, rather than a deployable model itself.
 
 Full write-up at `docs/D2_report.md`.
 
@@ -162,6 +166,6 @@ to confirm integrity (ALAMEDA md5 matches Zenodo; 17 Daphnet sessions; PPMI pres
 
 `next-steps.md` has the full week-by-week plan. In short:
 
-- **D2 (complete):** PADS pipeline + SVM/RF/CNN/MOMENT baselines on PD vs HC. Best: SVM F1=0.564. Full fine-tuning of MOMENT (freeze_encoder=False) in progress.
+- **D2 (complete):** PADS pipeline + SVM/RF/CNN/MOMENT baselines on PD vs HC. MOMENT full fine-tuning (freeze_encoder=False) F1=0.626 beats all baselines; SVM (F1=0.564) remains the Pi deployment choice.
 - **D3 (due Aug 4):** On-device latency benchmark (TFLite INT8 on Pi) + fairness audit (handedness, severity subgroups using PPMI).
 - **D4 (due Aug 16):** Final report + clean repo + 15-min talk + live demo.
