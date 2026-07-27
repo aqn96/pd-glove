@@ -84,10 +84,17 @@ Linear probing result is below SVM, as expected — a frozen encoder pre-trained
 **Original scope:** TFLite latency benchmark; MQTT with AES-256-GCM + TLS 1.3; MediaPipe Hand Landmarker compliance module; fairness audit across PPMI demographics.
 
 **Current plan:**
-- TFLite INT8 quantization of SVM or CNN — convert trained model, simulate latency on laptop (Pi not currently accessible)
-- Explore merging additional public datasets (Oday, PD-BioStampRC21) into existing baselines
-- Fairness audit using PPMI demographic splits (age, sex, disease stage, handedness)
+- TFLite INT8 quantization of the CNN1D — SVM is not a neural net and doesn't need quantization; it's already lightweight
+- Latency benchmark simulated on laptop CPU as an ARM proxy (Pi not currently accessible), reported explicitly as simulated, not a live Pi number
+- Fairness audit using PADS' own demographic fields (age, age_at_diagnosis, gender, handedness, height, weight — present directly in `patients/patient_XXX.json`), split across the already-trained models' test folds. PPMI demographics were considered but PPMI has no raw IMU signal, so it can't be linked to the models actually trained in D2 — PADS is the only dataset that can audit *these* models.
 - MQTT and MediaPipe modules deferred if time constrained — will note in D3 report
+
+**What changed and why:**
+
+| Original Plan | What Actually Happened | Reason |
+|---|---|---|
+| Fairness audit on PPMI demographics | Switched to PADS' own demographics | PPMI has no raw IMU signal, so it can't evaluate the D2 models directly; PADS' patient JSON already has age/gender/handedness/height/weight |
+| Merge additional public datasets (Oday, PD-BioStampRC21) to push benchmarks further | Deprioritized | Diminishing returns on accuracy vs. harmonization time cost, given the Aug 4 deadline; the paper's contribution is the deployment pipeline, not chasing a marginally higher F1 |
 
 **What's blocked:**
 - Pi hardware not currently accessible for live latency benchmark — will use software simulation
