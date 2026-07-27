@@ -167,5 +167,6 @@ to confirm integrity (ALAMEDA md5 matches Zenodo; 17 Daphnet sessions; PPMI pres
 `next-steps.md` has the full week-by-week plan. In short:
 
 - **D2 (complete):** PADS pipeline + SVM/RF/CNN/MOMENT baselines on PD vs HC. MOMENT full fine-tuning (freeze_encoder=False) F1=0.626 beats all baselines; SVM (F1=0.564) remains the Pi deployment choice.
-- **D3 (due Aug 4):** On-device latency benchmark (TFLite INT8 on Pi) + fairness audit (handedness, severity subgroups using PPMI).
+- **D3 (due Aug 4):** TFLite INT8 quantization of the CNN + simulated on-device latency benchmark (Pi 5 not currently accessible — benchmarked on laptop as a proxy, noted explicitly) + fairness audit (handedness, severity subgroups using PPMI).
 - **D4 (due Aug 16):** Final report + clean repo + 15-min talk + live demo.
+- **Phase 3 (post-IRB, not part of D1–D4):** once glove recordings exist (target 10–20 PD patients + healthy controls), continue-fine-tune MOMENT and CNN1D from their PADS checkpoints on glove data; refit SVM/RF on combined features. Core question: does IMU + flex sensor beat IMU-only, evaluated within the glove cohort itself. Details in `docs/D2_report.md` §8.

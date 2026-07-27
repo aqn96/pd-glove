@@ -280,9 +280,15 @@ The key remaining research question is whether adding the glove's per-finger cha
 - Compress the SVM or CNN using TFLite INT8 quantization and measure inference latency on the Pi.
 - Audit model performance across patient subgroups (left- vs. right-handed, mild vs. severe PD) using PPMI demographic data from D1. Prior work (Muhammad et al., 2026) found 38–70% accuracy drops for left-handed patients in cross-subject models, so handedness is a primary audit axis.
 
-**Glove fine-tuning (post-IRB).**
+**Glove fine-tuning (post-IRB) — Phase 3.**
 
-Once IRB approval is received, PADS-trained models will be retrained with glove recordings added to the training set. The novel contribution is the ablation: IMU-only vs. IMU + flex sensor channels. Flex sensor data captures finger stiffness (rigidity), which is distinct from tremor and not available in any public dataset.
+Once IRB approval is received and glove recordings exist (target: 10–20 PD patients + a small healthy-control group), the PADS-trained models are the starting point, not the finish line:
+
+- **MOMENT:** continue fine-tuning from the PADS full-fine-tune checkpoint (not from the generic pretrain) on glove data, with a much lower learning rate and fewer epochs than the PADS run to avoid overfitting on the small cohort. Works directly for a wrist-only ablation arm (channel count matches PADS' 6); the IMU+flex arm needs an expanded input embedding since it has more channels than PADS.
+- **CNN1D:** same continue-fine-tuning approach — it's a real neural net, same channel-count caveat as MOMENT.
+- **SVM/RF:** not gradient-fine-tuned; instead refit on a combined PADS + glove feature table (or glove-only for the ablation). These stay the practical estimate/deployment models, not the accuracy ceiling.
+
+The core research question is the ablation: IMU-only vs. IMU + flex sensor channels, evaluated within the glove cohort itself (not against PADS, which is a different population and different hardware). Flex sensor data captures finger stiffness (rigidity), which is distinct from tremor and not available in any public dataset. If patient counts allow only PD subjects (no healthy controls), reframe as MDS-UPDRS severity regression instead of PD-vs-HC classification.
 
 ---
 
