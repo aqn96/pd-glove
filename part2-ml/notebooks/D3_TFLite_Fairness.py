@@ -173,26 +173,91 @@ def subgroup_report(df, col):
     print(f"\n=== Fairness by {col} ===")
     rows = []
     for val, g in df.groupby(col):
+        pd_rate = g["y_true"].mean()  # class balance within this subgroup —
+                                       # a skewed rate here can explain an
+                                       # F1/AUROC gap without the model
+                                       # actually treating the group worse
         if len(g) < 10 or g["y_true"].nunique() < 2:
             f1 = f1_score(g["y_true"], g["y_pred"], average="macro")
-            print(f"  {val}: n={len(g)} — too few / single-class, AUROC skipped (F1={f1:.3f})")
-            rows.append({"group": str(val), "n": len(g), "f1": round(f1, 3), "auroc": None})
+            print(f"  {val}: n={len(g)}  PD rate={pd_rate:.2f} — too few / single-class, "
+                  f"AUROC skipped (F1={f1:.3f})")
+            rows.append({"group": str(val), "n": len(g), "pd_rate": round(pd_rate, 3),
+                        "f1": round(f1, 3), "auroc": None})
             continue
         f1    = f1_score(g["y_true"], g["y_pred"], average="macro")
         auroc = roc_auc_score(g["y_true"], g["y_prob"])
-        print(f"  {val}: n={len(g)}  F1={f1:.3f}  AUROC={auroc:.3f}")
-        rows.append({"group": str(val), "n": len(g), "f1": round(f1, 3), "auroc": round(auroc, 3)})
+        print(f"  {val}: n={len(g)}  PD rate={pd_rate:.2f}  F1={f1:.3f}  AUROC={auroc:.3f}")
+        rows.append({"group": str(val), "n": len(g), "pd_rate": round(pd_rate, 3),
+                    "f1": round(f1, 3), "auroc": round(auroc, 3)})
     return pd.DataFrame(rows)
 
 fairness_results = {col: subgroup_report(test_df, col)
                     for col in ["gender", "handedness", "age_group"]}
 
-# %% Cell 6 — Save results
+# %% Cell 6 — Robust fairness audit via 5-fold pooled out-of-fold predictions
+#
+# The audit above uses only the one held-out test split (54 subjects) --
+# small enough that a subgroup like left-handed can end up single-class by
+# chance (as it did). Pooling out-of-fold predictions across a 5-fold
+# StratifiedGroupKFold gives fairness statistics over the *entire* dataset
+# (every subject evaluated exactly once) instead of one small slice.
+#
+# Uses float32 predictions per fold rather than re-quantizing 5 separate
+# INT8 models -- quantization cost was already shown to be small (-0.010
+# F1 above), so this is a reasonable proxy for what the deployed model
+# would do across the full population.
+from sklearn.model_selection import StratifiedGroupKFold
+
+gkf = StratifiedGroupKFold(n_splits=5)
+oof_subj, oof_true, oof_pred, oof_prob = [], [], [], []
+
+for fold, (tr, te) in enumerate(gkf.split(X_raw, y_raw, subj_raw)):
+    fold_counts = np.bincount(y_raw[tr])
+    fold_class_weight = {0: len(y_raw[tr]) / (2 * fold_counts[0]),
+                         1: len(y_raw[tr]) / (2 * fold_counts[1])}
+
+    fold_model = build_cnn1d(seq_len=X_raw.shape[1])
+    fold_model.compile(optimizer="adam",
+                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                       metrics=["accuracy"])
+    fold_model.fit(X_raw[tr], y_raw[tr], epochs=40, batch_size=64,
+                   class_weight=fold_class_weight, verbose=0)
+
+    fold_logits = fold_model.predict(X_raw[te], verbose=0)
+    fold_probs  = tf.nn.softmax(fold_logits, axis=1).numpy()[:, 1]
+    fold_preds  = fold_logits.argmax(axis=1)
+
+    fold_f1 = f1_score(y_raw[te], fold_preds, average="macro")
+    print(f"Fold {fold + 1}/5 — F1={fold_f1:.3f}")
+
+    oof_subj.extend(subj_raw[te])
+    oof_true.extend(y_raw[te])
+    oof_pred.extend(fold_preds)
+    oof_prob.extend(fold_probs)
+
+pooled_df = pd.DataFrame({
+    "subject_id": oof_subj,
+    "y_true":     oof_true,
+    "y_pred":     oof_pred,
+    "y_prob":     oof_prob,
+}).merge(demo_df, on="subject_id", how="left")
+
+pooled_df["age_group"] = pd.cut(pooled_df["age"], bins=[0, 55, 70, 200],
+                                labels=["<55", "55-70", "70+"])
+
+print(f"\nPooled out-of-fold predictions: {len(pooled_df)} windows, "
+      f"{pooled_df['subject_id'].nunique()} subjects")
+
+pooled_fairness_results = {col: subgroup_report(pooled_df, col)
+                           for col in ["gender", "handedness", "age_group"]}
+
+# %% Cell 7 — Save results
 summary = {
     "float32": {"f1": round(float_f1, 3), "auroc": round(float_auroc, 3)},
     "int8":    {"f1": round(int8_f1, 3), "auroc": round(int8_auroc, 3)},
     "tflite_size_kb": round(TFLITE_PATH.stat().st_size / 1024, 1),
-    "fairness": {k: v.to_dict("records") for k, v in fairness_results.items()},
+    "fairness_single_split":     {k: v.to_dict("records") for k, v in fairness_results.items()},
+    "fairness_pooled_5fold_oof": {k: v.to_dict("records") for k, v in pooled_fairness_results.items()},
 }
 summary_path = OUT_DIR / "d3_tflite_fairness_summary.json"
 with open(summary_path, "w") as f:

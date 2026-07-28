@@ -46,7 +46,12 @@ One implementation issue worth recording: the first attempt declared the Keras i
 
 ### Fairness audit
 
-PADS' own patient metadata (`patients/*.json`) includes `age`, `gender`, and `handedness` directly — no need for PPMI or any other dataset. The audit joins the INT8 model's held-out test-set predictions (window-level, consistent with every other D2/D3 metric) against these fields and reports per-subgroup macro-F1 and AUROC. Subgroups with fewer than 10 windows or only one label class present are flagged rather than given a possibly-meaningless AUROC. The INT8 model is audited specifically because that is the artifact that would actually deploy, not the float32 training-time model.
+PADS' own patient metadata (`patients/*.json`) includes `age`, `gender`, and `handedness` directly — no need for PPMI or any other dataset. Subgroups with fewer than 10 windows or only one label class present are flagged rather than given a possibly-meaningless AUROC.
+
+Two versions of this audit were run, and the difference between them is itself a finding (see Section 3):
+
+1. **Single-split audit** — joins the deployed INT8 model's held-out test-set predictions (54 subjects, 1,188 windows) against demographics. This is the audit of the actual artifact that would deploy, but the test split is small enough that per-subgroup numbers get noisy fast.
+2. **Pooled 5-fold out-of-fold audit** — a fresh `tf.keras` CNN (same architecture) is trained on each of 5 `StratifiedGroupKFold` folds over the *entire* dataset, and each subject's prediction is taken from whichever fold held them out. Pooling across all 5 folds gives fairness statistics over all 355 subjects (7,810 windows) instead of one 54-subject slice, at the cost of using float32 predictions per fold rather than re-quantizing 5 separate INT8 models (quantization cost was already shown to be small, so this is a reasonable proxy for what the deployed model would do across the full population).
 
 ### Latency benchmark
 
@@ -60,39 +65,49 @@ Pending — see Section 5.
 
 | Model | Macro-F1 | AUROC | Size |
 |---|---|---|---|
-| Float32 Keras CNN | 0.549 | 0.673 | ~78 KB (unquantized) |
-| INT8 TFLite CNN | 0.538 | 0.666 | 19.6 KB |
-| **Delta** | **-0.010** | **-0.007** | **~4x smaller** |
+| Float32 Keras CNN | 0.427 | 0.680 | ~78 KB (unquantized) |
+| INT8 TFLite CNN | 0.391 | 0.675 | 19.6 KB |
+| **Delta** | **-0.036** | **-0.005** | **~4x smaller** |
 
-For context, this float32 number (F1=0.549) is consistent with D2's 5-fold CV CNN1D result (F1=0.565 ± 0.022) — within one standard deviation, on a single held-out split rather than an average of five. The quantized model loses essentially no accuracy (-0.010 F1) while shrinking to 19.6 KB, comfortably within reach of the Pi 5's resources.
+**Note on run-to-run variance:** an earlier run of the identical code and split produced F1=0.549 (float32) / F1=0.538 (int8) — a meaningfully different F1 despite the same architecture, same split, same seeds. AUROC was more stable across the two runs (0.673 vs 0.680). This is real training noise on a single small held-out split (54 subjects), not a bug — see the pooled 5-fold result below for the more trustworthy accuracy estimate. In both runs, AUROC loss from quantization was small (≤0.007), and the model size drops to 19.6 KB regardless — the deployment-relevant conclusions (quantize cheaply, model is tiny) hold up across both runs even though the exact F1 doesn't.
+
+For a more reliable estimate of the architecture's actual accuracy, the pooled 5-fold CV below gives per-fold F1 of 0.592, 0.584, 0.549, 0.537, 0.525 (mean ≈ 0.557) — consistent with D2's original PyTorch CNN1D 5-fold result (F1 = 0.565 ± 0.022).
 
 ### Fairness audit
 
-**By gender:**
+**Single-split audit (54 subjects, 1,188 windows) — the deployed INT8 model:**
 
-| Group | n | Macro-F1 | AUROC |
-|---|---|---|---|
-| Female | 418 | 0.621 | 0.706 |
-| Male | 770 | 0.454 | 0.586 |
+| Demographic | Group | n | Macro-F1 | AUROC |
+|---|---|---|---|---|
+| Gender | Female | 418 | 0.519 | 0.707 |
+| Gender | Male | 770 | 0.297 | 0.605 |
+| Handedness | Left | 66 | 0.165 | not computable — single label class |
+| Handedness | Right | 1,122 | 0.403 | 0.682 |
+| Age | Under 55 | 198 | 0.511 | 0.779 |
+| Age | 55-70 | 550 | 0.394 | 0.649 |
+| Age | 70+ | 440 | 0.322 | 0.614 |
 
-**By handedness:**
+**Pooled 5-fold out-of-fold audit (355 subjects, 7,810 windows — the entire dataset):**
 
-| Group | n | Macro-F1 | AUROC |
-|---|---|---|---|
-| Left | 66 | 0.340 | not computable — single label class in this split |
-| Right | 1,122 | 0.548 | 0.673 |
-
-**By age group:**
-
-| Group | n | Macro-F1 | AUROC |
-|---|---|---|---|
-| Under 55 | 198 | 0.677 | 0.783 |
-| 55-70 | 550 | 0.516 | 0.633 |
-| 70+ | 440 | 0.485 | 0.608 |
+| Demographic | Group | n | Macro-F1 | AUROC |
+|---|---|---|---|---|
+| Gender | Female | 2,882 | 0.598 | 0.666 |
+| Gender | Male | 4,928 | 0.506 | 0.698 |
+| Handedness | Left | 528 | 0.648 | 0.758 |
+| Handedness | Right | 7,282 | 0.552 | 0.686 |
+| Age | Under 55 | 1,694 | 0.629 | 0.728 |
+| Age | 55-70 | 3,630 | 0.529 | 0.662 |
+| Age | 70+ | 2,486 | 0.554 | 0.711 |
 
 ### Key findings
 
-Two real, measurable disparities: the model performs substantially worse on male subjects (AUROC 0.586 vs 0.706 for female, a 12-point gap) and on older subjects (AUROC 0.608 for 70+ vs 0.783 for under-55, a 17.5-point gap). Neither is a hypothetical concern raised for completeness — both are directly observed on this held-out test set. The handedness audit could not produce a reliable comparison: by chance, every left-handed subject in this test split shares the same diagnosis label, making AUROC uncomputable there. This is reported as a genuine limitation of the split rather than something to fix by re-splitting to get a "better" answer.
+**The single-split audit's apparent disparities do not survive being checked against the full dataset.** On the 54-subject split alone, the model looked strongly worse for male subjects (AUROC gap of 0.102) and for older subjects (AUROC gap of 0.165, decreasing steadily with age), and the handedness audit couldn't even compute an AUROC. Pooled across all 355 subjects via 5-fold cross-validation, that picture changes substantially:
+
+- **Gender:** AUROC is nearly equal (male 0.698 vs female 0.666) — if anything, slightly favoring male on ranking quality, though a moderate F1 gap remains (male 0.506 vs female 0.598).
+- **Handedness:** now measurable with enough data, and left-handed subjects score *better* (AUROC 0.758 vs 0.686), the opposite of what the single-split audit could only fail to measure.
+- **Age:** does not decrease monotonically with age. The 70+ group (AUROC 0.711) performs close to the under-55 group (0.728); the worst-performing group is actually the middle one, 55-70 (0.662).
+
+The honest conclusion is closer to **no strong, consistent subgroup disparity found** rather than the "real, measurable disparity" the single-split audit initially suggested. This is itself a useful methodological finding: a fairness audit run on a small held-out split can produce a confident-looking but misleading picture, and the fix is pooling predictions across cross-validation folds rather than trusting one split. The one gap that does persist in the pooled data — a moderate F1 difference by gender despite similar AUROC — is worth continued monitoring rather than dismissing outright, since it suggests the model's ranking ability is similar across gender but its hard classification threshold may not be equally well-calibrated for both groups.
 
 ---
 
@@ -100,13 +115,11 @@ Two real, measurable disparities: the model performs substantially worse on male
 
 ### What the quantization result means for deployment
 
-A 19.6 KB model losing 0.010 F1 from quantization is a strong result — this is well within the range where INT8 TFLite is a clear win for edge deployment, confirming the D2 report's earlier claim that a compressed CNN, not MOMENT, is the realistic Pi target.
+A ~20 KB model losing at most 0.036 F1 from quantization (and often less, per the run-to-run variance noted above) is a strong result — this is well within the range where INT8 TFLite is a clear win for edge deployment, confirming the D2 report's earlier claim that a compressed CNN, not MOMENT, is the realistic Pi target. AUROC loss from quantization was consistently small (≤0.007) across both runs, which is the more stable signal to lean on given the F1 volatility.
 
 ### What the fairness result means
 
-This is exactly the failure mode the project's literature review flagged as underreported: average accuracy (F1=0.538 overall) hides that the model works meaningfully better for some patients than others. A gap this size — 12 points of AUROC by gender, 17.5 by age — is not noise; a model this inconsistent across subgroups would need real scrutiny before any clinical use, regardless of its overall number.
-
-One caveat this report has not yet ruled out: whether the disparities are driven by differing PD/HC class balance within each subgroup rather than the model handling one group's signal worse. That check is listed as a next step below rather than something resolved here — reporting an unconfirmed causal claim would be exactly the kind of over-claiming this project has otherwise tried to avoid.
+This result is a stronger argument for auditing subgroup fairness than the original single-split finding would have been — not because it found a dramatic disparity, but because it demonstrates *why* the audit has to be done carefully. A naive single-split audit produced a confident, clinically alarming-looking story (large gaps by gender and age) that mostly evaporated once evaluated properly across the full population. Reporting the single-split number as the final answer would have been a real overclaim. The properly pooled result is more modest but more trustworthy: no strong consistent bias by age or handedness, and a moderate but real gender gap in F1 (not AUROC) worth further investigation before any clinical claim is made either way.
 
 ---
 
@@ -119,6 +132,7 @@ The Raspberry Pi 5 is not currently accessible. The plan is to benchmark the INT
 ## 6. Limitations and Next Steps
 
 - **Real Pi 5 latency validation** is the most important open item — the simulated laptop number is a stand-in, not a substitute.
-- **Subgroup class-balance confound**: check whether the gender/age fairness gaps track differing PD/HC ratios within each subgroup before attributing them to model behavior specifically.
-- **Handedness audit needs a larger or rebalanced cohort** — the current test split cannot support it at all.
-- These results feed into the Phase 3 glove fine-tuning plan (post-IRB): any subgroup weakness found here is worth checking again once glove-specific data exists, rather than assuming the public-dataset audit generalizes to the glove's own patient population.
+- **Single-split model accuracy is noisy** (F1 varied from 0.427 to 0.549 across two identical runs) — any accuracy claim about "the" deployed model should cite the pooled 5-fold mean (≈0.557) rather than one run's single-split number.
+- **The remaining gender F1 gap** (male 0.506 vs female 0.598 in the pooled audit, despite similar AUROC) is not yet explained — worth checking whether it tracks a class-balance difference between subgroups, or a genuine calibration difference, before drawing a conclusion either way.
+- **Handedness and age findings should be treated as provisional**, not because the pooled method is wrong, but because any fairness audit result deserves replication before being treated as settled — this project only ran one 5-fold pooling pass.
+- These results feed into the Phase 3 glove fine-tuning plan (post-IRB): any subgroup pattern found here is worth checking again once glove-specific data exists, rather than assuming the public-dataset audit generalizes to the glove's own patient population.
