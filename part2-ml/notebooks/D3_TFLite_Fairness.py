@@ -68,8 +68,8 @@ print(f"Test windows  : {len(y_te_raw)}   Subjects: {len(np.unique(subj_te))}")
 # model — TFLite's converter handles native Keras ops far more reliably
 # than a PyTorch -> ONNX -> TensorFlow path for a model this small.
 
-def build_cnn1d(n_channels=6, n_classes=2):
-    inputs = tf.keras.Input(shape=(None, n_channels))
+def build_cnn1d(seq_len, n_channels=6, n_classes=2):
+    inputs = tf.keras.Input(shape=(seq_len, n_channels))
     x = tf.keras.layers.Conv1D(32, 5, padding="same")(inputs)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.ReLU()(x)
@@ -85,7 +85,7 @@ counts = np.bincount(y_tr_raw)
 class_weight = {0: len(y_tr_raw) / (2 * counts[0]), 1: len(y_tr_raw) / (2 * counts[1])}
 print(f"Class weights: HC={class_weight[0]:.2f}  PD={class_weight[1]:.2f}")
 
-keras_cnn = build_cnn1d()
+keras_cnn = build_cnn1d(seq_len=X_tr_raw.shape[1])
 keras_cnn.compile(optimizer="adam",
                    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                    metrics=["accuracy"])
