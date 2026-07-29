@@ -123,9 +123,22 @@ This result is a stronger argument for auditing subgroup fairness than the origi
 
 ---
 
-## 5. Latency Benchmark — Pending
+## 5. Latency Benchmark
 
-The Raspberry Pi 5 is not currently accessible. The plan is to benchmark the INT8 TFLite model's inference latency locally on an Apple M3 Pro (ARM64) as a directional proxy — the same instruction-set family as the Pi 5's Cortex-A76, but a substantially more powerful chip. Any number produced this way will be reported explicitly as a laptop-measured upper-bound-on-speed estimate, not an equivalent to real Pi 5 performance, since the M3 Pro's core design and clock speed are not comparable to the Pi's. This section will be completed once that benchmark is run.
+The Raspberry Pi 5 is not currently accessible, so this benchmark was run locally on an Apple M3 Pro (ARM64) using `ai-edge-litert` — the same lightweight standalone TFLite interpreter family an actual Pi deployment would use, rather than pulling in full TensorFlow. The M3 Pro shares the Pi 5's ARM64 instruction-set family (unlike an x86 cloud machine), but its cores are far more powerful, so this number is a best-case bound, not an equivalent to real Pi 5 performance.
+
+**Method:** 20 warm-up inferences (to exclude one-time interpreter/delegate setup cost), then 500 timed inferences on a single 974-sample, 6-channel window — the same shape the model consumes in production.
+
+| Metric | Latency (ms) |
+|---|---|
+| Mean | 0.067 |
+| Median | 0.066 |
+| p95 | 0.069 |
+| p99 | 0.076 |
+| Min | 0.066 |
+| Max | 0.078 |
+
+Even accounting for the M3 Pro being a substantially more capable chip than the Pi 5's Cortex-A76, a mean latency of 0.067 ms per window leaves an enormous margin before real-time inference becomes a concern — PADS windows represent 10.24 seconds of sensor data, so even a Pi 5 running this model an order of magnitude slower would still complete inference in a small fraction of the window duration. The tiny model size (19.6 KB, Section 3) is consistent with this: there simply isn't much computation for even a modest ARM core to do. **This is a laptop-measured proxy, not a Pi 5 number** — a real on-device measurement remains the priority next step (Section 6) to confirm this margin holds on the actual target hardware.
 
 ---
 
