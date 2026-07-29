@@ -60,7 +60,7 @@ ALAMEDA ships at a feature granularity that **maps almost directly onto the PD-g
 | `dominant_amp` | `Magnitude_fft_pw_ar_dom_freq` (power at dom freq) |
 | `band_power` (4–6 Hz total power) | `Magnitude_fft_energy`, `PC1_fft_energy` |
 
-This is the schema-alignment work the syllabus calls for in Week 2 ("ALAMEDA feature alignment; feature format aligned to glove DSP output schema"). The mapping above is the starting point — a documented unified-schema notebook lands in D1 (`Dataset_Pipeline.ipynb`).
+This is the schema-alignment work the syllabus calls for in Week 2 ("ALAMEDA feature alignment; feature format aligned to glove DSP output schema"). The mapping above is the starting point — a documented unified-schema notebook lands in D1 (`D1_Dataset_Pipeline.ipynb`).
 
 ## Gitignore policy
 

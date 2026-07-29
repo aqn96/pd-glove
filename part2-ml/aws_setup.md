@@ -20,7 +20,7 @@ s3://pd-glove-data/
 ├── deliverable1/
 │   ├── raw/            # original downloads (PPMI is DUA-restricted — keep private)
 │   │   ├── alameda/  ppmi/  daphnet/  glove/
-│   └── cleaned/        # parquet splits written by Dataset_Pipeline.ipynb
+│   └── cleaned/        # parquet splits written by D1_Dataset_Pipeline.ipynb
 │       ├── alameda_{train,val,test,all}.parquet
 │       ├── daphnet_{train,val,test,all}.parquet
 │       ├── daphnet_raw_windows.npz
@@ -73,7 +73,7 @@ Attach to a dedicated `pd-glove-ml` IAM user (used by Kaggle Secrets and EC2):
 ## 4. Upload cleaned datasets (from the pipeline notebook)
 
 ```python
-# section 6 of Dataset_Pipeline.ipynb
+# section 6 of D1_Dataset_Pipeline.ipynb
 BUCKET = "pd-glove-data"
 upload_dir_to_s3(OUT_DIR, BUCKET, prefix="deliverable1/cleaned")
 ```

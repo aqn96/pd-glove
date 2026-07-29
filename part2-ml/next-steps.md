@@ -56,8 +56,8 @@ These four are exactly the four deliverable contributions — see §4.
 | Piece | Status |
 |---|---|
 | Datasets downloaded, organized, verified | ✅ ALAMEDA, Daphnet (17 sessions), PPMI Part III (5,157 patients), Demographics, Roche |
-| `Dataset_Pipeline.ipynb` — clean, leakage-safe subject splits, unified schema, EDA | ✅ verified on Kaggle |
-| `Unimodal_Classifiers.ipynb` — SVM / RF / 1D-CNN, subject-grouped CV | ✅ verified on Kaggle GPU T4 |
+| `D1_Dataset_Pipeline.ipynb` — clean, leakage-safe subject splits, unified schema, EDA | ✅ verified on Kaggle |
+| `D1_Unimodal_Classifiers.ipynb` — SVM / RF / 1D-CNN, subject-grouped CV | ✅ verified on Kaggle GPU T4 |
 | D1 report | ✅ written — `docs/D1_report.md` (PDF export ready) |
 | AWS S3 upload | ⏳ optional — skip if school account not available |
 
@@ -94,7 +94,7 @@ Each row names the file that should exist in the repo at the end of the week.
 ### D1 — Dataset & baselines (Jun 2 – 16) · 20%
 | Week | Dates | Work | Artifact |
 |---|---|---|---|
-| 3 | Jun 2–8 | Clean + split all datasets, unified schema, EDA, baseline SVM/RF/1D-CNN | `Dataset_Pipeline.ipynb`, `Unimodal_Classifiers.ipynb` ✅ |
+| 3 | Jun 2–8 | Clean + split all datasets, unified schema, EDA, baseline SVM/RF/1D-CNN | `D1_Dataset_Pipeline.ipynb`, `D1_Unimodal_Classifiers.ipynb` ✅ |
 | 4 | Jun 9–16 | Kaggle run, S3 upload, feature-importance, write report | `D1_report.pdf`, S3 datasets, **submit Jun 16** |
 
 ### D2 — Transformer + augmentation + fine-tuning (Jun 17 – Jul 14) · 35%

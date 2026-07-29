@@ -31,7 +31,7 @@
 # is the *clinical anchor / label reference + fairness cohort*, while ALAMEDA/Daphnet/
 # glove are the *feature sources* the baseline classifiers actually train on.
 #
-# Companion notebook: **`Unimodal_Classifiers.ipynb`** (SVM / RF / 1D-CNN baselines).
+# Companion notebook: **`D1_Unimodal_Classifiers.ipynb`** (SVM / RF / 1D-CNN baselines).
 
 # %% [markdown]
 # ## 0. Setup — portable paths (Kaggle *and* local)

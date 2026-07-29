@@ -25,8 +25,8 @@ generated results all live under `part2-ml/`.
 ```
 part2-ml/
 ├── notebooks/
-│   ├── Dataset_Pipeline.ipynb              # D1: load · clean · subject-split · EDA
-│   ├── Unimodal_Classifiers.ipynb          # D1: SVM · RF · 1D-CNN baselines
+│   ├── D1_Dataset_Pipeline.ipynb              # D1: load · clean · subject-split · EDA
+│   ├── D1_Unimodal_Classifiers.ipynb          # D1: SVM · RF · 1D-CNN baselines
 │   ├── D2_PADS_Pipeline.py                 # D2: PADS cleaning + feature extraction
 │   ├── D2_PADS_Baseline_Classifiers.py     # D2: SVM · RF · CNN on PADS
 │   ├── D2_PADS_Transformer_MOMENT.py       # D2: MOMENT fine-tuning on PADS
@@ -87,11 +87,11 @@ Full write-up at `docs/D2_report.md`.
 
 Two notebooks, both reproducible on Kaggle (free GPU) or locally:
 
-1. **`Dataset_Pipeline.ipynb`** — loads ALAMEDA, Daphnet, PPMI Part III + Demographics
+1. **`D1_Dataset_Pipeline.ipynb`** — loads ALAMEDA, Daphnet, PPMI Part III + Demographics
    (+ Roche), and the glove DSP data; cleans; makes **leakage-safe subject-level splits**
    (with an assertion); documents the unified feature schema; runs EDA (figures →
    `results/eda/`); writes cleaned parquet → `results/cleaned/`; optional S3 upload.
-2. **`Unimodal_Classifiers.ipynb`** — **SVM, Random Forest, 1D-CNN** for the
+2. **`D1_Unimodal_Classifiers.ipynb`** — **SVM, Random Forest, 1D-CNN** for the
    tremor/bradykinesia task (ALAMEDA) and the FOG task (Daphnet). **Subject-grouped K-fold
    CV** (mean ± std macro-F1 / AUROC), confusion matrices, RF feature importance →
    `results/figures/`, `results/metrics/`.
@@ -122,12 +122,12 @@ ALAMEDA tremor does **not** generalize across its 11 subjects with pre-extracted
    contents of `part2-ml/data/` (ALAMEDA csv, the Daphnet `dataset/` folder, and the PPMI
    CSVs). Keep it **private** — PPMI is DUA-restricted.
 2. **New Kaggle Notebook** → *Add Input* → attach that dataset. Upload
-   `Dataset_Pipeline.ipynb`. Accelerator = **None** for the pipeline; **GPU T4** when you
+   `D1_Dataset_Pipeline.ipynb`. Accelerator = **None** for the pipeline; **GPU T4** when you
    run the 1D-CNN in the classifiers notebook.
-3. **Run `Dataset_Pipeline.ipynb`.** Paths auto-detect under `/kaggle/input` — no edits
+3. **Run `D1_Dataset_Pipeline.ipynb`.** Paths auto-detect under `/kaggle/input` — no edits
    needed. Cleaned files land in `/kaggle/working/cleaned`. Confirm the leakage assertion
    passes and the EDA figures look right.
-4. **Run `Unimodal_Classifiers.ipynb`** in the same session (it reads
+4. **Run `D1_Unimodal_Classifiers.ipynb`** in the same session (it reads
    `/kaggle/working/cleaned`). Torch is preinstalled, so the 1D-CNN runs here.
 5. **(Optional) S3 upload.** Add AWS keys as Kaggle *Secrets* and uncomment the upload
    cell — see `aws_setup.md`.
@@ -145,8 +145,8 @@ pip install -r requirements.txt
 python scripts/organize_data.py /path/to/pasted_folder    # or --verify
 
 # 2) run the pipeline, then the baselines
-python notebooks/Dataset_Pipeline.py
-python notebooks/Unimodal_Classifiers.py
+python notebooks/D1_Dataset_Pipeline.py
+python notebooks/D1_Unimodal_Classifiers.py
 
 # results in results/{cleaned,eda,figures,metrics}/
 ```

@@ -15,7 +15,7 @@
 # # Deliverable 1 — Baseline Classifiers (SVM · Random Forest · 1D-CNN)
 # **CS 8674 Part II · Intelligent IoT Frameworks for Chronic Disease Management**
 #
-# Reads the cleaned parquet/npz produced by **`Dataset_Pipeline.ipynb`** and benchmarks
+# Reads the cleaned parquet/npz produced by **`D1_Dataset_Pipeline.ipynb`** and benchmarks
 # three baselines on **two tasks**:
 #
 # 1. **Tremor / bradykinesia** — ALAMEDA 92 features → 4 binary tremor labels.

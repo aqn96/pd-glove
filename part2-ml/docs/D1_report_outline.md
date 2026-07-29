@@ -18,7 +18,7 @@ Figures are in `results/figures/` and `results/eda/`.
 - The clinical-anchor asymmetry: PPMI = labels, no waveforms; ALAMEDA/Daphnet/glove =
   features. State it explicitly (graders look for this).
 - Joins: PPMI Part III ⋈ Roche on `PATNO`+`EVENT_ID`; Demographics on `PATNO`.
-- **Leakage-safe splits:** subject-grouped; assertion in `Dataset_Pipeline.ipynb`.
+- **Leakage-safe splits:** subject-grouped; assertion in `D1_Dataset_Pipeline.ipynb`.
   Explain why CV (GroupKFold) is used for ALAMEDA (11 subjects, near-constant per-subject
   labels → single 2-subject test fold is unstable).
 

@@ -52,7 +52,7 @@ Four publicly available PD datasets were downloaded, cleaned, and prepared for m
 
 Two Jupyter notebooks implement the full pipeline. They run in order: the first prepares the data, and the second uses that data to train and evaluate models.
 
-### Notebook 1: `Dataset_Pipeline.ipynb`
+### Notebook 1: `D1_Dataset_Pipeline.ipynb`
 
 This notebook loads the raw data files, cleans them, and saves them in a consistent format for the classifier notebook to use.
 
@@ -66,7 +66,7 @@ This notebook loads the raw data files, cleans them, and saves them in a consist
 
 **Step 5 - Save and run EDA.** All cleaned datasets are written to disk as .parquet files, one for each split (train, validation, test, and full). Three exploratory figures are generated. A built-in check confirms that no patient's data appears in more than one split.
 
-### Notebook 2: `Unimodal_Classifiers.ipynb`
+### Notebook 2: `D1_Unimodal_Classifiers.ipynb`
 
 This notebook reads the cleaned files from Notebook 1 and trains three types of classifiers.
 
