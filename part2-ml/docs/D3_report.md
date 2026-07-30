@@ -127,18 +127,20 @@ This result is a stronger argument for auditing subgroup fairness than the origi
 
 The Raspberry Pi 5 is not currently accessible, so this benchmark was run locally on an Apple M3 Pro (ARM64) using `ai-edge-litert` — the same lightweight standalone TFLite interpreter family an actual Pi deployment would use, rather than pulling in full TensorFlow. The M3 Pro shares the Pi 5's ARM64 instruction-set family (unlike an x86 cloud machine), but its cores are far more powerful, so this number is a best-case bound, not an equivalent to real Pi 5 performance.
 
-**Method:** 20 warm-up inferences (to exclude one-time interpreter/delegate setup cost), then 500 timed inferences on a single 974-sample, 6-channel window — the same shape the model consumes in production.
+**Method:** the first inference call is timed separately as a cold-start measurement (it includes one-time interpreter/delegate setup cost that no later call pays), then 19 further warm-up calls, then 500 timed steady-state inferences on a single 974-sample, 6-channel window — the same shape the model consumes in production. Peak process memory is also recorded, though this reflects the whole Python process's peak resident memory (interpreter, numpy, and library import overhead included), not the model's isolated footprint.
 
-| Metric | Latency (ms) |
+| Metric | Value |
 |---|---|
-| Mean | 0.067 |
-| Median | 0.066 |
-| p95 | 0.069 |
-| p99 | 0.076 |
-| Min | 0.066 |
-| Max | 0.078 |
+| Cold start (first call) | 0.644 ms |
+| Steady-state mean | 0.066 ms |
+| Steady-state median | 0.066 ms |
+| Steady-state p95 | 0.069 ms |
+| Steady-state p99 | 0.072 ms |
+| Steady-state min | 0.066 ms |
+| Steady-state max | 0.084 ms |
+| Peak process memory | 39.4 MB |
 
-Even accounting for the M3 Pro being a substantially more capable chip than the Pi 5's Cortex-A76, a mean latency of 0.067 ms per window leaves an enormous margin before real-time inference becomes a concern — PADS windows represent 10.24 seconds of sensor data, so even a Pi 5 running this model an order of magnitude slower would still complete inference in a small fraction of the window duration. The tiny model size (19.6 KB, Section 3) is consistent with this: there simply isn't much computation for even a modest ARM core to do. **This is a laptop-measured proxy, not a Pi 5 number** — a real on-device measurement remains the priority next step (Section 6) to confirm this margin holds on the actual target hardware.
+Even accounting for the M3 Pro being a substantially more capable chip than the Pi 5's Cortex-A76, a steady-state mean latency of 0.066 ms per window leaves an enormous margin before real-time inference becomes a concern — PADS windows represent 10.24 seconds of sensor data, so even a Pi 5 running this model an order of magnitude slower would still complete inference in a small fraction of the window duration. Cold start (~0.64 ms) is about 10x the steady-state latency, consistent with one-time delegate setup cost rather than a per-window concern — a deployed system running continuous inference only pays this once. The tiny model size (19.6 KB, Section 3) is consistent with both numbers: there simply isn't much computation for even a modest ARM core to do, and the 39.4 MB peak memory is almost entirely Python/library overhead rather than anything the model itself needs. **This is a laptop-measured proxy, not a Pi 5 number** — a real on-device measurement remains the priority next step (Section 6) to confirm this margin holds on the actual target hardware.
 
 ---
 
