@@ -12,3 +12,5 @@ boto3>=1.28           # AWS S3 upload of cleaned datasets
 jupytext>=1.15        # .py <-> .ipynb (notebook source is versioned as .py)
 ucimlrepo>=0.0.7      # optional: in-notebook Daphnet fetch (alt to local files)
 ai-edge-litert>=2.1   # D3: local TFLite inference for the latency benchmark
+cryptography>=42.0    # D3: AES-256-GCM payload encryption
+paho-mqtt>=2.0         # D3: MQTT publisher/subscriber + message expiry test

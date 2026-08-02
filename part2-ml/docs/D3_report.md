@@ -144,10 +144,44 @@ Even accounting for the M3 Pro being a substantially more capable chip than the 
 
 ---
 
-## 6. Limitations and Next Steps
+## 6. MQTT Encryption and Message Expiry
+
+The original D3 plan deferred MQTT and MediaPipe as out of scope. MediaPipe remains deferred — it validates *data collection* compliance for the glove's own future sessions and has no connection to the PADS-trained models this deliverable evaluates (see discussion below). MQTT's security layer, however, directly protects the payload this deliverable's models actually produce, so a scoped version was implemented and tested locally.
+
+### Why encryption matters even for a "processed score," not just raw data
+
+The routine payload (device ID, session timestamp, exercise, MDS-UPDRS score) is not raw sensor data, but it is still a health status tied to a patient identifier — plaintext on the network is readable by anyone positioned to intercept it. Separately, if a future cloud-side model (e.g. MOMENT, which cannot avoid raw input the way a summary score can) ever needs raw sensor windows for inference, that raw data would need the same protection, and more: a bounded lifetime, not just confidentiality in transit.
+
+### What was implemented and tested
+
+**Application-layer encryption** (`scripts/security.py`): AES-256-GCM authenticated encryption/decryption of the JSON payload, independent of whatever transport security sits underneath. Tested and passing:
+- Round-trip: encrypt then decrypt recovers the original payload exactly.
+- Tamper detection: flipping a single ciphertext byte causes decryption to raise (`InvalidTag`) rather than silently return corrupted data — this is GCM's built-in authentication, not custom logic.
+- Wrong-key rejection: decrypting with an incorrect key fails the same way.
+
+**MQTT pub/sub with message expiry** (`scripts/mqtt_publisher.py`, `mqtt_subscriber.py`, local Mosquitto broker, `scripts/mosquitto_local.conf`): the encrypted payload publishes over MQTT v5 with a `MessageExpiryInterval` property set. The subscriber decrypts the payload exactly once, keeps only the derived summary, and lets the plaintext (including any raw sensor window, if present) go out of scope rather than persisting or logging it.
+
+**Message expiry validation** (`scripts/test_message_expiry.py`) — this is the part that needed to be actually tested, not just described, since "the broker will discard it" is a specific, falsifiable claim:
+- A subscriber establishes a persistent MQTT v5 session, then disconnects (simulating being offline).
+- **Case 1**: a message is published with a 3-second expiry while the subscriber is offline; the subscriber reconnects after 6 seconds. Result: **message not delivered** — the broker discarded it before the subscriber returned.
+- **Case 2** (control): the same setup with a 60-second expiry and only a 2-second offline wait. Result: **message delivered**. This confirms the mechanism specifically respects the configured expiry window, rather than case 1 simply reflecting "nothing gets delivered."
+
+Both cases passed as expected, giving a validated, protocol-enforced bound on how long an undelivered payload can persist — not a policy promise.
+
+### What this does not solve, stated plainly
+
+- **The plaintext exists in memory during active processing.** Encryption and message expiry protect data in transit and in the broker's queue; they do nothing for the moment a cloud-side service (or an attacker who has compromised it) is actually holding the decrypted payload. This is the same caveat raised when the "encrypt raw data for cloud MOMENT inference" idea came up in discussion, and it remains unresolved here.
+- **This is a local, unauthenticated dev broker** (`allow_anonymous true`, no TLS). TLS 1.3 with mutual certificate authentication — the paper's actual stated security design — was not implemented; this demo validates the application-layer encryption and message-expiry mechanisms in isolation, not the full transport security stack.
+- **Message expiry bounds *this* payload's lifetime, not copies elsewhere.** A log, cache, or backup made before expiry isn't automatically covered unless it's independently subject to the same discipline.
+
+---
+
+## 7. Limitations and Next Steps
 
 - **Real Pi 5 latency validation** is the most important open item — the simulated laptop number is a stand-in, not a substitute.
 - **Single-split model accuracy is noisy** (F1 varied from 0.427 to 0.549 across two identical runs) — any accuracy claim about "the" deployed model should cite the pooled 5-fold mean (≈0.557) rather than one run's single-split number.
 - **The remaining gender F1 gap** (male 0.506 vs female 0.598 in the pooled audit, despite similar AUROC) is not yet explained — worth checking whether it tracks a class-balance difference between subgroups, or a genuine calibration difference, before drawing a conclusion either way.
 - **Handedness and age findings should be treated as provisional**, not because the pooled method is wrong, but because any fairness audit result deserves replication before being treated as settled — this project only ran one 5-fold pooling pass.
+- **TLS 1.3 + mutual certificate authentication** remains unimplemented — the MQTT work here validates application-layer encryption and message expiry, not the full transport security design.
+- **MediaPipe compliance validation** remains deferred to Phase 3, since it validates the glove's own future data collection sessions rather than anything evaluated in D2/D3.
 - These results feed into the Phase 3 glove fine-tuning plan (post-IRB): any subgroup pattern found here is worth checking again once glove-specific data exists, rather than assuming the public-dataset audit generalizes to the glove's own patient population.
