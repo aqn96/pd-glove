@@ -17,19 +17,42 @@ The project makes a **layered** claim (detail in §3.1). Layer 1 is a multimodal
 detection and severity system across motion, voice, and gait: broad, deployable, and not
 novel by itself. Layer 2 is the contribution:
 
-**Per-finger inertial sensing improves differential diagnosis of Parkinsonian tremor
-versus essential tremor, relative to wrist-worn sensing.**
+**Per-finger inertial sensing captures inter-digit phase relationships that discriminate
+Parkinsonian tremor from essential tremor, providing an EMG-free alternative to the
+established alternating-versus-synchronous sign, in a deployable low-cost device.**
 
-The mechanism is specific rather than general. The clinical sign that distinguishes PD
-rest tremor from essential tremor is pill-rolling, a thumb-index opposition pattern.
-That is a finger-level phenomenon. A wrist-mounted sensor measures aggregate hand
-acceleration and spatially averages away which digits are moving. Five per-finger IMUs
-can, in principle, resolve thumb-index relative motion directly.
+### The mechanism, and where it comes from
 
-**Needs clinical verification:** the pill-rolling and rest-versus-action distinctions are
-well established, but how cleanly they separate in real patients (as opposed to in a
-textbook table) should be confirmed with Prof. Singh or a neurologist before this becomes
-load-bearing.
+The strongest published discriminator between PD rest tremor and ET is **not** frequency
+or amplitude — those overlap heavily, with both conditions sitting roughly in the 4–8 Hz
+band [S1, S3]. It is the **phase relationship between antagonist muscle pairs**:
+
+- **PD rest tremor: alternating pattern** (antagonist muscles contract out of phase)
+- **ET rest tremor: synchronous pattern** (antagonist muscles contract together)
+
+Nisticò et al. [S1] report **no overlap between the two diseases** on this feature: every
+ET patient in their sample showed the synchronous pattern, every PD patient the
+alternating one. It is classically measured with surface EMG [S2], which requires
+electrodes and clinical setup.
+
+The hypothesis this project tests is that **inter-digit phase, measured with per-finger
+IMUs, is a usable proxy for that sign without EMG.** A wrist-mounted sensor measures
+aggregate hand acceleration and spatially averages away the relative timing between
+digits; five per-finger IMUs can resolve it directly. This is a narrower and better
+grounded claim than "pill-rolling looks different," and it is the version that survives
+the objection that IMU tremor classification has already been done (see §1.2).
+
+Secondary discriminators reported in the literature, useful as additional features rather
+than as the core claim: PD rest tremor amplitude is significantly higher than ET's [S1],
+and ET shows higher burst duration and frequency [S2].
+
+**Needs clinical verification.** The alternating/synchronous distinction is well
+documented in the sources above, but two things should be confirmed with Prof. Singh or a
+neurologist before the design depends on them: (a) how cleanly that separation holds in
+unselected real-world patients rather than in a curated study sample, and (b) whether
+inter-digit phase measured at the fingertips is a physiologically sound proxy for
+antagonist-muscle phase measured at the forearm. Point (b) is an assumption this project
+is making, not something the cited sources establish.
 
 ### Why this framing rather than "multimodal PD detection"
 
@@ -64,7 +87,38 @@ The per-finger claim is narrower and considerably harder to dismiss because:
    tremor-versus-no-tremor. PD versus ET means classifying tremor *type*, which is the
    question a neurologist actually faces and where misdiagnosis genuinely happens.
 
-### Why the PD/ET distinction is worth solving
+### 1.2 Prior work on PD versus ET with wearables — this space is occupied
+
+**Read this before claiming novelty.** IMU-based PD/ET discrimination is an active area,
+not virgin territory. Thumb and index sensor placement has already been used. "We put IMUs
+on fingers" is not by itself a contribution.
+
+| Approach | Sensors | Reported performance | Cohort | Source |
+|---|---|---|---|---|
+| Balance and gait characteristics | Body-worn IMU | Best **F1 0.61** (neural net); 0.59 gradient boosting, 0.56 random forest | — | [S4] |
+| Postural maneuver (stretched vs hanging) | **One IMU per hand**, 50 Hz | Sens **83%** / spec **75%** | 12 PD vs 12 ET | [S5] |
+| Temporal fluctuations of tremor signal | Inertial | Preliminary | — | [S6] |
+| Phase displacement, wearable validated against EMG | Wearable + EMG comparison | — | PD and ET | [S2, S7] |
+| Multi-location hand accelerometry | Thumb, index, metacarpal, wrist | Severity assessment, not PD/ET classification | — | [S7] |
+| Gait analysis, early PD vs ET | Wearable | — | — | [S8] |
+
+**What remains open, and is therefore where the contribution has to live:**
+
+1. **Five per-finger channels**, versus the one-to-four sensor sites used in the work
+   above. [S5] used a single IMU per hand; [S7] used four locations but for severity, not
+   differential diagnosis.
+2. **Inter-digit phase as the explicit discriminating feature**, framed as an EMG-free
+   proxy for the alternating/synchronous sign. Prior wearable work on phase displacement
+   exists [S7] but validated against EMG rather than using per-finger resolution.
+3. **Flex sensors** adding finger flexion (rigidity), which none of the above have.
+4. **Edge deployment.** The work above is offline lab analysis. This project runs INT8
+   inference on-device with raw data never leaving the glove.
+
+**Note on the gait result.** Best F1 of 0.61 for PD versus ET from gait [S4] is weak. This
+retroactively supports the decision in §3 to drop camera-based gait: gait is a poor
+discriminator for this specific question, whatever sensor captures it.
+
+### 1.3 Why the PD/ET distinction is worth solving
 
 Different first-line medications with no overlap (levodopa for PD; propranolol or
 primidone for ET), different prognosis (progressive neurodegeneration versus a generally
@@ -73,6 +127,12 @@ cannot be resolved clinically, the current tiebreaker is DaTscan imaging, which 
 radioactive tracer, specialised facilities, and significant cost. A low-cost wearable
 that gives meaningful signal on this question matters most exactly where that imaging is
 unavailable, which sharpens the accessibility argument already in the AIIoT paper.
+
+**Sourcing status:** the medication, prognosis, and DaTscan claims in this paragraph are
+general clinical knowledge stated without a citation read for this project. They are
+uncontroversial but should be given proper references before appearing in a paper, and the
+misdiagnosis rate in particular should be cited with an actual figure rather than
+described as "real." Flagged rather than silently asserted.
 
 **Scope honestly:** the device provides clinical decision support, not diagnosis. This is
 already stated in the paper's Intended Use section and should stay there.
@@ -275,11 +335,11 @@ has ET subjects, so this is the only modality where the discriminator can be pre
 The reason multimodality is *more* justified under Layer 2, not less, is that the three
 modalities plausibly carry different PD-versus-ET information:
 
-| Modality | Expected in PD | Expected in ET |
-|---|---|---|
-| Motion (glove) | Rest tremor, pill-rolling, bradykinesia | Action/postural tremor, no pill-rolling |
-| Gait / posture | Postural instability, shuffling, reduced arm swing | Largely unaffected |
-| Voice | Hypophonia, monotone (hypokinetic dysarthria) | Vocal tremor in some patients |
+| Modality | Expected in PD | Expected in ET | Sourcing |
+|---|---|---|---|
+| Motion (glove) | Rest tremor, **alternating** antagonist phase, higher amplitude | Action/postural tremor, **synchronous** phase, lower amplitude | [S1], [S2] |
+| Gait / posture | Postural instability, shuffling, reduced arm swing | Largely unaffected | Partially supported: [S4] and [S8] attempt gait-based PD/ET discrimination, but [S4] reports only F1 0.61, so the separation is weaker than this row implies |
+| Voice | Hypophonia, monotone (hypokinetic dysarthria) | Vocal tremor in some patients | **Unsourced.** Clinical description only |
 
 If that holds, the *pattern across modalities* discriminates even where any single one is
 ambiguous: PD elevates all three, whereas ET elevates the tremor channel while leaving
@@ -357,6 +417,35 @@ off-medication gives a within-person design where each subject is their own cont
 is better powered than the cross-sectional comparison and needs no healthy controls at
 all. It is also the right first test of whether the instrument can detect within-person
 change, since levodopa response is large and well characterised.
+
+### Task protocol: include the postural maneuver contrast
+
+[S5] found that the **direction of tremor change between two arm postures** discriminates
+PD from ET, independent of any sensor sophistication:
+
+| Posture | PD | ET |
+|---|---|---|
+| Hands completely stretched (CS), arms outstretched | baseline | baseline |
+| Hands hanging down (HD), arms at shoulder height, hands relaxed downward | tremor **increases** (83% of patients) | tremor **decreases** (75% of patients) |
+
+They reported 83% sensitivity and 75% specificity from this contrast alone, using one IMU
+per hand at 50 Hz, on 12 PD versus 12 ET. That is a **task-design** discriminator, not a
+sensor one, which means it costs nothing to adopt and composes with the per-finger
+approach rather than competing with it.
+
+**PADS supports only half of it.** Checked against the 11 PADS task labels
+(`CrossArms`, `DrinkGlas`, `Entrainment`, `HoldWeight`, `LiftHold`, `PointFinger`,
+`Relaxed`, `RelaxedTask`, `StretchHold`, `TouchIndex`, `TouchNose`):
+
+- **Stretched condition: present.** `StretchHold` and `LiftHold` approximate CS.
+- **Hanging condition: absent.** No PADS task places the arms at shoulder height with the
+  hands relaxed downward. `Relaxed` and `RelaxedTask` are seated rest, which is a
+  different posture.
+
+So the CS/HD contrast **cannot be evaluated on PADS** and must be added to the patient
+protocol. Worth doing: it is two extra postures, roughly 20 seconds, and it is an
+independent discriminator that does not depend on the per-finger hypothesis being correct.
+If the per-finger phase claim underperforms, this maneuver still produces a result.
 
 ### Pairing requirements
 
@@ -470,3 +559,49 @@ reason someone would cite it:
 - **Methodological rigour.** Subject-level splits, pooled out-of-fold fairness auditing,
   and honest reporting make the paper trustworthy rather than novel. Good reviewers treat
   this as table stakes. It belongs in the methods section, not the contributions list.
+
+---
+
+## 8. Sources
+
+Every claim in this document that rests on outside literature is tagged with an `[Sn]`
+marker. Claims **without** a marker are either (a) facts about this project's own repo and
+results, verifiable in the reports under `docs/`, or (b) general clinical knowledge stated
+without a citation read for this project, in which case they are explicitly flagged as
+needing sourcing at the point they appear.
+
+| Tag | Source |
+|---|---|
+| **[S1]** | Nisticò et al., *Synchronous pattern distinguishes resting tremor associated with essential tremor from rest tremor of Parkinson's disease.* Parkinsonism & Related Disorders. [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S1353802010002531) — source of the **no-overlap** alternating vs synchronous finding, and of PD rest tremor amplitude being higher than ET's. |
+| **[S2]** | Zhang et al. (2017), *Differential Diagnosis of Parkinson Disease, Essential Tremor, and Enhanced Physiological Tremor with the Tremor Analysis of EMG.* Parkinson's Disease (Wiley). [Wiley](https://onlinelibrary.wiley.com/doi/10.1155/2017/1597907) · [PMC5573102](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5573102/) — EMG as the classical measurement route; burst duration and frequency higher in ET. |
+| **[S3]** | *Distinguishing Essential Tremor From Parkinson's Disease.* Practical Neurology. [link](https://practicalneurology.com/diseases-diagnoses/imaging-testing/distinguishing-essential-tremor-from-parkinsons-disease/30751/) — clinical overview, frequency band overlap. |
+| **[S4]** | *Classification of Parkinson's disease and essential tremor based on balance and gait characteristics from wearable motion sensors via machine learning techniques.* J NeuroEngineering and Rehabilitation (2020). [Springer](https://link.springer.com/article/10.1186/s12984-020-00756-5) · [PMC7488406](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7488406/) — best F1 0.61 for gait-based PD vs ET. |
+| **[S5]** | *Differentiation of Parkinson's disease tremor and essential tremor based on a novel hand posture.* [PMC9136132](https://pmc.ncbi.nlm.nih.gov/articles/PMC9136132/) · [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S2590112522000172) — the CS/HD postural maneuver. One ReSense IMU per hand, 50 Hz, 12 PD vs 12 ET (4 excluded for missing data). Sens 83% / spec 75%. |
+| **[S6]** | *Temporal fluctuations of tremor signals from inertial sensor: a preliminary study in differentiating Parkinson's disease from essential tremor.* [PMC4632333](https://pmc.ncbi.nlm.nih.gov/articles/PMC4632333/) |
+| **[S7]** | *Development and Validation of a New Wearable Mobile Device for the Automated Detection of Resting Tremor in Parkinson's Disease and Essential Tremor.* [PMC7911899](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7911899/) — wearable phase displacement compared against classical EMG; multi-location hand accelerometry (thumb, index, metacarpal, wrist). |
+| **[S8]** | *Wearable sensor-based gait analysis to discriminate early Parkinson's disease from essential tremor.* [PMC10025195](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10025195/) · [PubMed](https://pubmed.ncbi.nlm.nih.gov/36725698/) |
+| **[S9]** | Ravichandran, Sadhu, Convey, Guerrier, Chomal, Mankodiya et al. (2023), *iTex Gloves: Design and In-Home Evaluation of an E-Textile Glove System for Tele-Assessment of Parkinson's Disease.* [PMC10054833](https://pmc.ncbi.nlm.nih.gov/articles/PMC10054833) — the per-finger gap quote; one IMU + three flex sensors per glove; 128 Hz target vs 82–87 Hz achieved; MQTT inter-payload interval 364 ± 23 ms. |
+| **[S10]** | PADS: Varghese et al. (2024), *Machine Learning in the Parkinson's disease smartwatch (PADS) dataset.* npj Parkinsons Dis. 10, 9. [PhysioNet](https://physionet.org/content/parkinsons-disease-smartwatch/1.0.0/) — 276 PD / 79 HC / 114 DD (of which 28 essential tremor), bilateral wrist acc+gyro @ 100 Hz, 11 tasks. |
+| **[S11]** | mPower: Bot et al. (2016), *The mPower study, Parkinson disease mobile data collected using ResearchKit.* Sci Data 3, 160011. [Synapse portal](https://www.synapse.org/Synapse:syn4993293/wiki/247859) — paired voice / walking / tapping modules; self-reported diagnosis. |
+| **[S12]** | MDVR-KCL: Jaeger, Trivedi & Stadtschnitzer (2019). [Zenodo](https://doi.org/10.5281/zenodo.2867216) — 16 PD / 21 HC, raw `.wav`, recorded on a Motorola Moto G4. |
+| **[S13]** | REMAP Open. [data.bris](https://data.bris.ac.uk/data/dataset/21h9f9e30v9cl2fapjggz4q1x7) — skeleton pose only, no video; sister to the access-controlled REMAP dataset. Considered and set aside, see §3. |
+| **[S14]** | UCI Parkinson Disease Spiral Drawings (digitised graphics tablet), 62 PD / 15 HC. [UCI](https://archive.ics.uci.edu/dataset/395/parkinson+disease+spiral+drawings+using+digitized+graphics+tablet) — considered and set aside, see §3. |
+| **[S15]** | *Facial expressions can detect Parkinson's disease: preliminary evidence from videos collected online.* npj Digital Medicine (2021) — **RETRACTED**. [Nature](https://www.nature.com/articles/s41746-021-00502-8) · [preprint](https://arxiv.org/abs/2012.05373) — basis for rejecting the face modality, see §3. |
+
+### Claims in this document that are NOT yet sourced
+
+Listed so they are not mistaken for verified:
+
+1. **Inter-digit phase as a proxy for antagonist-muscle phase.** This is the project's core
+   hypothesis, not an established result. [S1] and [S2] establish the muscle-level sign;
+   nothing cited establishes that fingertip IMUs capture it. This is what the work would
+   demonstrate.
+2. **PD/ET medication, prognosis, and DaTscan claims** (§1.3) — general clinical knowledge,
+   uncontroversial, but needs proper references before publication. The misdiagnosis rate
+   should be cited with a figure.
+3. **The PD-versus-ET expectations per modality** (§3.1 table: gait sparing in ET, vocal
+   tremor in ET versus hypophonia in PD) — clinical description, flagged in place, needs a
+   neurologist's confirmation.
+4. **"50 Hz is sufficient for PD assessment"** — appears in project notes attributed to
+   Shawen et al. via [S9]'s citation list. Not read directly. Verify before relying on it
+   to justify the 89 Hz sampling rate.
