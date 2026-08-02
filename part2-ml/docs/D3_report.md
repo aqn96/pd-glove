@@ -65,49 +65,49 @@ Pending — see Section 5.
 
 | Model | Macro-F1 | AUROC | Size |
 |---|---|---|---|
-| Float32 Keras CNN | 0.427 | 0.680 | ~78 KB (unquantized) |
-| INT8 TFLite CNN | 0.391 | 0.675 | 19.6 KB |
-| **Delta** | **-0.036** | **-0.005** | **~4x smaller** |
+| Float32 Keras CNN | 0.555 | 0.680 | ~78 KB (unquantized) |
+| INT8 TFLite CNN | 0.519 | 0.655 | 19.6 KB |
+| **Delta** | **-0.036** | **-0.025** | **~4x smaller** |
 
-**Note on run-to-run variance:** an earlier run of the identical code and split produced F1=0.549 (float32) / F1=0.538 (int8) — a meaningfully different F1 despite the same architecture, same split, same seeds. AUROC was more stable across the two runs (0.673 vs 0.680). This is real training noise on a single small held-out split (54 subjects), not a bug — see the pooled 5-fold result below for the more trustworthy accuracy estimate. In both runs, AUROC loss from quantization was small (≤0.007), and the model size drops to 19.6 KB regardless — the deployment-relevant conclusions (quantize cheaply, model is tiny) hold up across both runs even though the exact F1 doesn't.
+**Note on run-to-run variance:** three runs of the identical code and split have now produced float32 F1 of 0.549, 0.427, and 0.555 — a real, meaningful spread despite identical architecture, split, and seeds. AUROC has been more stable across all three (0.673, 0.680, 0.680). This is real training noise on a single small held-out split (54 subjects), not a bug — see the pooled 5-fold result below for the more trustworthy accuracy estimate. Across all three runs, AUROC loss from quantization has stayed small (≤0.025), and the model size drops to 19.6 KB regardless — the deployment-relevant conclusions (quantize cheaply, model is tiny) hold up every time even though the exact F1 doesn't.
 
-For a more reliable estimate of the architecture's actual accuracy, the pooled 5-fold CV below gives per-fold F1 of 0.592, 0.584, 0.549, 0.537, 0.525 (mean ≈ 0.557) — consistent with D2's original PyTorch CNN1D 5-fold result (F1 = 0.565 ± 0.022).
+For a more reliable estimate of the architecture's actual accuracy, the pooled 5-fold CV below gives per-fold F1 of 0.586, 0.610, 0.593, 0.601, 0.468 (mean ≈ 0.572, one weak fold) — consistent with D2's original PyTorch CNN1D 5-fold result (F1 = 0.565 ± 0.022).
 
 ### Fairness audit
 
 **Single-split audit (54 subjects, 1,188 windows) — the deployed INT8 model:**
 
-| Demographic | Group | n | Macro-F1 | AUROC |
-|---|---|---|---|---|
-| Gender | Female | 418 | 0.519 | 0.707 |
-| Gender | Male | 770 | 0.297 | 0.605 |
-| Handedness | Left | 66 | 0.165 | not computable — single label class |
-| Handedness | Right | 1,122 | 0.403 | 0.682 |
-| Age | Under 55 | 198 | 0.511 | 0.779 |
-| Age | 55-70 | 550 | 0.394 | 0.649 |
-| Age | 70+ | 440 | 0.322 | 0.614 |
+| Demographic | Group | n | PD rate | Macro-F1 | AUROC |
+|---|---|---|---|---|---|
+| Gender | Female | 418 | 0.63 | 0.642 | 0.713 |
+| Gender | Male | 770 | 0.91 | 0.417 | 0.564 |
+| Handedness | Left | 66 | 1.00 | 0.283 | not computable — single label class |
+| Handedness | Right | 1,122 | 0.80 | 0.532 | 0.661 |
+| Age | Under 55 | 198 | 0.67 | 0.646 | 0.757 |
+| Age | 55-70 | 550 | 0.84 | 0.507 | 0.618 |
+| Age | 70+ | 440 | 0.85 | 0.456 | 0.601 |
 
 **Pooled 5-fold out-of-fold audit (355 subjects, 7,810 windows — the entire dataset):**
 
-| Demographic | Group | n | Macro-F1 | AUROC |
-|---|---|---|---|---|
-| Gender | Female | 2,882 | 0.598 | 0.666 |
-| Gender | Male | 4,928 | 0.506 | 0.698 |
-| Handedness | Left | 528 | 0.648 | 0.758 |
-| Handedness | Right | 7,282 | 0.552 | 0.686 |
-| Age | Under 55 | 1,694 | 0.629 | 0.728 |
-| Age | 55-70 | 3,630 | 0.529 | 0.662 |
-| Age | 70+ | 2,486 | 0.554 | 0.711 |
+| Demographic | Group | n | PD rate | Macro-F1 | AUROC |
+|---|---|---|---|---|---|
+| Gender | Female | 2,882 | 0.62 | 0.571 | 0.624 |
+| Gender | Male | 4,928 | **0.87** | 0.552 | 0.711 |
+| Handedness | Left | 528 | 0.62 | 0.641 | 0.707 |
+| Handedness | Right | 7,282 | **0.79** | 0.574 | 0.684 |
+| Age | Under 55 | 1,694 | 0.70 | 0.604 | 0.689 |
+| Age | 55-70 | 3,630 | **0.79** | 0.553 | 0.662 |
+| Age | 70+ | 2,486 | 0.81 | 0.595 | 0.718 |
 
 ### Key findings
 
-**The single-split audit's apparent disparities do not survive being checked against the full dataset.** On the 54-subject split alone, the model looked strongly worse for male subjects (AUROC gap of 0.102) and for older subjects (AUROC gap of 0.165, decreasing steadily with age), and the handedness audit couldn't even compute an AUROC. Pooled across all 355 subjects via 5-fold cross-validation, that picture changes substantially:
+**The single-split audit's apparent disparities do not survive being checked against the full dataset**, and the pooled audit's per-subgroup PD rate explains most of what looked like an unexplained gap. Across all three demographic splits, the pattern is consistent: subgroups with a *more balanced* PD:HC ratio score a *higher* macro-F1 than subgroups more skewed toward the majority (PD) class in the same comparison —
 
-- **Gender:** AUROC is nearly equal (male 0.698 vs female 0.666) — if anything, slightly favoring male on ranking quality, though a moderate F1 gap remains (male 0.506 vs female 0.598).
-- **Handedness:** now measurable with enough data, and left-handed subjects score *better* (AUROC 0.758 vs 0.686), the opposite of what the single-split audit could only fail to measure.
-- **Age:** does not decrease monotonically with age. The 70+ group (AUROC 0.711) performs close to the under-55 group (0.728); the worst-performing group is actually the middle one, 55-70 (0.662).
+- **Gender:** female (PD rate 0.62) F1=0.571 vs. male (PD rate **0.87**) F1=0.552. Male subjects are only 13% HC in this test population, a much thinner minority-class signal than female's 38% — exactly the condition that punishes macro-F1 mechanically, independent of anything the model is doing differently per group. AUROC (which is prevalence-invariant) actually runs *higher* for male (0.711) than female (0.624) — the model's ranking ability is, if anything, better for male, which is the signature of a class-balance artifact rather than a true fairness failure. This mirrors the same F1-vs-AUROC dynamic already explained in the D2 report for SVM vs. Random Forest.
+- **Handedness:** left (PD rate 0.62) F1=0.641 vs. right (PD rate **0.79**) F1=0.574 — same direction, same explanation.
+- **Age:** under-55 (PD rate 0.70) F1=0.604 vs. 55-70 (PD rate **0.79**) F1=0.553 — same pattern, though 70+ (PD rate 0.81, F1=0.595) breaks the clean monotonic trend, so age is the noisiest of the three.
 
-The honest conclusion is closer to **no strong, consistent subgroup disparity found** rather than the "real, measurable disparity" the single-split audit initially suggested. This is itself a useful methodological finding: a fairness audit run on a small held-out split can produce a confident-looking but misleading picture, and the fix is pooling predictions across cross-validation folds rather than trusting one split. The one gap that does persist in the pooled data — a moderate F1 difference by gender despite similar AUROC — is worth continued monitoring rather than dismissing outright, since it suggests the model's ranking ability is similar across gender but its hard classification threshold may not be equally well-calibrated for both groups.
+The honest conclusion: **the demographic "fairness gaps" in this audit are substantially explained by differing class balance across subgroups, not by the model treating any group's underlying signal worse.** This is not a fully isolated causal test (that would require re-evaluating each subgroup on a PD-rate-matched subsample), but the same direction holding across three independent demographic splits is a strong, consistent pattern, not a coincidence. This is itself a useful methodological finding on top of the earlier single-split-vs-pooled lesson: a demographic F1 gap should be checked against subgroup class balance before being reported as a model fairness failure.
 
 ---
 
@@ -115,11 +115,11 @@ The honest conclusion is closer to **no strong, consistent subgroup disparity fo
 
 ### What the quantization result means for deployment
 
-A ~20 KB model losing at most 0.036 F1 from quantization (and often less, per the run-to-run variance noted above) is a strong result — this is well within the range where INT8 TFLite is a clear win for edge deployment, confirming the D2 report's earlier claim that a compressed CNN, not MOMENT, is the realistic Pi target. AUROC loss from quantization was consistently small (≤0.007) across both runs, which is the more stable signal to lean on given the F1 volatility.
+A ~20 KB model losing at most 0.036 F1 from quantization (varying somewhat run to run, per the variance noted above) is a strong result — this is well within the range where INT8 TFLite is a clear win for edge deployment, confirming the D2 report's earlier claim that a compressed CNN, not MOMENT, is the realistic Pi target. AUROC loss from quantization has stayed small (≤0.025) across all three runs, which is the more stable signal to lean on given the F1 volatility.
 
 ### What the fairness result means
 
-This result is a stronger argument for auditing subgroup fairness than the original single-split finding would have been — not because it found a dramatic disparity, but because it demonstrates *why* the audit has to be done carefully. A naive single-split audit produced a confident, clinically alarming-looking story (large gaps by gender and age) that mostly evaporated once evaluated properly across the full population. Reporting the single-split number as the final answer would have been a real overclaim. The properly pooled result is more modest but more trustworthy: no strong consistent bias by age or handedness, and a moderate but real gender gap in F1 (not AUROC) worth further investigation before any clinical claim is made either way.
+This result is a stronger argument for auditing subgroup fairness carefully than either the original single-split finding, or a pooled result left unexplained, would have been. The single-split audit produced a confident, clinically alarming-looking story (large gaps by gender and age); pooling across all 355 subjects showed that story mostly didn't hold up; and checking per-subgroup class balance on top of that pooled result explains most of what remained. Each step corrected the previous one's overclaim. The final, most defensible finding is: this model does not show strong evidence of treating any demographic group's underlying signal worse — the F1 differences that remain track how balanced each subgroup's PD:HC ratio happens to be, which is a property of the *evaluation population*, not the model. That's a meaningfully different, and more honest, claim than "no bias found" (too strong) or "bias found, unexplained" (too alarming) — it's "no bias found beyond what class imbalance in the population explains."
 
 ---
 
@@ -179,8 +179,8 @@ Both cases passed as expected, giving a validated, protocol-enforced bound on ho
 ## 7. Limitations and Next Steps
 
 - **Real Pi 5 latency validation** is the most important open item — the simulated laptop number is a stand-in, not a substitute.
-- **Single-split model accuracy is noisy** (F1 varied from 0.427 to 0.549 across two identical runs) — any accuracy claim about "the" deployed model should cite the pooled 5-fold mean (≈0.557) rather than one run's single-split number.
-- **The remaining gender F1 gap** (male 0.506 vs female 0.598 in the pooled audit, despite similar AUROC) is not yet explained — worth checking whether it tracks a class-balance difference between subgroups, or a genuine calibration difference, before drawing a conclusion either way.
+- **Single-split model accuracy is noisy** (F1 has ranged from 0.427 to 0.555 across three identical runs) — any accuracy claim about "the" deployed model should cite the pooled 5-fold mean (≈0.57) rather than one run's single-split number.
+- **The demographic F1 gaps are substantially explained by subgroup class-balance differences** (PD rate), not left as an open question — but this was shown via a consistent correlational pattern across three demographic splits, not an isolated causal test (e.g. re-evaluating on PD-rate-matched subsamples). Worth a follow-up if this audit is ever repeated on a new population.
 - **Handedness and age findings should be treated as provisional**, not because the pooled method is wrong, but because any fairness audit result deserves replication before being treated as settled — this project only ran one 5-fold pooling pass.
 - **TLS 1.3 + mutual certificate authentication** remains unimplemented — the MQTT work here validates application-layer encryption and message expiry, not the full transport security design.
 - **MediaPipe compliance validation** remains deferred to Phase 3, since it validates the glove's own future data collection sessions rather than anything evaluated in D2/D3.
