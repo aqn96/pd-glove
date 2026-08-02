@@ -13,9 +13,10 @@ Clinical assertions are marked where they still need a clinician's sign-off.
 
 ## 1. The research claim
 
-The project makes a **layered** claim (detail in §3.1). Layer 1 is a multimodal PD
-detection and severity system across motion, voice, and gait: broad, deployable, and not
-novel by itself. Layer 2 is the contribution:
+The project makes a **layered** claim (detail in §3.1, paper framing in §5). Layer 1 is a
+multimodal low-cost home PD assessment system across motion, voice, gait, and tapping:
+broad, deployable, and not novel by itself. Layer 2 is what makes Layer 1 credible outside
+a curated cohort, and is where the contribution lives:
 
 **Per-finger inertial sensing captures inter-digit phase relationships that discriminate
 Parkinsonian tremor from essential tremor, providing an EMG-free alternative to the
@@ -470,7 +471,112 @@ labels are stronger.
 
 ---
 
-## 5. Staging
+## 5. Paper framing and narrative
+
+Decided direction: the paper is a **multimodal low-cost home PD assessment system**, with
+PD-versus-ET as an integrated part of the argument rather than a separate contribution.
+This section records how to frame that so it does not collapse into the generic
+"we fused modalities and got X%" paper.
+
+### 5.1 ET is the validity check, not a bonus feature
+
+The instinct is to present differential diagnosis as an extra. Framed that way, a reviewer
+reads it as underpowered scope creep. Reframe it:
+
+**Essential tremor is more common than Parkinson's.** A home system that detects "tremor"
+and reports PD will misclassify a substantial fraction of the people who would actually
+use it. So the ET evaluation is not a bonus, it is what makes the detection claim credible
+outside a curated cohort where everyone already has a diagnosis.
+
+That single move puts ET in the spine of the argument. The paper is not "we detect PD, and
+also ET." It is **"we detect PD in a way that survives the population the device would
+actually meet."**
+
+### 5.2 The four gaps, and what fills each
+
+The gap is not that nobody does multimodal. It is that the field reports accuracy and
+almost nothing else. Four specific failures, each matched to something this project has:
+
+| Gap in the field | What this project has |
+|---|---|
+| **Single-modality.** PD is not one symptom; systems measuring one domain miss the others | Tremor and bradykinesia (glove), voice, gait, tapping |
+| **Data shipping.** Most home systems send raw biometrics to the cloud | On-device inference, score-only publishing, AES-256-GCM, MQTT message expiry — all implemented and tested (D3) |
+| **No deployment accounting.** Everyone trains in the cloud, few report what it costs on target hardware | Model size, quantization cost, latency, cold start, peak memory (D3) |
+| **The easy comparison.** Nearly everything benchmarks PD against healthy controls | Benchmarked against essential tremor, the question a clinician actually faces |
+
+The first is the system, the middle two are the engineering, the fourth is the clinical
+credibility. Together they are the paper.
+
+### 5.3 Structure
+
+1. **Motivation.** Clinic visits are sparse, symptoms fluctuate hourly, specialist access
+   is limited globally. Cheap home assessment matters most where DaTscan and neurologists
+   are unavailable.
+2. **System.** Commodity hardware: per-finger glove plus a phone. State the cost explicitly.
+3. **Pipeline.** Pretrain on public data (PADS, mPower), adapt on a small
+   clinician-confirmed cohort, deploy quantized to the Pi.
+4. **Evaluation — this is the differentiating section.** Subject-level splits throughout,
+   pooled out-of-fold subgroup fairness, full deployment cost accounting, and the
+   PD-versus-ET comparison.
+5. **Limitations.** Small cohort, self-reported labels in mPower, laptop-proxy latency
+   until the Pi is accessible again.
+
+### 5.4 Title
+
+Working title:
+
+> **Not All Tremor Is Parkinson's: A Low-Cost Multimodal Edge System for Home Assessment
+> and Differential Diagnosis**
+
+The first clause states the problem in six words, is memorable, and signals immediately
+that this is not the crowded PD-versus-healthy paper. The subtitle carries the keywords a
+reviewer scans for.
+
+Alternatives by emphasis:
+
+- *Conventional, safer:* "A Low-Cost Multimodal Edge System for Home Parkinson's Assessment
+  and Differential Diagnosis from Essential Tremor"
+- *Most combative, leads with the methodological complaint:* "Beyond Accuracy: Deployment
+  Cost, Subgroup Fairness, and Differential Diagnosis in a Low-Cost Parkinson's Monitor"
+- *Continues the existing brand:* "Sensing-to-Decision at Home: Multimodal Edge Assessment
+  and Parkinsonian versus Essential Tremor Discrimination"
+
+On the last option: the AIIoT paper is *"Sensing-to-Decision: A Low-Cost, Privacy-Centric
+Edge Framework for Objective Parkinsonian Tremor and Bradykinesia Quantification."*
+Reusing the prefix builds a recognisable line of work, which is worth something if several
+papers come off this hardware. The cost is that it reads as incremental rather than
+distinct. Only do it if the series is deliberate.
+
+**Avoid in the title:** the phrase "multimodal fusion" (files the paper into the crowded
+bucket, and fusion is not the contribution), and any number — no accuracy figure, no
+subject count. At this cohort size a number in the title invites exactly the scrutiny the
+feasibility framing is meant to avoid.
+
+### 5.5 Two cautions
+
+**Do not let "multimodal" carry the novelty.** If a reviewer can summarise the paper as
+"they fused three modalities and got X%," it lands in the crowded bucket. The sentence they
+should be able to write is *"they built a complete low-cost home system and reported what
+it actually costs to run and where it fails."* Multimodality is how the system is complete,
+not why it is new.
+
+**Decide the ET fallback before writing the introduction.** If ET recruitment fails
+(§7 risk table), the fallback is to run PD-versus-ET on PADS' 28 ET subjects as a
+wrist-only offline analysis, reported as a dataset result rather than a claim about the
+glove. That is weaker but publishable. Knowing this in advance prevents building an
+introduction that cannot be supported.
+
+### 5.6 Venue fit
+
+This framing suits venues like UEMCON and AIIoT, where a working system with honest
+engineering accounting is valued above a novel ML claim. Since the existing accepted paper
+is in that family, this reads as a coherent continuation rather than a pivot. Both venues
+tend toward colon-subtitle titles with keyword-dense second halves, which is why every
+option in §5.4 keeps that shape.
+
+---
+
+## 6. Staging
 
 Each stage should stand alone as a result, so that a later stage failing does not leave an
 unfinished paper.
@@ -531,7 +637,7 @@ from scratch on the patient cohort.
 
 ---
 
-## 6. Risks and dependencies
+## 7. Risks and dependencies
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -548,21 +654,31 @@ from scratch on the patient cohort.
 
 ---
 
-## 7. What is explicitly not a contribution
+## 8. What is explicitly not a contribution
 
-Worth being clear-eyed, since these all appear in the project and none of them are the
-reason someone would cite it:
+Worth being clear-eyed. These all appear in the project and all belong in the paper, but
+none of them is the reason someone would cite it. Compare with §5.2, which lists what each
+of them *does* contribute when combined.
 
 - **Multimodal fusion** on its own. Crowded, and the generic framing of this entire space.
+  Per §5.5: multimodality is how the system is complete, not why it is new.
 - **Edge deployment / INT8 quantization.** Well trodden; the project's own citation list
-  includes prior work establishing the latency and footprint benefits.
+  includes prior work establishing the latency and footprint benefits. What is less common
+  is *reporting the full deployment cost* rather than asserting the technique works.
 - **Methodological rigour.** Subject-level splits, pooled out-of-fold fairness auditing,
   and honest reporting make the paper trustworthy rather than novel. Good reviewers treat
   this as table stakes. It belongs in the methods section, not the contributions list.
+- **Per-finger IMU placement by itself.** Per §1.2, thumb and index placement is already in
+  the literature. The contribution has to be inter-digit *phase* as an EMG-free proxy, plus
+  five channels, plus flex, plus deployment — not the fact of putting sensors on fingers.
+
+The honest summary: no single element here is novel. The argument is that the *combination*
+is a complete, deployable, honestly-measured system evaluated against the hard clinical
+comparison, and that no existing system is all four of those at once.
 
 ---
 
-## 8. Sources
+## 9. Sources
 
 Every claim in this document that rests on outside literature is tagged with an `[Sn]`
 marker. Claims **without** a marker are either (a) facts about this project's own repo and
