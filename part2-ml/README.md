@@ -4,13 +4,19 @@ Model-training, validation, and system-integration work for **Part II** of the
 Sensing-to-Decision framework. This folder is self-contained: code, data, docs, and
 generated results all live under `part2-ml/`.
 
-> **Status (2026-07-26):** Deliverable 2 **complete** — three D2 notebooks verified on Kaggle
-> (GPU T4), report written at `docs/D2_report.md`. Key result: MOMENT full fine-tuning
+> **Status (2026-08-02):** Deliverables 2 and 3 **complete**. D2: MOMENT full fine-tuning
 > (encoder + embedder + head all trainable) reaches macro-F1 0.626 / AUROC 0.731, beating
 > every classical baseline (best baseline SVM F1=0.564, best baseline AUROC RF 0.726). The
 > linear-probe version (frozen encoder) underperformed the baselines at F1=0.502, confirming
 > that a frozen foundation-model encoder needs full fine-tuning to adapt to PD wrist data.
-> **D3 starts next** — on-device latency + fairness audit.
+> D3: CNN quantized to INT8 TFLite (19.6 KB, small accuracy cost), fairness audited across
+> PADS demographics, latency benchmarked, AES-256-GCM + MQTT message expiry implemented and
+> tested. Reports at `docs/D2_report.md` and `docs/D3_report.md`.
+> **D4 next** (due Aug 16) — final report, repo cleanup, talk, demo. Research direction
+> beyond the course is in `docs/research-direction.md`.
+>
+> **Open from D3:** real Pi 5 latency measurement (hardware not currently accessible; the
+> reported number is a laptop ARM proxy).
 >
 > **Why PADS (D2 pivot):** D1 showed ALAMEDA tremor detection was near-chance cross-subject
 > (best SVM F1=0.510, AUROC=0.572) because pre-computed tabular features describe a patient's
@@ -24,15 +30,22 @@ generated results all live under `part2-ml/`.
 
 ```
 part2-ml/
-├── notebooks/
-│   ├── D1_Dataset_Pipeline.ipynb              # D1: load · clean · subject-split · EDA
-│   ├── D1_Unimodal_Classifiers.ipynb          # D1: SVM · RF · 1D-CNN baselines
-│   ├── D2_PADS_Pipeline.py                 # D2: PADS cleaning + feature extraction
-│   ├── D2_PADS_Baseline_Classifiers.py     # D2: SVM · RF · CNN on PADS
-│   ├── D2_PADS_Transformer_MOMENT.py       # D2: MOMENT fine-tuning on PADS
-│   └── *.py                                # jupytext source (version-controlled)
+├── notebooks/                        # .py is canonical source (jupytext); .ipynb are Kaggle copies
+│   ├── D1_Dataset_Pipeline.py        # D1: load · clean · subject-split · EDA
+│   ├── D1_Unimodal_Classifiers.py    # D1: SVM · RF · 1D-CNN baselines
+│   ├── D2_PADS_Pipeline.py           # D2: PADS cleaning + feature extraction
+│   ├── D2_PADS_Baseline_Classifiers.py  # D2: SVM · RF · CNN on PADS
+│   ├── D2_PADS_Transformer_MOMENT.py    # D2: MOMENT fine-tuning on PADS
+│   └── D3_TFLite_Fairness.py         # D3: INT8 quantization + fairness audit
 ├── scripts/
-│   └── organize_data.py              # verify/unzip/organize a pasted data folder
+│   ├── organize_data.py              # verify/unzip/organize a pasted data folder
+│   ├── benchmark_tflite_latency.py   # D3: local TFLite latency / cold start / peak memory
+│   ├── security.py                   # D3: AES-256-GCM payload encryption + self-test
+│   ├── mqtt_common.py                # D3: shared broker config + payload builder
+│   ├── mqtt_publisher.py             # D3: publish encrypted payload with MQTT v5 expiry
+│   ├── mqtt_subscriber.py            # D3: decrypt once, keep summary, discard plaintext
+│   ├── test_message_expiry.py        # D3: validates broker enforces message expiry
+│   └── mosquitto_local.conf          # D3: local dev broker (no TLS — testing only)
 ├── data/                             # datasets (gitignored; READMEs tracked) — see data/README.md
 │   ├── alameda/  daphnet/  ppmi/  pad/  glove/
 ├── results/                          # generated: cleaned/ eda/ figures/ metrics/ (gitignored)
@@ -41,6 +54,10 @@ part2-ml/
 │   ├── D1_report_outline.md          # report skeleton with the actual baseline numbers
 │   ├── D1_report.md                  # final D1 report (figures embedded)
 │   ├── D2_report.md                  # final D2 report — PADS pipeline + MOMENT results
+│   ├── D2_progress_update.md         # amended plan: what changed from the syllabus, and why
+│   ├── D3_report.md                  # final D3 report — quantization, fairness, latency, MQTT
+│   ├── research-direction.md         # post-coursework research plan (PD vs ET, multimodal)
+│   ├── syllabus_original.md          # original syllabus, preserved for reference
 │   └── figures/                      # report figures committed here (results/ is gitignored)
 ├── aws_setup.md                      # S3 bucket layout, IAM policy, EC2 config
 ├── requirements.txt
@@ -167,6 +184,6 @@ to confirm integrity (ALAMEDA md5 matches Zenodo; 17 Daphnet sessions; PPMI pres
 `next-steps.md` has the full week-by-week plan. In short:
 
 - **D2 (complete):** PADS pipeline + SVM/RF/CNN/MOMENT baselines on PD vs HC. MOMENT full fine-tuning (freeze_encoder=False) F1=0.626 beats all baselines; SVM (F1=0.564) remains the Pi deployment choice.
-- **D3 (due Aug 4):** TFLite INT8 quantization of the CNN + simulated on-device latency benchmark (Pi 5 not currently accessible — benchmarked on laptop as a proxy, noted explicitly) + fairness audit (handedness, severity subgroups using PPMI).
+- **D3 (complete):** CNN quantized to INT8 TFLite (19.6 KB); fairness audited across **PADS' own demographics** (age, gender, handedness — not PPMI, which has no raw IMU and so cannot evaluate these models); latency benchmarked on an ARM laptop proxy; AES-256-GCM encryption and MQTT v5 message expiry implemented and tested. Details in `docs/D3_report.md`.
 - **D4 (due Aug 16):** Final report + clean repo + 15-min talk + live demo.
-- **Phase 3 (post-IRB, not part of D1–D4):** once glove recordings exist (target 10–20 PD patients + healthy controls), continue-fine-tune MOMENT and CNN1D from their PADS checkpoints on glove data; refit SVM/RF on combined features. Core question: does IMU + flex sensor beat IMU-only, evaluated within the glove cohort itself. Details in `docs/D2_report.md` §8.
+- **Post-coursework research direction:** the sharper claim is **per-finger sensing for PD vs essential tremor**, not PD vs healthy — the discriminating sign (pill-rolling) is finger-level, which is exactly what wrist sensors average away. Voice and gait are supporting modalities, staged after the glove. Full plan, study design, and staging in [`docs/research-direction.md`](docs/research-direction.md).

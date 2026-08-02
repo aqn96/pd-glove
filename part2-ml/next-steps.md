@@ -2,8 +2,16 @@
 
 **Course:** CS 8674 Part II — Intelligent IoT Frameworks for Chronic Disease Management (Summer 2026)
 **Instructor:** Sarita Singh
-**As of:** 2026-06-14 (Week 4) — **Deliverable 1 complete. D2 starts June 17.**
-**Companion docs:** [literature-review.md](literature-review.md) · [README.md](README.md) · [docs/D1_report.md](docs/D1_report.md)
+**As of:** 2026-08-02 — **D1, D2, and D3 complete. D4 due Aug 16.**
+**Companion docs:** [literature-review.md](literature-review.md) · [README.md](README.md) · [docs/D1_report.md](docs/D1_report.md) · [docs/D2_report.md](docs/D2_report.md) · [docs/D3_report.md](docs/D3_report.md) · [docs/research-direction.md](docs/research-direction.md)
+
+> **Note on this document.** Sections 1 and 3–5 (framing, deliverable descriptions, the
+> literature summary) are still accurate. Sections 2, 6, and 7 were written in June and
+> describe plans that were later superseded: the D2 glove-augmentation approach was
+> replaced by the PADS pivot (blocked on IRB), and the D3 fairness audit used PADS'
+> own demographics rather than PPMI. What actually happened, and why, is documented in
+> [`docs/D2_progress_update.md`](docs/D2_progress_update.md). Post-coursework direction is
+> in [`docs/research-direction.md`](docs/research-direction.md).
 
 This is the plain-English version of the plan: what the project is, where it stands today,
 and what happens next. The detailed annotated bibliography lives in `literature-review.md`.
@@ -49,7 +57,10 @@ These four are exactly the four deliverable contributions — see §4.
 
 ---
 
-## 2. Where we are right now (2026-06-14)
+## 2. Where we were on 2026-06-14 (historical — see README for current status)
+
+> Superseded. Kept for the record of what D1 delivered. Current status is in
+> [README.md](README.md); D2/D3 outcomes are in their respective reports.
 
 **Deliverable 1 is complete.**
 
@@ -178,13 +189,26 @@ averages. Handedness is a real bias axis (38–70% disparity) and needs its own 
 
 ## 7. Open questions to resolve
 
-1. **Roche/`EVENT_ID` discrepancy** — confirm with Prof. Singh how to present the Roche
-   sub-study, since the syllabus's join key doesn't exist in the data.
-2. **AWS school account** — is it usable now? (console login + a `boto3` smoke-test.)
-3. **mPower (Synapse) access** — application filed? Needed for D2 Week 5.
-4. **Pi 5 availability** for the D3 latency benchmark by Jul 29 — if not, lock the EC2 proxy.
-5. **Co-author sync** — are D2/D3 results headed toward a follow-on paper or coursework only?
-   (Affects how the ablation is framed.)
+*Updated 2026-08-02. Items 1–3 below are resolved or moot; the live ones are 4 onward.*
+
+1. ~~**Roche/`EVENT_ID` discrepancy**~~ — handled as a per-patient table joined on `PATNO`
+   only; documented in `docs/unified-feature-schema.md` and flagged in the D1 report.
+2. ~~**AWS school account**~~ — never became available. All compute ran on Kaggle; no S3.
+3. ~~**mPower (Synapse) access**~~ — not pursued. D2 pivoted to PADS instead.
+4. **Pi 5 availability** — still outstanding. The D3 latency number is an Apple M3 Pro
+   (ARM64) proxy, explicitly labelled as such. A real on-device measurement is the top
+   open item, and it is also what AIIoT reviewer R1 asked for by name.
+5. **IRB status** — the blocking dependency for every patient-facing stage. Nothing in
+   `docs/research-direction.md` §4 has a timeline until this moves.
+6. **Can the clinical contact reach essential tremor patients?** The post-coursework
+   research claim (per-finger sensing for PD vs ET) depends on recruiting an ET arm. If
+   that population is not reachable, the framing needs to change before a study is built
+   around it. Ask Prof. Singh early.
+7. **Clinical verification of the PD/ET framing** — pill-rolling as a finger-level
+   discriminating sign is the mechanistic basis for the whole research claim. Needs a
+   neurologist's read on how cleanly it separates in practice.
+8. **Co-author sync** — are D2/D3 results headed toward a follow-on paper or coursework
+   only? (Affects how the ablation is framed.)
 
 ---
 
