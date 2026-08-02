@@ -168,10 +168,18 @@ scripts/
 
 ## Documentation
 
+**Repo orientation:**
+- `CLAUDE.md` — one-page map of both halves of this repo, current state, headline results,
+  and the conventions that matter. Read this first if you are new here (human or LLM).
+
 **Part II — ML pipeline (CS 8674 Part II):**
-- `part2-ml/` — Deliverable 1+ work: dataset pipeline, baseline classifiers, unified feature
-  schema, and the week-by-week plan. Start at `part2-ml/README.md`; the plain-English plan is
-  `part2-ml/next-steps.md`. Part II datasets live under `part2-ml/data/` (gitignored).
+- `part2-ml/` — dataset pipeline, baseline classifiers, MOMENT transformer fine-tuning,
+  INT8 edge quantization, fairness auditing, and the MQTT security layer. Start at
+  `part2-ml/README.md`. Part II datasets live under `part2-ml/data/` (gitignored).
+- `part2-ml/docs/research-direction.md` — **research plan beyond the coursework.** The
+  claim is per-finger sensing for Parkinson's vs essential tremor discrimination, with
+  voice, gait, and tapping as supporting modalities. Includes the architecture diagram,
+  dataset choices, study design, and staging.
 
 **Demo day:**
 - `docs/DEMO_SCRIPT.md` — ~5-minute spoken walkthrough for presenting at the booth
