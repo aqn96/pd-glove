@@ -13,6 +13,10 @@ Clinical assertions are marked where they still need a clinician's sign-off.
 
 ## 1. The research claim
 
+The project makes a **layered** claim (detail in §3.1). Layer 1 is a multimodal PD
+detection and severity system across motion, voice, and gait: broad, deployable, and not
+novel by itself. Layer 2 is the contribution:
+
 **Per-finger inertial sensing improves differential diagnosis of Parkinsonian tremor
 versus essential tremor, relative to wrist-worn sensing.**
 
@@ -33,10 +37,26 @@ Multimodal fusion for PD detection is a crowded space and is not a contribution 
 own. Nor is edge deployment, nor methodological rigour (both matter, neither is novel).
 The per-finger claim is narrower and considerably harder to dismiss because:
 
-1. **iTex named this exact gap and did not fill it.** Their Background states that
-   wrist-worn IMU has lower precision for fine finger movement unless individual IMU
-   sensors are used per finger. They then built one IMU per glove. This project has five.
-   *Source: prior reading notes, citation to be verified against the paper directly.*
+1. **iTex named this exact gap and did not fill it.** Verified against the paper directly
+   (Ravichandran, Sadhu, Convey, Guerrier, Chomal, Mankodiya et al., *iTex Gloves: Design
+   and In-Home Evaluation of an E-Textile Glove System for Tele-Assessment of Parkinson's
+   Disease*, 2023, [PMC10054833](https://pmc.ncbi.nlm.nih.gov/articles/PMC10054833)). Their
+   Background states:
+
+   > "However, this approach has lower precision while measuring fine-grained movement
+   > within fingers, unless individual IMU sensors are used for each finger for analysis of
+   > specific MDS-UPDRS-III exercises such as finger tapping and hand open-close."
+
+   iTex then built **one 6-DoF IMU per glove** plus three flex sensors (index, middle,
+   thumb). This project has five IMUs and five flex sensors, one per finger. The closest
+   prior system identified the limitation and did not address it.
+
+   **Also worth citing from the same paper:** iTex targeted 128 Hz and achieved 82–87 Hz
+   effective, traced to MQTT inter-payload interval averaging 364 ± 23 ms rather than any
+   hardware ceiling. This glove sustains 88.9–89.3 Hz, which is *higher than the closest
+   prior system actually achieved*. The repo currently frames 89 Hz as a shortfall against
+   a 100 Hz target; it should be reframed as comfortably within the range the literature
+   treats as sufficient, with a citation to what comparable systems deliver in practice.
 2. **It has a built-in ablation.** Collapse the five per-finger channels to a single
    wrist-equivalent signal and measure what is lost. This is testable within a single
    cohort, no cross-dataset comparison needed.
@@ -128,11 +148,79 @@ the public-dataset representations. Head-only, LoRA, or linear probing.
 
 ### Datasets per modality
 
-| Modality | Public dataset | Access | Notes |
-|---|---|---|---|
-| Motion | PADS | Already staged | 276 PD, 79 HC, 114 DD, wrist acc+gyro @ 100 Hz |
-| Voice | MDVR-KCL | Public (Zenodo) | 16 PD, 21 HC, raw `.wav`, PD/HC comparison present |
-| Gait | REMAP Open | Public download, no request form | 2D/3D skeleton pose, sit-to-stand and gait turns, PD/HC, medication state labels |
+| Modality | Public dataset | Access | Contains ET? | Notes |
+|---|---|---|---|---|
+| Motion | PADS | Already staged | **Yes, 28** | 276 PD, 79 HC, 114 DD, wrist acc+gyro @ 100 Hz |
+| Voice | MDVR-KCL | Public (Zenodo) | No | 16 PD, 21 HC, raw `.wav`, recorded on a Motorola Moto G4 smartphone |
+| Gait | REMAP Open | Public download, no request form | No | 12 PD, 12 HC, 2D/3D skeleton pose, sit-to-stand and gait turns, medication state labels |
+
+**Only PADS has essential tremor.** This constrains the research claim materially: the
+PD-versus-ET signal can be pretrained on public data for the motion modality only. For
+voice and gait, the public encoders can only learn PD-versus-healthy, and any ET
+discrimination in those modalities has to be learned at the paired-patient stage where
+n is 15 to 20. See §3.1.
+
+### Capture format, and what each modality needs from a phone
+
+**Voice: clean fit.** MDVR-KCL was itself recorded on a Motorola Moto G4 smartphone, so the
+public training data and the eventual deployment device are the same class of hardware.
+No domain gap worth worrying about. A phone microphone is sufficient.
+
+**Gait: there is a real domain gap, and it is easy to miss.** REMAP Open does **not**
+contain video. The released data is derived 2D/3D skeleton coordinates in CSV, coarsened
+for anonymisation — the raw RGB footage is withheld precisely because faces are
+identifying. Consequences:
+
+- You cannot run your own pose estimator over REMAP. There are no frames to process.
+- You would train on their skeleton coordinates, then at inference run a pose model
+  (MediaPipe Pose or similar) over phone video to produce skeletons, then feed those in.
+- **The two skeleton formats will not match.** Joint sets, ordering, and coordinate
+  conventions differ between pose estimators. A harmonisation layer mapping MediaPipe
+  output onto REMAP's joint schema is required work, not a detail.
+- **Viewpoint differs too.** REMAP used fixed wall-mounted cameras in a home. A handheld
+  or tripod phone is a different distance, height, and angle. Skeleton coordinates are
+  sensitive to this unless normalised (scale, translation, and rotation invariance need to
+  be handled explicitly).
+
+This is the main reason gait is staged last: it is the only modality where the public data
+and the deployment sensor are not the same kind of signal.
+
+### 3.1 The layered claim: detection and differentiation are different questions
+
+The two framings are compatible, and stacking them is stronger than either alone, provided
+they are kept clearly separate:
+
+**Layer 1 (all three modalities): multimodal PD detection and severity.** Each modality
+contributes an independent symptom domain, trained on public PD-versus-HC data. This is
+the broad, deployable capability. It is not novel on its own.
+
+**Layer 2 (glove-led): PD versus essential tremor.** This is the contribution. Only PADS
+has ET subjects, so this is the only modality where the discriminator can be pretrained.
+
+The reason multimodality is *more* justified under Layer 2, not less, is that the three
+modalities plausibly carry different PD-versus-ET information:
+
+| Modality | Expected in PD | Expected in ET |
+|---|---|---|
+| Motion (glove) | Rest tremor, pill-rolling, bradykinesia | Action/postural tremor, no pill-rolling |
+| Gait / posture | Postural instability, shuffling, reduced arm swing | Largely unaffected |
+| Voice | Hypophonia, monotone (hypokinetic dysarthria) | Vocal tremor in some patients |
+
+If that holds, the *pattern across modalities* discriminates even where any single one is
+ambiguous: PD elevates all three, whereas ET elevates the tremor channel while leaving
+gait comparatively intact. That is a genuine multimodal argument rather than a
+score-averaging exercise.
+
+**Needs clinical verification.** The table above is drawn from general clinical
+description, not from a source read for this project. Gait sparing in ET and postural
+instability being PD-characteristic are the load-bearing assumptions and should be
+confirmed with a neurologist before the design depends on them.
+
+**The honest limitation:** because no public voice or gait dataset contains ET subjects,
+Layer 2's multimodal component cannot be pretrained. It can only be learned and tested on
+paired patient data at n = 15 to 20. So Layer 2 should be reported as: wrist/finger motion
+evidence (trainable on PADS today, strongest arm), plus a smaller, exploratory multimodal
+result from the patient cohort framed with effect sizes rather than accuracy.
 
 Parkinsons Telemonitoring was considered for voice and rejected: it ships pre-extracted
 acoustic features rather than raw audio (nothing for a pretrained audio model to consume),
