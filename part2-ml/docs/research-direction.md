@@ -314,6 +314,47 @@ spontaneous dialogue. These are different tasks producing different acoustic fea
 Default to sustained phonation for protocol simplicity, keeping MDVR-KCL on disk as a
 fallback.
 
+### mPower data governance — resolve before downloading anything
+
+Synapse registration includes a pledge covering inclusion and respect, legal compliance,
+ethical conduct, **security measures for the content**, open-access practice, crediting
+sources, no marketing use, and 2-business-day incident reporting. Nothing in this project's
+intended use conflicts with any of that in spirit. But the pledge is not the binding
+document — the **mPower-specific conditions of use**, agreed at the data request step, are.
+Two questions must be answered before committing to the mPower plan.
+
+**1. Can mPower data be hosted on Kaggle? This is the one that could break the workflow.**
+
+The security item commits the account holder to appropriate technical and administrative
+measures. This project's entire compute pattern is: download dataset, upload to a *private
+Kaggle dataset*, train there. That is fine for PADS (PhysioNet, open licence). It may not
+be permitted for mPower.
+
+Governed datasets commonly prohibit redistribution and require the data remain under the
+qualified recipient's control. A private Kaggle dataset is still third-party hosted, and
+"private" means private from other Kaggle users, not from Kaggle itself. **If mPower's
+conditions restrict re-hosting, the standard workflow is non-compliant** and an alternative
+compute path is needed — which is a serious constraint given there is no AWS access and
+Kaggle is where everything currently runs.
+
+Ask `act@sagebionetworks.org` directly, in writing, before downloading.
+
+**2. Does secondary use need institutional review?**
+
+Secondary analysis of an existing de-identified dataset is often exempt or classed as
+not-human-subjects-research, but **the institution decides, not the researcher**.
+Northeastern research compliance should confirm. This is separate from the IRB covering
+this project's own patient collection.
+
+**Get the data use statement right.** It should describe the actual intended work, not a
+narrower version: training and fine-tuning across the voice, walking, and tapping modules;
+later combination of derived model outputs with a separately-consented clinical cohort;
+and publication of results. Also ask explicitly whether **model weights trained on mPower
+count as derived data** with their own restrictions — this matters if a checkpoint is ever
+released, and agreements differ on it.
+
+**Status: not yet asked.** Owner: An. Do this in parallel with registration, not after.
+
 ### Access concentration risk
 
 Three of the four modalities plus the fusion pretraining all sit behind a single Synapse
@@ -609,11 +650,36 @@ unfinished paper.
 should start immediately because Synapse gates three modalities. Everything in Stages 1
 through 3 that touches patients waits on IRB.
 
-**Stage 0 — now, no IRB, no new data.**
-Reframe PADS from PD-vs-HC to PD-vs-ET (28 ET subjects currently discarded in
-`load_labels()`). This establishes the wrist-only baseline the glove must beat and
-measures how much harder the differential-diagnosis question is. If wrist-only PD-vs-ET
-lands well below PD-vs-HC, that gap is the motivation section.
+**Stage 0 — now, no IRB, no new data, and independent of mPower.**
+
+Add the PADS differential-diagnosis groups back in. `load_labels()` currently assigns
+`label = -1` to everything that is not PD or Healthy, discarding all 114 DD subjects
+including the 28 with essential tremor. This establishes the wrist-only baseline the glove
+must beat, and measures how much harder differential diagnosis is than PD-vs-HC. If
+wrist-only PD-vs-ET lands well below PD-vs-HC, that gap *is* the motivation section.
+
+**This is not a contingency for mPower failing.** The two are orthogonal: mPower supplies
+the phone modalities, PADS supplies the differential-diagnosis question. Stage 0 should
+happen regardless of how the Synapse process goes, and it happens to also be the thing that
+keeps the paper alive if both mPower access and ET recruitment fall through.
+
+Four practical points:
+
+1. **This is a new task, not a replacement.** Do not overwrite the PD-vs-HC results in the
+   D2 and D3 reports — those remain valid as reported. Add PD-vs-ET as a parallel analysis
+   with its own label mapping and its own numbers.
+2. **Expect a worse F1 than PD-vs-HC, partly for uninteresting reasons.** PD-vs-ET is
+   276 vs 28 subjects, roughly a 10:1 imbalance, against 3.5:1 for PD-vs-HC. D3 established
+   that subgroup class balance alone shifts macro-F1 substantially, so some of the drop will
+   be imbalance rather than task difficulty. Report AUROC prominently (prevalence-invariant)
+   and state the class ratio explicitly. Consider a PD-subsampled variant matched to the ET
+   arm as a sanity check.
+3. **Run PD-vs-all-DD as well.** 276 vs 114 is far better balanced than 276 vs 28, and
+   "PD versus other movement disorders" is a legitimate clinical question in its own right.
+   Two analyses: the specific one (ET, small, clinically sharp) and the better-powered
+   broader one (all DD).
+4. **28 ET subjects across 5-fold subject-level CV is 5 to 6 per fold.** Thin. Treat the
+   output as effect sizes with wide intervals, not a headline accuracy.
 
 **Stage 0b — start in parallel, calendar time only.**
 Begin the Synapse access process for mPower (registration, certification, profile
@@ -649,6 +715,7 @@ from scratch on the patient cohort.
 | MQTT throughput ceiling | Sampling rate collapse when streaming | iTex hit this at 128 Hz and traced it to inter-payload interval. Current design publishes per-exercise summaries, not raw streams, so should be clear. Revisit if raw windows are ever streamed for cloud inference |
 | Scope: four modalities, one built | Unfinished multimodal paper | Stage so each modality is publishable alone |
 | **Synapse access concentration** | mPower gates voice, gait, tapping, *and* fusion pretraining. One denial removes most of the phone-side system | Start the access process immediately, in parallel with IRB. Keep MDVR-KCL (ungated) on disk as an independent voice path |
+| **mPower may not be hostable on Kaggle** | Would break the only available compute workflow, not just delay it | Email `act@sagebionetworks.org` before downloading. See §3 governance subsection. If re-hosting is prohibited, either find a compliant compute path or drop mPower and fall back to MDVR-KCL for voice, accepting the loss of paired fusion pretraining |
 | **mPower labels are self-reported** | Pretraining on unconfirmed diagnoses | Frame as weak supervision at scale; the clinician-confirmed patient cohort provides strong supervision. Never report mPower accuracy as a clinical result |
 | Voice task mismatch | Encoder pretrained on sustained vowels will not transfer to connected speech, or vice versa | Fix the task before writing the study protocol; record whichever task the encoder was pretrained on |
 
