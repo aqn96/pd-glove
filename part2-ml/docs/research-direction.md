@@ -389,6 +389,48 @@ trained on patient data. That is wrong. **mPower is paired** — voice, walking,
 all come from the same participants — so the fusion head *can* be pretrained there and then
 adapted on the patient cohort.
 
+#### The grouping rule: follow data pairing, not clinical construct
+
+This is the counterintuitive part and the thing most likely to be re-derived later, so it
+is stated plainly:
+
+> **A channel goes in level 1 if mPower observed it alongside the other level-1 channels
+> on the same person. Everything else goes in level 2.**
+
+| Channel | Source | Paired with others in mPower? | Level |
+|---|---|---|---|
+| Voice | mPower | Yes | **1** |
+| Gait | mPower | Yes | **1** |
+| Tapping | mPower | Yes | **1** |
+| Tremor | PADS, then cohort | No — PADS has no phone data | **2** |
+| Flex bradykinesia | No public dataset exists | No | **2** |
+
+A fusion head learns *weights*, and weights require joint observations. mPower recorded
+voice, gait, and tapping on the same people, so those three relationships are learnable from
+thousands of subjects. Nothing anywhere pairs glove channels with phone channels, so that
+relationship can only come from the patient cohort.
+
+**Two consequences that look wrong until you know the rule:**
+
+1. **The two bradykinesia measures sit at different levels.** Phone tapping is inside
+   level 1; glove flex enters at level 2. Clinically they are the same construct, which
+   makes this look misplaced. But grouping follows pairing, not clinical category. Tapping's
+   placement is determined by mPower having recorded it next to voice and gait, not by what
+   it measures.
+2. **Tapping is engineered features, yet still level 1.** Where the features came from is
+   irrelevant. What matters is that mPower observed tapping on the same subjects as the
+   other two.
+
+**A useful side effect:** burying tapping inside `phone_score` *reduces* the
+multicollinearity problem. As a standalone level-2 input it would sit beside `flex_brady`
+measuring the same construct, and the two weights would fight. Mixed with voice and gait,
+what reaches level 2 correlates more weakly with `flex_brady`.
+
+**Keep the two bradykinesia scores separate rather than merging them.** The head-to-head —
+does per-finger flex beat a capacitive touchscreen on the same clinical task — requires two
+separately evaluated scores. Report it as an ablation result; it does not need to be encoded
+in the fusion topology.
+
 #### Two-level fusion, and why it is not one flat head
 
 A flat head over all five channels would be 5 weights plus a bias = **6 parameters**, all
@@ -423,6 +465,56 @@ as partial initialisation of something with the wrong input shape.
 | Phone fusion (level 1) | voice, gait, tapping | 4 | mPower, ~9.5k subjects |
 | Final fusion (level 2), Path A | glove tremor, glove flex, phone score | 4 | Patient cohort, n = 15-20 |
 | Final fusion (level 2), Path B | same, but tremor from MOMENT | 4 | Patient cohort, separate weights |
+
+#### Implementation details that follow from this structure
+
+**Feed logits between levels, not probabilities.** A sigmoid output is squashed toward 0
+and 1 at the extremes, discarding information exactly where a model is most confident. Pass
+the level-1 logit into level 2, and likewise for the other channel scores.
+
+**`phone_score` is a feature, not a calibrated probability.** Level 1 was optimised to
+predict *self-reported* PD in mPower's population; level 2 predicts *clinician-confirmed*
+diagnosis in this cohort. Different targets, different populations, different label quality.
+Level 2 consumes `phone_score` as an input signal, and the weights absorb any systematic
+scale difference. Do not interpret or report it as "probability of PD."
+
+**Watch for a near-zero weight on `phone_score`.** If level 2 learns to ignore it, that is
+evidence mPower's population differs enough from the patient cohort that the pretraining did
+not transfer. Report that honestly rather than quietly dropping the channel.
+
+**Encoder drift after adaptation.** Level 1's weights are fitted to mPower's encoder
+outputs. Adapting those encoders on the cohort shifts their score distributions, so a frozen
+level 1 becomes somewhat miscalibrated. Level 2's weight on `phone_score` absorbs overall
+scaling but cannot fix *relative* drift inside level 1. Three options, in order of
+defensibility at n = 15-20:
+
+1. **Freeze the phone encoders entirely.** Level 1 stays exactly valid. Gives up cohort
+   adaptation on channels that are not the contribution anyway, and leaves very few degrees
+   of freedom fitted on the small cohort — which is easy to defend in a paper.
+2. **Adapt the encoders, keep level 1, let level 2 absorb the scaling.** Probably fine.
+   Worth testing.
+3. **Adapt the encoders and refit level 1 on the cohort.** Defeats the purpose of
+   pretraining it.
+
+#### OPEN — flat versus two-level is an empirical question
+
+Everything above is a reasoned argument, not a result. Both variants fit in seconds at this
+parameter count.
+
+| | Flat (5 inputs, 6 params) | Two-level (4 + 4) |
+|---|---|---|
+| Fitted on n = 15-20 | All 6 params | Only level 2's 4 |
+| mPower fusion pretraining | Cannot transfer cleanly — a 3-weight model does not slot into a 5-weight one, since logistic weights are meaningful only relative to each other and the bias | Level 1 used whole, as a module |
+| Flexibility | Can learn that voice matters more than gait *for this cohort* | Level 1's internal balance is frozen from mPower's population |
+| Overfitting risk | Higher | Lower |
+
+**Resolve it with LOSO, then report what happened.** "We evaluated flat and hierarchical
+late fusion under leave-one-subject-out; the hierarchical variant generalised better,
+plausibly because it fits fewer parameters on the small cohort" is a stronger sentence than
+asserting either is correct.
+
+Note also that if mPower access falls through entirely, flat fusion fitted on the cohort is
+the natural fallback: 6 parameters on 20 subjects, no pretraining, still workable.
 
 #### Late fusion, not early — and this is not a close call
 

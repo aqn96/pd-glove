@@ -55,10 +55,18 @@ placement alone is not a contribution. See §1.2 for what actually remains open.
 home system that calls all tremor Parkinson's would misclassify much of its real user base.
 ET is the validity check on the detection claim.
 
-**Five scoring channels, late fusion** (never early — see §3 for the six reasons):
+**Five scoring channels, two-level late fusion** (never early — §3 has the six reasons):
 glove tremor (PADS), glove flex bradykinesia (engineered features, no dataset exists),
 phone tapping (mPower, and the head-to-head baseline the glove must beat), phone voice
 (mPower), phone gait (mPower, in-pocket accelerometry not camera pose).
+
+**Fusion grouping rule:** a channel goes in level 1 if mPower observed it *paired* with the
+other level-1 channels on the same person; everything else goes in level 2. So voice, gait,
+and tapping form level 1 (pretrained on ~9.5k subjects), and glove tremor + glove flex +
+the level-1 phone score form level 2 (fitted on the cohort). Four parameters each. This
+means the two bradykinesia measures land at different levels, which looks wrong until you
+know the rule: grouping follows data pairing, not clinical construct. Flat vs two-level is
+still an open empirical question — settle it with LOSO.
 
 **Two datasets:** **PADS** (only source of essential tremor anywhere) and **mPower** (only
 source of *paired* modalities, so the fusion head can be pretrained rather than fitted at
