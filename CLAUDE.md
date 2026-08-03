@@ -56,7 +56,8 @@ home system that calls all tremor Parkinson's would misclassify much of its real
 ET is the validity check on the detection claim.
 
 **Five scoring channels, two-level late fusion** (never early — §3 has the six reasons):
-glove tremor (PADS), glove flex bradykinesia (engineered features, no dataset exists),
+glove tremor (PADS), glove flex bradykinesia (engineered features; no *flex* dataset
+exists, but mPower tapping becomes one once the feature space is sensor-agnostic),
 phone tapping (mPower, and the head-to-head baseline the glove must beat), phone voice
 (mPower), phone gait (mPower, in-pocket accelerometry not camera pose).
 

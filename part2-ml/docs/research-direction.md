@@ -678,13 +678,18 @@ The DSP infrastructure for this already exists in the repo. Cross-spectral phase
 finger channels is a modest extension of the Butterworth-plus-FFT pipeline in
 `scripts/dsp_pipeline.py`.
 
-### The flex channel: engineered features, no pretraining needed
+### The flex channel: engineered features, and a synthesised pretraining set
 
-The flex sensors have no public counterpart — no PD dataset anywhere carries finger-flexion
-data. That sounds like a gap, but for this channel it is not, because **bradykinesia already
-has an explicit clinical definition**. MDS-UPDRS item 3.4 scores finger tapping on speed,
-amplitude, decrement across the sequence, and hesitations. Every one of those is directly
-computable:
+**Correction to an earlier version of this document.** It said the flex channel has "no
+public dataset." That is true at the **sensor** level and misleading at the **construct**
+level. No PD dataset carries finger-flexion data, but if the feature space is defined to be
+sensor-agnostic, **mPower's tapping module becomes a bradykinesia dataset in that space**,
+with roughly 9,500 subjects. The pretraining set is synthesised rather than found, but it is
+real. See the transfer subsection below.
+
+Start from the fact that **bradykinesia already has an explicit clinical definition**.
+MDS-UPDRS item 3.4 scores finger tapping on speed, amplitude, decrement across the sequence,
+and hesitations. Every one of those is directly computable:
 
 | Feature | Computation |
 |---|---|
@@ -706,7 +711,32 @@ conclusion are worth considerably more than two correlated ones. Flag for clinic
 confirmation.
 
 **The flex channel does not block on Synapse access.** With a small feature set and a small
-model, it is not data-starved.
+model, it is not data-starved. This is the one channel with a working zero-dependency
+fallback.
+
+#### Build order: cohort-only first, mPower as an enhancement
+
+Not either/or. Sequential:
+
+**1. Cohort-only (unblocked, do this first).** Fit the ~6-parameter model on the patient
+cohort's own flex data. Twenty subjects supports six parameters. No Synapse dependency, no
+transfer assumptions to defend. This is the floor, and it survives every failure mode
+upstream.
+
+**2. mPower-pretrained (enhancement, if access arrives).** What this buys is *not* mostly
+"more data for a six-parameter model" — at that size the channel is not data-starved. It
+buys three other things:
+
+- **Feature-set validation at n ≈ 9,500.** If these features do not separate PD from
+  controls on thousands of people, they will not on twenty. Much better to learn that before
+  collecting patient data.
+- **Population reference ranges.** What is a normal tap rate, what decrement ratio is
+  abnormal. Twenty people cannot establish this.
+- **The same-model-two-sensors comparison** (below), which is the clean version of the
+  glove-versus-phone head-to-head.
+
+**If both exist, report the comparison.** "Cohort-fitted achieved X; mPower-pretrained
+achieved Y" is itself a result about whether the transfer works.
 
 ### Feature-level transfer from mPower tapping
 
@@ -756,6 +786,39 @@ model:
    abnormal? Twenty people cannot establish that; thousands can.
 3. **Effect size expectations.** Knowing the separation to expect tells you whether a glove
    result is plausible or whether the pipeline is broken.
+
+#### Train the mPower model deliberately handicapped
+
+The transferable feature subset is smaller than what mPower alone could support. Absolute
+amplitude in particular is screen position in one case and bend angle in the other, with no
+meaningful mapping between them.
+
+**So train the mPower bradykinesia model using only the sensor-agnostic normalised features,
+even where an mPower-specific feature would improve its standalone accuracy.** A model that
+scores better on mPower but breaks on flex input is worthless here. Cripple it on purpose so
+it transfers.
+
+#### The payoff: one model, two sensors, a clean controlled comparison
+
+If a single bradykinesia model serves both sensors, the glove-versus-phone head-to-head
+becomes a properly controlled experiment:
+
+> One bradykinesia model, trained on mPower tapping features. Applied to two sensors on the
+> same patients: phone screen tapping and glove flex. **The only variable is the sensor.**
+
+That is considerably stronger than training two separate models and comparing their outputs,
+where any difference could come from the models rather than the hardware. This isolates
+exactly what the paper claims: that per-finger flex sensing beats a capacitive touchscreen at
+the same clinical task.
+
+**Consequence for fusion.** Sharing a model makes `flex_brady` and the tapping component
+inside `phone_score` *more* correlated than previously noted. That reinforces treating the
+head-to-head as a reported ablation rather than relying on both as independent fusion inputs.
+
+**And it does not move flex to level 1.** Good test of the grouping rule: grouping follows
+*pairing*, not where a model was pretrained. mPower's tapping is paired with mPower's voice
+and gait. The cohort's flex readings are paired with the cohort's phone readings, not with
+mPower's. Flex stays at level 2.
 
 ### Datasets
 
