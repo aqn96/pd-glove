@@ -264,13 +264,21 @@ PUBLIC PRETRAINING (large n)                 PATIENT ADAPTATION (n = 15-20, clin
 │  walking: phone in pocket  │────────────>  small accel model ──freeze, train head──────> gait
 │  tapping: screen           │────────────>  engineered features ──recalibrate───────────> tap
 │                            │
-│  all 3 from same person ───│────────────>  FUSION HEAD ~5 params ──refit on cohort─────> FINAL
-└────────────────────────────┘
+│  all 3 from same person ───│────────────>  PHONE FUSION (level 1) ─────────────────> phone
+└────────────────────────────┘               3 inputs + bias = 4 params                 score
+                                             pretrained on thousands of subjects
 
 ┌─ no public dataset exists ─┐
 │ glove flex sensors         │────────────>  engineered features ──fit on cohort─────────> brady
 │ (finger bend angle)        │               rate / decrement / irregularity                score
 └────────────────────────────┘
+
+
+                    LEVEL 2 FUSION, fitted on the patient cohort (n = 15-20)
+                    ────────────────────────────────────────────────────────
+                        tremor score  ─┐
+                        brady score   ─┼──> 3 inputs + bias = 4 params ──> FINAL
+                        phone score   ─┘
 ```
 
 **Three things this diagram encodes:**
@@ -312,28 +320,37 @@ bradykinesia, and it is the cheap alternative the glove has to beat. Report both
 ```
 PATH A — routine, fully on-device (the default, and the headline claim)
 
-  glove IMU     ──> CNN, 19.6 KB, 0.066 ms ──┐
-  glove flex    ──> engineered features ─────┤
-  phone mic     ──> small audio model ───────┼──> fusion head A ──> score
-  phone pocket  ──> small accel model ───────┤    (~5 params)         │
-  phone screen  ──> engineered features ─────┘                        │
-                                                                      v
-  EVERYTHING RUNS ON THE PI.                          AES-256-GCM + MQTT expiry
-  No raw signal of any kind leaves.                                   │
-                                                                      v
-                                                           cloud receives score only
+  phone mic     ──> small audio model ──┐
+  phone pocket  ──> small accel model ──┼─> LEVEL 1 phone fusion ──> phone_score ─┐
+  phone screen  ──> engineered features ┘   (4 params, mPower-pretrained)         │
+                                                                                  │
+  glove IMU     ──> CNN, 19.6 KB, 0.066 ms ────────────> tremor_score ────────────┤
+  glove flex    ──> engineered features ───────────────> brady_score  ────────────┤
+                                                                                  v
+                                                       LEVEL 2 fusion A (4 params)
+  EVERYTHING RUNS ON THE PI.                                        │
+  No raw signal of any kind leaves.                                 v
+                                                     AES-256-GCM + MQTT expiry
+                                                                    │
+                                                                    v
+                                                        cloud receives score only
 
 
 PATH B — optional second opinion (explicit consent required)
 
-  glove IMU     ══> RAW IMU LEAVES DEVICE ══> MOMENT in cloud ──┐
-  glove flex    ──> features   (computed locally) ──> number ───┤
-  phone mic     ──> audio model (computed locally) ─> number ───┼──> fusion head B
-  phone pocket  ──> accel model (computed locally) ─> number ───┤    (SEPARATE weights)
-  phone screen  ──> features   (computed locally) ──> number ───┘         │
-                                                                          v
-  Only raw IMU crosses the boundary. Voice, gait, and tapping          score
-  stay local and travel as plain numbers. Raw AUDIO never leaves.
+  phone mic     ──> audio model  (local) ─┐
+  phone pocket  ──> accel model  (local) ─┼─> LEVEL 1 phone fusion (local, UNCHANGED)
+  phone screen  ──> features     (local) ─┘                    │
+                                                               └──> phone_score ──┐
+  glove flex    ──> features     (local) ──────────────────────────> brady_score ─┤
+                                                                                  │
+  glove IMU     ══> RAW IMU LEAVES DEVICE ══> MOMENT (cloud) ──────> tremor_score ┤
+                                                                                  v
+                                                       LEVEL 2 fusion B (4 params,
+  Only raw IMU crosses the boundary. Voice, gait, tapping,          SEPARATE weights)
+  and flex all stay local and travel as plain numbers.                  │
+  Raw AUDIO never leaves. Level 1 is untouched.                         v
+                                                                      score
 ```
 
 **Design Path B this way deliberately.** Only the motion encoder needs swapping, so only raw
@@ -344,11 +361,13 @@ speech content — and there is no reason for it to leave the device even in the
 This is not a tiered compromise where privacy is traded for accuracy on the routine path; it
 is a complete on-device system, with Path B as an opt-in extra.
 
-**The two paths need separate fusion heads.** Fusion weights are fitted to the distribution
-of scores they saw during training. MOMENT and the CNN are confident in different ways and
-their outputs are not interchangeable. Swapping the motion encoder under a head trained on
-the other one degrades performance in a way that is hard to diagnose. Each head is five
-numbers, so fitting two is cheap, but it must be done knowingly.
+**The two paths need separate level-2 fusion heads.** Fusion weights are fitted to the
+distribution of scores they saw during training. MOMENT and the CNN are confident in
+different ways and their outputs are not interchangeable. Swapping the motion encoder under
+a head trained on the other one degrades performance in a way that is hard to diagnose.
+Only level 2 needs duplicating — the level-1 phone fusion is unaffected, since Path B
+changes nothing about the phone channels. Each level-2 head is four parameters, so fitting
+two is cheap, but it must be done knowingly.
 
 **Preferred: make Path B unnecessary.** Distillation (train the CNN to imitate MOMENT's
 soft outputs during training) recovers part of the accuracy gap while keeping everything
@@ -370,13 +389,48 @@ trained on patient data. That is wrong. **mPower is paired** — voice, walking,
 all come from the same participants — so the fusion head *can* be pretrained there and then
 adapted on the patient cohort.
 
+#### Two-level fusion, and why it is not one flat head
+
+A flat head over all five channels would be 5 weights plus a bias = **6 parameters**, all
+fitted on 15 to 20 patients. Worse, the mPower pretraining would not transfer into it: a
+head pretrained on mPower has **three** inputs (voice, gait, tapping), the deployed head
+needs five, and the two channels with no pretrained weight at all are the glove channels —
+exactly the ones carrying the contribution.
+
+Two levels fix that by respecting where the data actually lives:
+
+```
+LEVEL 1 — pretrained on mPower (thousands of paired subjects)
+  voice   ─┐
+  gait    ─┼──> phone fusion:  3 inputs + bias = 4 params  ──> phone_score
+  tapping ─┘
+
+LEVEL 2 — fitted on the patient cohort (n = 15-20)
+  glove_tremor ─┐
+  glove_flex   ─┼──> final fusion: 3 inputs + bias = 4 params ──> FINAL
+  phone_score  ─┘
+```
+
+Level 1 is learned where there are thousands of subjects. Level 2 has only **four**
+parameters to fit on twenty patients rather than six, because the three phone channels
+arrive pre-combined. The mPower pretraining is used as a self-contained module rather than
+as partial initialisation of something with the wrong input shape.
+
+**Parameter count summary**
+
+| Head | Inputs | Params | Fitted on |
+|---|---|---|---|
+| Phone fusion (level 1) | voice, gait, tapping | 4 | mPower, ~9.5k subjects |
+| Final fusion (level 2), Path A | glove tremor, glove flex, phone score | 4 | Patient cohort, n = 15-20 |
+| Final fusion (level 2), Path B | same, but tremor from MOMENT | 4 | Patient cohort, separate weights |
+
 #### Late fusion, not early — and this is not a close call
 
 **Late fusion** means each encoder produces its own score first, then those scores are
 combined:
 
 ```
-final = w1·motion + w2·voice + w3·gait + w4·tapping + bias      (5 numbers to learn)
+score = w1·channel1 + w2·channel2 + ... + bias     (one weight per input, plus a bias)
 ```
 
 **Early fusion** would combine the raw signals before encoding, learning one joint
