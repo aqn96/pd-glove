@@ -290,6 +290,8 @@ Once IRB approval is received and glove recordings exist (target: 10–20 PD pat
 
 The core research question is the ablation: IMU-only vs. IMU + flex sensor channels, evaluated within the glove cohort itself (not against PADS, which is a different population and different hardware). Flex sensor data captures finger stiffness (rigidity), which is distinct from tremor and not available in any public dataset. If patient counts allow only PD subjects (no healthy controls), reframe as MDS-UPDRS severity regression instead of PD-vs-HC classification.
 
+> **Superseded after D2 was submitted.** A literature review conducted during D3 sharpened this framing. The core question is now **PD versus essential tremor via inter-digit phase**, an EMG-free proxy for the published alternating-versus-synchronous sign, rather than the IMU-versus-IMU+flex ablation described above. The flex channel still contributes through bradykinesia decrement, but as a second independent mechanism rather than the headline claim. The paragraph above is left unedited as a record of what D2 argued at submission. Current plan: [`research-direction.md`](research-direction.md).
+
 ---
 
 ## References

@@ -73,6 +73,10 @@ Pending — see Section 5.
 
 For a more reliable estimate of the architecture's actual accuracy, the pooled 5-fold CV below gives per-fold F1 of 0.586, 0.610, 0.593, 0.601, 0.468 (mean ≈ 0.572, one weak fold) — consistent with D2's original PyTorch CNN1D 5-fold result (F1 = 0.565 ± 0.022).
 
+![Figure 1. Left: accuracy cost of INT8 quantization, macro-F1 and AUROC, float32 versus quantized, with the model shrinking from roughly 78 KB to 19.6 KB. Right: inference latency against the duration of the sensor window being scored, log scale.](figures/d3_deployment_cost.png)
+
+**Figure 1.** Deployment cost. Left: quantization costs 0.036 macro-F1 and 0.025 AUROC for a roughly 4x reduction in model size. Right: steady-state inference (0.066 ms) and cold start (0.644 ms) against the 10.24-second window being scored, on a log scale — the margin before real-time inference becomes a constraint is roughly five orders of magnitude. **The latency numbers are an Apple M3 Pro proxy, not a Raspberry Pi 5 measurement** (Section 5).
+
 ### Fairness audit
 
 **Single-split audit (54 subjects, 1,188 windows) — the deployed INT8 model:**
@@ -98,6 +102,10 @@ For a more reliable estimate of the architecture's actual accuracy, the pooled 5
 | Age | Under 55 | 1,694 | 0.70 | 0.604 | 0.689 |
 | Age | 55-70 | 3,630 | **0.79** | 0.553 | 0.662 |
 | Age | 70+ | 2,486 | 0.81 | 0.595 | 0.718 |
+
+![Figure 2. Per-subgroup AUROC for the two fairness audits side by side. Left: the single held-out split, where gender and age gaps look large and the left-handed group cannot be scored at all. Right: pooled 5-fold out-of-fold, where the gaps largely close. Each bar is annotated with that subgroup's PD rate.](figures/d3_fairness_single_vs_pooled.png)
+
+**Figure 2.** The fairness audit, single split versus pooled. On the 54-subject split (left) the gaps look large and clinically alarming, and the left-handed group has only one label class so AUROC cannot be computed. Pooled across all 355 subjects (right), the gaps largely close, handedness becomes measurable and favours left-handed subjects, and age is no longer monotonic. The PD rate under each bar is the explanation for the residual macro-F1 spread: subgroups with a more balanced PD:HC ratio score higher on F1, while AUROC (prevalence-invariant) does not follow the same pattern.
 
 ### Key findings
 
@@ -183,5 +191,7 @@ Both cases passed as expected, giving a validated, protocol-enforced bound on ho
 - **The demographic F1 gaps are substantially explained by subgroup class-balance differences** (PD rate), not left as an open question — but this was shown via a consistent correlational pattern across three demographic splits, not an isolated causal test (e.g. re-evaluating on PD-rate-matched subsamples). Worth a follow-up if this audit is ever repeated on a new population.
 - **Handedness and age findings should be treated as provisional**, not because the pooled method is wrong, but because any fairness audit result deserves replication before being treated as settled — this project only ran one 5-fold pooling pass.
 - **TLS 1.3 + mutual certificate authentication** remains unimplemented — the MQTT work here validates application-layer encryption and message expiry, not the full transport security design.
-- **MediaPipe compliance validation** remains deferred to Phase 3, since it validates the glove's own future data collection sessions rather than anything evaluated in D2/D3.
-- These results feed into the Phase 3 glove fine-tuning plan (post-IRB): any subgroup pattern found here is worth checking again once glove-specific data exists, rather than assuming the public-dataset audit generalizes to the glove's own patient population.
+- **MediaPipe compliance validation** remains deferred to post-coursework work, since it validates the glove's own future data collection sessions rather than anything evaluated in D2/D3.
+- These results feed into the post-IRB glove work: any subgroup pattern found here is worth checking again once glove-specific data exists, rather than assuming the public-dataset audit generalizes to the glove's own patient population.
+
+**Note on research direction.** The forward-looking plan has been revised since the D2 report was written, following a literature review. D2 §8 framed the core research question as an IMU-only versus IMU-plus-flex ablation. The current framing is narrower and better grounded: **per-finger inertial sensing captures inter-digit phase relationships that discriminate PD from essential tremor**, as an EMG-free proxy for the established alternating-versus-synchronous sign. The flex channel still contributes, via bradykinesia decrement, but through a separate mechanism rather than as the headline claim. Full plan, sourcing, and staging in [`research-direction.md`](research-direction.md). Nothing in D3's own results depends on which framing is used.
