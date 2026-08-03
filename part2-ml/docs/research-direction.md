@@ -300,13 +300,44 @@ trained on patient data. That is wrong. **mPower is paired** — voice, walking,
 all come from the same participants — so the fusion head *can* be pretrained there and then
 adapted on the patient cohort.
 
-The fusion head should still stay small:
+#### Late fusion, not early — and this is not a close call
 
-- Logistic regression over the modality scores is roughly four or five parameters and is
-  fittable under LOSO at n = 15 to 20 even without mPower pretraining. A learned
-  cross-attention fusion module is not.
-- Describe it as **late fusion of independently adapted unimodal encoders**, not "learned
-  multimodal fusion."
+**Late fusion** means each encoder produces its own score first, then those scores are
+combined:
+
+```
+final = w1·motion + w2·voice + w3·gait + w4·tapping + bias      (5 numbers to learn)
+```
+
+**Early fusion** would combine the raw signals before encoding, learning one joint
+representation. Six reasons that is the wrong choice here, roughly in order of how
+decisive they are:
+
+1. **The pretraining data makes it nearly impossible.** Early fusion must be trained on
+   examples where all modalities are present together. PADS and mPower share no subjects,
+   so there is nothing to pretrain a joint representation on. Late fusion lets each encoder
+   train on whatever dataset covers it.
+2. **Parameter count versus cohort size.** Five numbers is fittable at n = 15 to 20. A
+   joint model is not.
+3. **Missing modalities.** A participant whose gait recording failed cannot be dropped at
+   this n. Late fusion renormalises over whatever scores exist; early fusion generally
+   breaks when an input is absent.
+4. **The signals are not commensurable.** Glove is 100 Hz over 10 s, voice is 44.1 kHz,
+   gait is variable-rate accelerometry over 20 to 30 s, tapping is discrete touch events
+   with no fixed rate. Early fusion requires aligning all of that; late fusion does not.
+5. **Staging requires it.** Adding a modality means adding one input and refitting five
+   weights, rather than retraining a joint model from scratch.
+6. **Interpretability.** Per-modality scores let a clinician see which channel flagged a
+   patient, and make the ablations readable. Early fusion is one number from a black box.
+
+*When to reconsider:* early fusion's genuine advantage is capturing cross-modal
+interactions that separate scoring misses. Reaching that ceiling needs hundreds of paired
+subjects. If the cohort ever grows that far, the natural intermediate step is
+**intermediate fusion** — concatenating encoder *embeddings* rather than final scores,
+then training a small classifier on the concatenation.
+
+- Describe it in the paper as **late fusion of independently adapted unimodal encoders**,
+  not "learned multimodal fusion."
 - Do **not** stitch PADS and mPower subjects together by diagnosis label to fake a paired
   set. Fusion pretraining uses mPower's genuinely paired modalities only; the glove enters
   the fusion at the patient stage. Faking pairing is the confound that makes existing
@@ -325,15 +356,107 @@ Running both gives a direct head-to-head: does per-finger IMU sensing beat a cap
 touchscreen at the same clinical task? That supports the core claim rather than duplicating
 another modality.
 
-### Transfer sequence per modality
+### Pretraining and adaptation strategy
+
+Every model follows the same three-step shape, but the **adaptation step differs by model
+size**, and that is the part most easily got wrong.
 
 ```
 general pretrained model  ->  large public PD dataset  ->  paired patient data
-      (MOMENT, etc.)            (full fine-tune)          (frozen / LoRA / head-only)
+                                (full fine-tune, n is        (adaptation — method
+                                 large enough to support it)   depends on size, below)
 ```
 
-**Stage 3 must not be a full fine-tune.** At n around 30, full fine-tuning will overwrite
-the public-dataset representations. Head-only, LoRA, or linear probing.
+**Step 2 can be a full fine-tune.** PADS has 355 subjects and mPower has thousands. That is
+enough data to move all the weights safely. D2 already demonstrated this: MOMENT full
+fine-tuned on PADS reached F1 0.626, while the frozen-encoder linear probe managed only
+0.502.
+
+**Step 3 must not be.** At 15 to 20 patients, full fine-tuning has far more parameters than
+data points. The model memorises the cohort and overwrites what it learned from the public
+data. This is the single easiest way to silently invalidate the pipeline.
+
+#### Choosing the adaptation method
+
+Rule of thumb, by trainable parameter count of the pretrained model:
+
+| Model size | Method | Why |
+|---|---|---|
+| **> 100M params** (MOMENT) | **LoRA** | Full FT overfits badly; freezing entirely is too rigid to pick up cohort-specific patterns. LoRA trains small adapter matrices alongside the frozen weights, typically under 1% of parameters |
+| **1M – 100M params** (likely the voice model) | **Freeze most layers, train the last block plus head** | Enough capacity to adapt, few enough trainable weights to survive small n |
+| **< 1M params** (the CNN, tapping, probably gait) | **Freeze the feature extractor, train the final layer only** | A few hundred trainable parameters. LoRA here would add complexity for no benefit — it exists to make *large* models cheap to adapt |
+
+**LoRA is for MOMENT, not for the CNN.** The CNN is roughly 50 thousand parameters. Freeze
+its convolutional layers, retrain the final Dense layer, done.
+
+#### Quantization is a packaging step, not a training step
+
+Do **not** fine-tune the `.tflite` file. INT8 weights are discrete and the TFLite artifact
+is inference-only. Keep the float32 model as the master copy:
+
+```
+float32 CNN  --fine-tune on patients-->  float32 CNN v2  --quantize-->  .tflite  --> Pi
+```
+
+(Quantization-aware training exists, which simulates INT8 during training so the model
+learns to tolerate it. Worth knowing the term; not worth the complexity at this scale.)
+
+### The two motion models, and why there are two
+
+Easy to conflate. **Both pretrain on PADS**, then diverge:
+
+| | On-device motion model | Cloud second-opinion model |
+|---|---|---|
+| Model | CNN1D | MOMENT-1-large |
+| Size | 19.6 KB quantized | 1.4 GB |
+| Pretrain | PADS, full fine-tune | PADS, full fine-tune (done, D2) |
+| Adapt to patients | Freeze convs, retrain final Dense | LoRA |
+| Runs where | Raspberry Pi 5, 0.066 ms | Cloud only, cannot fit on a Pi |
+| Raw data leaves device? | **No** | **Yes** |
+
+### Two deployment paths, two fusion heads
+
+**Path A — routine, fully on-device.** Every encoder is small enough to run locally:
+
+| Modality | Encoder | Local? |
+|---|---|---|
+| Motion | Quantized CNN, 19.6 KB | Yes, proven in D3 |
+| Gait | Small model on pocket accelerometer | Almost certainly — same signal class as the glove |
+| Tapping | Touch timestamps, trivial | Yes |
+| Voice | Small audio model, needs care | Probably; audio models run larger, so this needs checking |
+| Fusion | Logistic regression, ~5 numbers | Trivially |
+
+Nothing here needs the cloud. **This is the headline deployment claim**: complete
+multimodal assessment, entirely local, raw data never leaves the device. Not a tiered
+compromise — the whole system.
+
+**Path B — optional second opinion, cloud.** Swaps the motion encoder for MOMENT. Requires
+explicit consent, since raw glove data must leave the device for MOMENT to run at all.
+
+**Important privacy detail for Path B:** only the *motion* encoder changes. Voice, gait,
+and tapping scores can still be computed locally and transmitted as plain numbers. So Path
+B sends raw IMU, but **not raw audio** — which matters, because voice is the most sensitive
+of the four modalities (identifying, and it carries speech content). Design Path B this way
+deliberately rather than shipping everything.
+
+**The gotcha: Path A and Path B need separate fusion heads.** Fusion weights are fitted to
+the distribution of scores they were trained on. MOMENT and the CNN are confident in
+different ways and their outputs are not interchangeable. Swapping the motion encoder
+underneath a fusion head trained on the other one degrades performance in a way that is
+hard to debug. Fit two heads — each is five numbers, so this is cheap, but it has to be
+done knowingly.
+
+**Preferred alternative to Path B: distillation.** Train the on-device CNN to imitate
+MOMENT's probability outputs rather than just the hard labels. MOMENT does its work once,
+offline, during training. You recover part of the accuracy gap and raw data never leaves at
+inference. If this works well enough, Path B becomes unnecessary and the privacy claim
+covers the entire system.
+
+**Open item:** MOMENT ships in multiple sizes (the large variant is built on
+`flan-t5-large`; base and small variants exist). A smaller variant quantized to INT8 might
+fit a Pi 5. Memory is probably not the blocker given 8 GB of RAM; inference speed is what
+needs measuring. Unverified — worth checking, because if it fits, the accuracy ceiling
+moves on-device.
 
 ### Datasets
 
