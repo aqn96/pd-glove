@@ -35,15 +35,46 @@ accuracy ceiling, not a deployable model.
 ## Research direction
 
 Read `part2-ml/docs/research-direction.md` before proposing anything about future work.
+It has diagrams, sourcing, and open decisions. Summary:
 
-The claim is **layered**. Layer 1 is multimodal PD detection (motion, voice, gait, tapping)
-— deployable but not novel. Layer 2 is the contribution: **per-finger inertial sensing
-improves PD versus essential tremor discrimination**, because pill-rolling is a finger-level
-sign that wrist sensors spatially average away. iTex (the closest prior system) named this
-exact gap in their Background and then built one IMU per glove; this project has five.
+The claim is **layered**. Layer 1 is a multimodal low-cost home PD assessment system:
+deployable, not novel by itself. Layer 2 is what makes Layer 1 credible and is where the
+contribution lives: **per-finger inertial sensing captures inter-digit phase relationships
+that discriminate PD from essential tremor, as an EMG-free alternative to the established
+alternating-versus-synchronous sign.**
 
-Two public datasets drive it: **PADS** (only source of essential tremor) and **mPower**
-(only source of paired multimodal data, so the fusion head can be pretrained there).
+The mechanism is specific. PD rest tremor is *alternating* (antagonist muscles out of
+phase), ET is *synchronous*; one study reports no overlap. Classically measured with EMG.
+A wrist sensor averages away inter-digit timing; five per-finger IMUs can resolve it.
+
+**This space is occupied — do not claim novelty carelessly.** IMU-based PD/ET
+discrimination exists in the literature, including thumb/index placement. Per-finger
+placement alone is not a contribution. See §1.2 for what actually remains open.
+
+**Framing note:** ET is not a bonus feature. Essential tremor is more common than PD, so a
+home system that calls all tremor Parkinson's would misclassify much of its real user base.
+ET is the validity check on the detection claim.
+
+**Five scoring channels, late fusion** (never early — see §3 for the six reasons):
+glove tremor (PADS), glove flex bradykinesia (engineered features, no dataset exists),
+phone tapping (mPower, and the head-to-head baseline the glove must beat), phone voice
+(mPower), phone gait (mPower, in-pocket accelerometry not camera pose).
+
+**Two datasets:** **PADS** (only source of essential tremor anywhere) and **mPower** (only
+source of *paired* modalities, so the fusion head can be pretrained rather than fitted at
+n=20). mPower labels are self-reported — weak supervision at scale, not a clinical result.
+
+**Deployment:** Path A is fully on-device, every encoder small enough for the Pi, nothing
+raw leaves. That is the headline claim, not a tiered compromise. Path B is an opt-in cloud
+second opinion using MOMENT, which sends raw IMU but never raw audio.
+
+**Adaptation method depends on model size:** LoRA above 100M params (MOMENT),
+freeze-most-train-last-block at 1M–100M (voice), freeze-extractor-train-head below 1M
+(CNN, tapping, gait). Never full fine-tune at n=20. Never train the `.tflite` — keep the
+float32 master, fine-tune that, re-quantize.
+
+**Blocking dependencies:** IRB (all patient work), Synapse access (three of five channels),
+and an unresolved question about whether mPower can legally be hosted on Kaggle at all.
 
 ## Conventions that matter
 

@@ -228,64 +228,134 @@ Decide which rung is acceptable *before* writing the introduction (§5.5).
 | Voice modality | **Not started** |
 | Gait modality | **Not started** |
 | Tapping modality | **Not started** |
-| mPower (Synapse) access | **Not started** — gates three of four modalities |
+| mPower (Synapse) access | **Not started** — gates three of five scoring channels |
 | Patient data collection | **Blocked** — IRB pending |
 
-One of the four proposed modalities is built.
+Of the five scoring channels, one (glove tremor) is built and validated. Glove flex is
+bench-characterised on the thumb only. The three phone channels are not started.
 
 ---
 
 ## 3. Architecture
 
-### Full picture
+### Diagram 1 — where each model comes from and how it is adapted
 
 ```
-PUBLIC PRETRAINING                     ADAPTATION                  DEPLOYMENT
-(weak/clinical labels, large n)        (n = 15-20, clinical)       (edge)
+PUBLIC PRETRAINING (large n)                 PATIENT ADAPTATION (n = 15-20, clinician-labelled)
+──────────────────────────────               ──────────────────────────────────────────────────
 
-┌─ PADS ──────────────────┐
-│ 276 PD / 79 HC / 114 DD │
-│ incl. 28 ESSENTIAL      │──> motion encoder ──┐
-│ TREMOR  (only source)   │    (MOMENT -> PADS) │
-│ wrist acc+gyro @100Hz   │                     │
-└─────────────────────────┘                     │
-                                                │  freeze / LoRA
-┌─ mPower ────────────────┐                     │  (never full FT)
-│ ~9.5k subjects, PAIRED  │                     v
-│ self-reported labels    │              ┌──────────────┐        ┌─────────────┐
-│                         │              │ paired glove │        │ Raspberry   │
-│  voice  (sustained /a/) │──> voice ────│ + phone data │───────>│ Pi 5        │
-│  walking (in pocket)    │──> gait  ────│ from own     │        │ INT8 TFLite │
-│  tapping (screen)       │──> tapping ──│ PD/ET/HC     │        │ 19.6 KB     │
-│                         │              │ cohort       │        │ local infer │
-│  (+ fusion head can be  │──> fusion ───│              │        └──────┬──────┘
-│   PRETRAINED here, all  │    head      └──────────────┘               │
-│   3 from same person)   │                                      AES-256-GCM
-└─────────────────────────┘                                      + MQTT expiry
-                                                                        │
-                                                                        v
-                                                                   cloud: score
-                                                                   only, never
-                                                                   raw signal
+┌─ PADS ─────────────────────┐
+│ 276 PD / 79 HC             │  full
+│ 114 DD, incl. 28 ET        │  fine-tune    ┌─ CNN1D ~11.6K params ─┐  freeze convs,
+│ ← ONLY ET SOURCE ANYWHERE  │──────┬───────>│ on-device motion model│──train final layer──> tremor
+│ 1 wrist IMU, 6ch @ 100 Hz  │      │        └───────────────────────┘                       score
+└────────────────────────────┘      │
+                                    │        ┌─ MOMENT 100M+ params ─┐
+                                    └───────>│ cloud-only, 1.4 GB    │──LoRA───────────────> tremor
+                                             └───────────────────────┘                    score (B)
+
+┌─ mPower ───────────────────┐
+│ ~9.5k subjects             │
+│ PAIRED: one person does    │
+│ all three tasks            │
+│ self-reported labels (weak)│
+│                            │
+│  voice: sustained /a/      │────────────>  small audio model ──freeze most, train last──> voice
+│  walking: phone in pocket  │────────────>  small accel model ──freeze, train head──────> gait
+│  tapping: screen           │────────────>  engineered features ──recalibrate───────────> tap
+│                            │
+│  all 3 from same person ───│────────────>  FUSION HEAD ~5 params ──refit on cohort─────> FINAL
+└────────────────────────────┘
+
+┌─ no public dataset exists ─┐
+│ glove flex sensors         │────────────>  engineered features ──fit on cohort─────────> brady
+│ (finger bend angle)        │               rate / decrement / irregularity                score
+└────────────────────────────┘
 ```
 
-**The one thing to understand from this diagram:** PADS is the only source of essential
-tremor, so the differential-diagnosis claim rests on the glove path. mPower is the only
-source of *paired* modalities, so the fusion head can be pretrained there rather than fit
-from scratch at n = 20. Those two facts drive the whole design.
+**Three things this diagram encodes:**
 
-### Two public datasets, four modalities, late fusion
+1. **PADS pretrains two different motion models**, not one. The CNN goes on the device;
+   MOMENT is the cloud second opinion. Same pretraining data, different sizes, therefore
+   different adaptation methods.
+2. **PADS is the only source of essential tremor anywhere**, so the differential-diagnosis
+   claim rests entirely on the glove path.
+3. **mPower is the only source of paired modalities**, so the fusion head can be pretrained
+   on thousands of subjects instead of fitted from scratch on twenty.
+
+Note that two channels use **engineered features rather than learned encoders**: glove flex
+and phone tapping. Both measure bradykinesia, which has an explicit clinical definition
+(MDS-UPDRS 3.4: speed, amplitude, decrement, hesitations) that is directly computable. No
+encoder needed, and no public flex dataset exists to pretrain one on.
+
+### Diagram 2 — the five channels, and the head-to-head hiding in them
 
 ```
-[Glove: 5x per-finger IMU + flex]  -> tremor/bradykinesia encoder -> score_motion   (PADS)
-[Phone mic: sustained /a/]         -> dysarthria encoder          -> score_voice    (mPower)
-[Phone in pocket: walk + stand]    -> gait/postural encoder       -> score_gait     (mPower)
-[Phone screen: tapping]            -> bradykinesia encoder        -> score_tapping  (mPower)
-                                                                        |
-                                             late fusion (small, LOSO-validated)
-                                                                        |
-                                                                  final output
+GLOVE                                                    PHONE
+─────                                                    ─────
+5x per-finger IMU  -> tremor score          ┌── same ──> screen tapping -> bradykinesia score
+5x flex sensor     -> bradykinesia score  ──┘ construct                    (comparison baseline)
+                                                         microphone     -> voice score
+                                                         in-pocket accel-> gait score
+                                                    |
+                              late fusion (~5 weights, LOSO-validated)
+                                                    |
+                                              final output
 ```
+
+Glove flex and phone tapping measure **the same construct by different means**. That is not
+redundancy, it is the head-to-head: screen tapping is what a phone-only system would use for
+bradykinesia, and it is the cheap alternative the glove has to beat. Report both.
+
+### Diagram 3 — two deployment paths
+
+```
+PATH A — routine, fully on-device (the default, and the headline claim)
+
+  glove IMU     ──> CNN, 19.6 KB, 0.066 ms ──┐
+  glove flex    ──> engineered features ─────┤
+  phone mic     ──> small audio model ───────┼──> fusion head A ──> score
+  phone pocket  ──> small accel model ───────┤    (~5 params)         │
+  phone screen  ──> engineered features ─────┘                        │
+                                                                      v
+  EVERYTHING RUNS ON THE PI.                          AES-256-GCM + MQTT expiry
+  No raw signal of any kind leaves.                                   │
+                                                                      v
+                                                           cloud receives score only
+
+
+PATH B — optional second opinion (explicit consent required)
+
+  glove IMU     ══> RAW IMU LEAVES DEVICE ══> MOMENT in cloud ──┐
+  glove flex    ──> features   (computed locally) ──> number ───┤
+  phone mic     ──> audio model (computed locally) ─> number ───┼──> fusion head B
+  phone pocket  ──> accel model (computed locally) ─> number ───┤    (SEPARATE weights)
+  phone screen  ──> features   (computed locally) ──> number ───┘         │
+                                                                          v
+  Only raw IMU crosses the boundary. Voice, gait, and tapping          score
+  stay local and travel as plain numbers. Raw AUDIO never leaves.
+```
+
+**Design Path B this way deliberately.** Only the motion encoder needs swapping, so only raw
+IMU has to go up. Voice is the most sensitive modality — it is identifying and carries
+speech content — and there is no reason for it to leave the device even in the cloud path.
+
+**Path A is the claim.** Because every encoder can be small, the whole system runs locally.
+This is not a tiered compromise where privacy is traded for accuracy on the routine path; it
+is a complete on-device system, with Path B as an opt-in extra.
+
+**The two paths need separate fusion heads.** Fusion weights are fitted to the distribution
+of scores they saw during training. MOMENT and the CNN are confident in different ways and
+their outputs are not interchangeable. Swapping the motion encoder under a head trained on
+the other one degrades performance in a way that is hard to diagnose. Each head is five
+numbers, so fitting two is cheap, but it must be done knowingly.
+
+**Preferred: make Path B unnecessary.** Distillation (train the CNN to imitate MOMENT's
+soft outputs during training) recovers part of the accuracy gap while keeping everything
+local. If it works well enough, the privacy claim covers the entire system with no
+exceptions.
+
+### Dataset ownership
 
 **PADS owns the hand, tremor, and ET question. mPower owns the phone-based multimodal
 system.** That split keeps harmonisation work to two datasets rather than four, and every
@@ -401,62 +471,145 @@ float32 CNN  --fine-tune on patients-->  float32 CNN v2  --quantize-->  .tflite 
 (Quantization-aware training exists, which simulates INT8 during training so the model
 learns to tolerate it. Worth knowing the term; not worth the complexity at this scale.)
 
-### The two motion models, and why there are two
+### The two motion models, side by side
 
-Easy to conflate. **Both pretrain on PADS**, then diverge:
+Easy to conflate. **Both pretrain on PADS** (Diagram 1), then diverge:
 
 | | On-device motion model | Cloud second-opinion model |
 |---|---|---|
 | Model | CNN1D | MOMENT-1-large |
+| Trainable params | ~11,600 | 100M+ |
 | Size | 19.6 KB quantized | 1.4 GB |
-| Pretrain | PADS, full fine-tune | PADS, full fine-tune (done, D2) |
-| Adapt to patients | Freeze convs, retrain final Dense | LoRA |
-| Runs where | Raspberry Pi 5, 0.066 ms | Cloud only, cannot fit on a Pi |
+| Pretrain on PADS | Full fine-tune | Full fine-tune (done, D2: F1 0.626) |
+| Adapt to patients | Freeze convs, retrain final Dense (~130 params) | LoRA |
+| Runs where | Raspberry Pi 5, 0.066 ms | Cloud only, cannot fit a Pi |
 | Raw data leaves device? | **No** | **Yes** |
+| Used in | Path A (routine) | Path B (opt-in) |
 
-### Two deployment paths, two fusion heads
+**Open item — a smaller MOMENT might collapse this distinction.** MOMENT ships in multiple
+sizes; the large variant is built on `flan-t5-large`, and base and small variants exist. A
+smaller one quantized to INT8 might fit a Pi 5. Memory is probably not the blocker given
+8 GB of RAM; inference speed is what needs measuring. **Unverified.** Worth checking early,
+because if a usable variant fits on-device, Path B stops being necessary and the privacy
+claim covers everything with no exceptions.
 
-**Path A — routine, fully on-device.** Every encoder is small enough to run locally:
+### Handling the glove's channel count
 
-| Modality | Encoder | Local? |
+PADS is one wrist IMU: **6 channels**. The glove is five IMUs plus five flex sensors:
+**35 channels**. A PADS-pretrained encoder cannot accept that input directly.
+
+**This is less of an obstacle than it first appears**, because each finger IMU produces
+exactly the same 6-channel shape PADS trained on. The problem is not incompatible input, it
+is how to combine five compatible inputs.
+
+| Option | How | Trade-off |
 |---|---|---|
-| Motion | Quantized CNN, 19.6 KB | Yes, proven in D3 |
-| Gait | Small model on pocket accelerometer | Almost certainly — same signal class as the glove |
-| Tapping | Touch timestamps, trivial | Yes |
-| Voice | Small audio model, needs care | Probably; audio models run larger, so this needs checking |
-| Fusion | Logistic regression, ~5 numbers | Trivially |
+| **1. Per-finger encoding** | Run the encoder 5x, once per finger, combine the 5 embeddings | No mismatch at all, uses pretrained weights as intended. 5x compute (trivial for the CNN at 0.066 ms, expensive for MOMENT). **But the encoder cannot see between fingers**, so inter-digit phase must be reintroduced elsewhere |
+| **2. Expand the input embedding** | Keep pretrained weights for the original 6 channels, randomly initialise the other 29, train those | Standard practice, but new channels start from nothing and need data. Thin at n = 20 |
+| **3. Projection layer** | Learn a 35→6 linear map, feed the frozen encoder | **Don't.** Compresses away exactly the per-finger information that is the contribution |
+| **4. Aggregate + explicit phase features** | Wrist-equivalent aggregate (6ch) into the PADS encoder, plus separately computed inter-digit phase features | **Recommended** — see below |
 
-Nothing here needs the cloud. **This is the headline deployment claim**: complete
-multimodal assessment, entirely local, raw data never leaves the device. Not a tiered
-compromise — the whole system.
+**Why option 4 is preferred.** It maps directly onto the experiment:
 
-**Path B — optional second opinion, cloud.** Swaps the motion encoder for MOMENT. Requires
-explicit consent, since raw glove data must leave the device for MOMENT to run at all.
+```
+5 finger IMUs ──┬──> aggregate to wrist-equivalent (6ch) ──> PADS encoder ──> baseline score
+                │                                                                (CONTROL ARM)
+                └──> inter-digit phase features ──────────────────────────────> phase score
+                     (cross-spectral phase, thumb-index etc.)                    (TREATMENT)
+```
 
-**Important privacy detail for Path B:** only the *motion* encoder changes. Voice, gait,
-and tapping scores can still be computed locally and transmitted as plain numbers. So Path
-B sends raw IMU, but **not raw audio** — which matters, because voice is the most sensitive
-of the four modalities (identifying, and it carries speech content). Design Path B this way
-deliberately rather than shipping everything.
+The aggregate path **is** the wrist-equivalent baseline, which is the control arm of the
+ablation. The phase features **are** the treatment. The comparison is the whole experiment,
+built into the architecture rather than bolted on afterwards.
 
-**The gotcha: Path A and Path B need separate fusion heads.** Fusion weights are fitted to
-the distribution of scores they were trained on. MOMENT and the CNN are confident in
-different ways and their outputs are not interchangeable. Swapping the motion encoder
-underneath a fusion head trained on the other one degrades performance in a way that is
-hard to debug. Fit two heads — each is five numbers, so this is cheap, but it has to be
-done knowingly.
+Second advantage, and it matters for a clinical paper: an explicit phase measurement (say
+the phase difference between thumb and index in the tremor band) is **interpretable and
+directly comparable to the EMG literature** [S1, S2]. A learned embedding is not. Being
+able to put a measured phase difference next to the published alternating-versus-synchronous
+finding is far stronger than reporting that a black box separated the classes.
 
-**Preferred alternative to Path B: distillation.** Train the on-device CNN to imitate
-MOMENT's probability outputs rather than just the hard labels. MOMENT does its work once,
-offline, during training. You recover part of the accuracy gap and raw data never leaves at
-inference. If this works well enough, Path B becomes unnecessary and the privacy claim
-covers the entire system.
+The DSP infrastructure for this already exists in the repo. Cross-spectral phase between two
+finger channels is a modest extension of the Butterworth-plus-FFT pipeline in
+`scripts/dsp_pipeline.py`.
 
-**Open item:** MOMENT ships in multiple sizes (the large variant is built on
-`flan-t5-large`; base and small variants exist). A smaller variant quantized to INT8 might
-fit a Pi 5. Memory is probably not the blocker given 8 GB of RAM; inference speed is what
-needs measuring. Unverified — worth checking, because if it fits, the accuracy ceiling
-moves on-device.
+### The flex channel: engineered features, no pretraining needed
+
+The flex sensors have no public counterpart — no PD dataset anywhere carries finger-flexion
+data. That sounds like a gap, but for this channel it is not, because **bradykinesia already
+has an explicit clinical definition**. MDS-UPDRS item 3.4 scores finger tapping on speed,
+amplitude, decrement across the sequence, and hesitations. Every one of those is directly
+computable:
+
+| Feature | Computation |
+|---|---|
+| Tap rate | Peaks per second in the flexion signal |
+| Amplitude | Flexion range per tap |
+| **Decrement** | Slope of amplitude across the 10 s sequence |
+| Hesitations | Irregularity or gaps in inter-tap interval |
+| Velocity | Peak flexion rate per tap |
+
+Five or six numbers feeding a logistic regression is roughly seven parameters, trainable on
+twenty patients with no pretraining at all. The AIIoT paper already specifies exactly these
+metrics for Exercise 2, so the design was right; only the Pi integration is outstanding.
+
+**Decrement is also a PD-versus-ET discriminator.** Progressive amplitude reduction during
+repetitive movement is specifically parkinsonian; ET does not produce it. So the flex
+channel contributes to the differential-diagnosis claim through a *completely different
+mechanism* than the phase argument. Two independent lines of evidence for the same
+conclusion are worth considerably more than two correlated ones. Flag for clinical
+confirmation.
+
+**The flex channel does not block on Synapse access.** With a small feature set and a small
+model, it is not data-starved.
+
+### Feature-level transfer from mPower tapping
+
+mPower's tapping module measures **the same construct with a different sensor**: screen taps
+rather than flexion angle. The construct transfers even when the signal does not. Write one
+feature extractor and two thin adapters:
+
+```
+bradykinesia_features(tap_times, tap_amplitudes) -> features
+    tap_rate                    taps per second
+    inter_tap_interval_cv       coefficient of variation = irregularity
+    rate_decrement_ratio        rate in last third / first third
+    amplitude_decrement_ratio   amplitude in last third / first third
+    n_hesitations               gaps beyond threshold
+
+  flex adapter:   peak detection on flexion signal -> (times, bend amplitudes)
+  mPower adapter: tap timestamps + position deltas -> (times, spatial amplitudes)
+```
+
+**Be precise about what transfers:**
+
+- **Timing features transfer cleanly.** Rate, inter-tap variability, rate decrement. Same
+  construct regardless of how the tap was detected.
+- **Absolute amplitude does not transfer at all.** mPower measures touch position in screen
+  units; flex measures bend angle via ADC. Different physical quantities, no meaningful
+  mapping.
+- **Amplitude decrement transfers, but only normalised.** Express as a ratio (last third
+  over first third), not an absolute drop. This matters because decrement is the clinically
+  important, PD-specific signal, so it needs to be in the transferable set.
+
+**Rule: normalise every feature within subject and within session.** Then the feature space
+is sensor-agnostic and the comparison is legitimate.
+
+**Verify the mPower tapping protocol on access.** It is believed to be two fingers
+alternating between on-screen targets, whereas MDS-UPDRS 3.4 and this project's protocol are
+index-tapping-thumb. Different biomechanics for the same construct. Rate and decrement
+should still be comparable, but confirm, because a large enough difference weakens the
+transfer argument.
+
+**What mPower is actually for here.** Not weight transfer, and not rescuing an underpowered
+model:
+
+1. **Validating the feature set.** Do these five features separate PD from HC at n = 5,000?
+   If not, they will not at n = 20 — and it is much better to learn that before collecting
+   patient data.
+2. **Population reference ranges.** What is a normal tap rate? What decrement ratio is
+   abnormal? Twenty people cannot establish that; thousands can.
+3. **Effect size expectations.** Knowing the separation to expect tells you whether a glove
+   result is plausible or whether the pipeline is broken.
 
 ### Datasets
 
@@ -551,7 +704,7 @@ released, and agreements differ on it.
 
 ### Access concentration risk
 
-Three of the four modalities plus the fusion pretraining all sit behind a single Synapse
+Three of the five scoring channels plus the fusion pretraining all sit behind a single Synapse
 gate. If that access is slow or denied, most of the phone-side system disappears at once.
 Mitigations: start the Synapse process immediately, in parallel with IRB rather than after
 it, and download MDVR-KCL now (free, ungated) so voice has an independent path.
@@ -878,7 +1031,7 @@ Four practical points:
 **Stage 0b — start in parallel, calendar time only.**
 Begin the Synapse access process for mPower (registration, certification, profile
 validation, data use statement) and download MDVR-KCL. Neither depends on IRB, both take
-elapsed time rather than effort, and mPower gates three of the four modalities.
+elapsed time rather than effort, and mPower gates three of the five scoring channels.
 
 **Stage 1 — finish the glove.**
 Flex sensors integrated on the Pi 5, CH4 fault resolved, real Pi latency measured. Plus an
@@ -908,7 +1061,7 @@ from scratch on the patient cohort.
 | Full fine-tune at stage 3 | Silently destroys public-dataset representations | Freeze encoder; head-only or LoRA |
 | Splitting by session not subject | Inflated accuracy, invalid result | Group on subject ID, as D1 through D3 already do |
 | MQTT throughput ceiling | Sampling rate collapse when streaming | iTex hit this at 128 Hz and traced it to inter-payload interval. Current design publishes per-exercise summaries, not raw streams, so should be clear. Revisit if raw windows are ever streamed for cloud inference |
-| Scope: four modalities, one built | Unfinished multimodal paper | Stage so each modality is publishable alone |
+| Scope: five channels, one built | Unfinished multimodal paper | Stage so each channel is publishable alone |
 | **Synapse access concentration** | mPower gates voice, gait, tapping, *and* fusion pretraining. One denial removes most of the phone-side system | Start the access process immediately, in parallel with IRB. Keep MDVR-KCL (ungated) on disk as an independent voice path |
 | **mPower may not be hostable on Kaggle** | Would break the only available compute workflow, not just delay it | Email `act@sagebionetworks.org` before downloading. See §3 governance subsection. If re-hosting is prohibited, either find a compliant compute path or drop mPower and fall back to MDVR-KCL for voice, accepting the loss of paired fusion pretraining |
 | **mPower labels are self-reported** | Pretraining on unconfirmed diagnoses | Frame as weak supervision at scale; the clinician-confirmed patient cohort provides strong supervision. Never report mPower accuracy as a clinical result |
