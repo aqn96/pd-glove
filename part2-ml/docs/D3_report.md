@@ -1,6 +1,6 @@
 # Deliverable 3: Edge Deployment (INT8 TFLite) and Fairness Audit
 **CS 8674 Part II - Intelligent IoT Frameworks for Chronic Disease Management**
-An Nguyen · Northeastern University Khoury College · July 2026
+An Nguyen · Northeastern University Khoury College · August 2026
 
 ---
 
