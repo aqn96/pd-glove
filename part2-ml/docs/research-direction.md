@@ -138,6 +138,77 @@ described as "real." Flagged rather than silently asserted.
 **Scope honestly:** the device provides clinical decision support, not diagnosis. This is
 already stated in the paper's Intended Use section and should stay there.
 
+### 1.4 OPEN DECISION — which comparison group
+
+**Not yet decided.** Recorded here so the options and their tradeoffs are not re-derived
+later. Depends partly on what can be recruited (§7).
+
+PADS' 114 differential-diagnosis subjects are not one thing:
+
+| Group | n | Relationship to PD |
+|---|---|---|
+| Other Movement Disorders | 60 | Heterogeneous, unspecified |
+| Essential Tremor | 28 | The classic diagnostic confusion |
+| Atypical Parkinsonism | 15 | PSP / MSA / CBD — genuinely parkinsonian |
+| Multiple Sclerosis | 11 | Not primarily a tremor disorder |
+
+**Option A — PD vs ET (276 vs 28).** The mechanism, the citation [S1], and the real-world
+misdiagnosis problem all line up here. Sharpest claim. Worst balance at roughly 10:1, and
+5 to 6 ET subjects per fold under subject-level CV.
+
+**Option B — PD vs all DD (276 vs 114).** Best balance at 2.4:1 and the most realistic
+screening scenario, since a deployed device does not know in advance what the alternative
+diagnosis is. But it is a *different, messier* question, not a better-powered version of
+Option A:
+
+- **The mechanism does not transfer.** [S1] establishes alternating-versus-synchronous for
+  PD versus ET specifically. Nothing cited supports "PD alternating, all other disorders
+  synchronous." Broadening the target costs the mechanistic grounding that makes the claim
+  sharp.
+- **Atypical parkinsonism is the wrong thing to call "not PD."** PSP, MSA, and CBD *are*
+  parkinsonian, sharing rigidity, bradykinesia, and sometimes rest tremor. Separating them
+  from PD with a hand sensor is a much harder problem than separating ET, and may not be
+  solvable at all at the wrist or fingers. Clinically that distinction usually comes from
+  disease course and non-motor signs, not tremor morphology. Including these 15 could
+  depress results for reasons unrelated to the sensor.
+- **MS tremor is a different mechanism** (intention / cerebellar).
+
+**Option C — PD vs ET + atypical parkinsonism (276 vs 43).** Middle ground: keeps the arm
+to parkinsonian-and-tremor conditions, drops MS and the unspecified grab bag, better
+balanced than Option A. Still only 15 atypical subjects.
+
+**Not recommended: multiclass.** At 15 and 11 subjects the small classes cannot support
+anything reportable.
+
+**Current leaning:** Option A as the primary claim, Option B reported alongside as the
+realistic screening scenario. Two analyses, different purposes.
+
+**Needs clinical input.** The grouping logic above, particularly the claim that atypical
+parkinsonism is harder to separate from PD than ET is, comes from general clinical
+knowledge rather than a source read for this project. It determines which subjects go in
+which arm, so confirm with Prof. Singh or a neurologist before building the analysis.
+
+### 1.5 If essential tremor patients cannot be recruited
+
+A live concern. The important distinction: **the PADS analysis requires no recruitment at
+all.** Those 28 ET subjects are already in staged data. Recruitment risk affects only the
+glove cohort. Fallback ladder, strongest first:
+
+1. **Recruit ET.** Full claim available: per-finger versus wrist-collapsed ablation on
+   PD versus ET within one cohort.
+2. **No ET, but PD patients available.** The discrimination claim is unavailable, but the
+   *measurement* claim is not. Show that per-finger IMUs reliably extract the
+   alternating-phase signature in PD patients, and report the PADS wrist-only PD-vs-ET
+   result separately as a dataset analysis. Honest framing: "we demonstrate the glove
+   recovers the phase signature the literature identifies as discriminating; validating
+   discrimination against ET requires a cohort we were unable to recruit." Weaker, still a
+   real contribution.
+3. **Neither.** PADS PD-vs-ET and PD-vs-DD stand alone as a public-dataset result, and the
+   glove study reverts to PD versus healthy controls. The per-finger claim becomes motivated
+   future work rather than a tested one.
+
+Decide which rung is acceptable *before* writing the introduction (§5.5).
+
 ---
 
 ## 2. Where things actually stand
@@ -708,7 +779,8 @@ from scratch on the patient cohort.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | IRB not yet cleared | Blocks every patient-facing stage | Critical path; nothing downstream has a timeline until it moves |
-| ET arm cannot be recruited | Removes the core research claim | Ask Prof. Singh early whether the clinical contact reaches ET patients at all. If not, reframe before building the study |
+| ET arm cannot be recruited | Removes the *glove* discrimination claim, but **not** the PADS analysis, which needs no recruitment | Ask Prof. Singh early whether the clinical contact reaches ET patients at all. Fallback ladder in §1.5 — the measurement claim survives even without an ET cohort. Decide which rung is acceptable before writing the introduction |
+| Comparison group not yet decided | Determines the mechanism, the balance, and the achievable claim | §1.4 records the options. Needs clinical input on whether atypical parkinsonism belongs in the "not PD" arm |
 | No clinical rater available | Cannot train toward MDS-UPDRS 0-4 | Within-person medication contrast needs no absolute severity labels |
 | Full fine-tune at stage 3 | Silently destroys public-dataset representations | Freeze encoder; head-only or LoRA |
 | Splitting by session not subject | Inflated accuracy, invalid result | Group on subject ID, as D1 through D3 already do |
