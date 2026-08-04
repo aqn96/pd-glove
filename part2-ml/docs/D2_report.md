@@ -268,6 +268,21 @@ Both models see the same underlying signal — tremor-band power and frequency p
 
 ### Why MOMENT linear probing underperforms
 
+**Terminology.** "Linear probing" and "freezing the encoder and training only the head" are
+the same technique. MOMENT's own documentation uses this definition, describing linear
+probing as "fine-tuning the final linear layer." The V3 run used `freeze_encoder=True`, so
+only the classification head learned. V9–V11 set `freeze_encoder`, `freeze_embedder`, and
+`freeze_head` all to `False`, so every weight was updated.
+
+*Documentation gap: the repo records `freeze_encoder=True` for V3 but not the V3 values of
+`freeze_embedder` and `freeze_head`. Recoverable from Version 3 of the Kaggle notebook if a
+precise config is ever needed for publication.*
+
+**Reproducibility note:** the MOMENT changelog records a fix for classification being unable
+to handle multi-channel inputs. This work uses `n_channels=6` and is therefore affected. The
+notebook installs `momentfm` from GitHub `main` rather than pinning a release, so the fixed
+code was used. Any future version pin must be to a release *after* that fix.
+
 MOMENT's encoder was pre-trained on general time series data across many domains. Linear probing means the encoder is completely frozen — only a small classification layer on top is trained. Think of it like using a general-purpose brain without letting it adapt to PD data specifically. The classification layer has only 5 training epochs to map fixed, unadapted representations to PD vs. HC labels, which is not enough given the class imbalance and the fact that these representations were never tuned for wrist tremor.
 
 Full fine-tuning (training the entire encoder end-to-end) confirms this: letting the model adjust its internal representations to recognize PD-specific wrist motion patterns raises macro-F1 from 0.502 to 0.626 and AUROC from 0.622 to 0.731 (Table 1, Section 6) — enough to overtake every classical baseline.

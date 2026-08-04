@@ -632,12 +632,31 @@ Easy to conflate. **Both pretrain on PADS** (Diagram 1), then diverge:
 | Raw data leaves device? | **No** | **Yes** |
 | Used in | Path A (routine) | Path B (opt-in) |
 
-**Open item — a smaller MOMENT might collapse this distinction.** MOMENT ships in multiple
-sizes; the large variant is built on `flan-t5-large`, and base and small variants exist. A
-smaller one quantized to INT8 might fit a Pi 5. Memory is probably not the blocker given
-8 GB of RAM; inference speed is what needs measuring. **Unverified.** Worth checking early,
-because if a usable variant fits on-device, Path B stops being necessary and the privacy
-claim covers everything with no exceptions.
+**Open item — a smaller MOMENT might collapse this distinction.** Now **confirmed**: the
+MOMENT repo announces small and base variants alongside the large one used here.
+
+| Variant | Backbone | Approx. params | HuggingFace |
+|---|---|---|---|
+| MOMENT-1-small | `flan-t5-small` | ~38–40 M | [AutonLab/MOMENT-1-small](https://huggingface.co/AutonLab/MOMENT-1-small) |
+| MOMENT-1-base | `flan-t5-base` | ~113 M | [AutonLab/MOMENT-1-base](https://huggingface.co/AutonLab/MOMENT-1-base) |
+| MOMENT-1-large *(used in D2)* | `flan-t5-large` | ~350 M | [AutonLab/MOMENT-1-large](https://huggingface.co/AutonLab/MOMENT-1-large) |
+
+Parameter counts for small and base are from secondary sources, not verified against a
+downloaded config the way the large variant was (§ D2 report). At ~38–40 M, small quantized
+to INT8 would be roughly 40 MB, which a Pi 5 with 8 GB RAM can certainly hold. **Memory is
+not the blocker; inference speed is what needs measuring**, and that measurement needs the
+actual Pi.
+
+Worth checking early. If a usable variant runs on-device at acceptable latency, Path B stops
+being necessary and the privacy claim covers the whole system with no exceptions. It would
+also change the adaptation strategy: at ~38 M, small falls in the freeze-most-train-last-block
+band rather than needing LoRA.
+
+**Related, and relevant to reproducibility:** the MOMENT changelog records a fix for
+classification being *unable to handle multi-channel inputs*. This project runs
+`n_channels=6`, so it is directly affected. The notebook installs from GitHub `main` rather
+than pinning a release, so the fixed code was used. Pinning a version for reproducibility
+would be sensible, but pin a version *after* that fix.
 
 ### Handling the glove's channel count
 
