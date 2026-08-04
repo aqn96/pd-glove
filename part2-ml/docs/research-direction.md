@@ -250,7 +250,7 @@ PUBLIC PRETRAINING (large n)                 PATIENT ADAPTATION (n = 15-20, clin
 │ ← ONLY ET SOURCE ANYWHERE  │──────┬───────>│ on-device motion model│──train final layer──> tremor
 │ 1 wrist IMU, 6ch @ 100 Hz  │      │        └───────────────────────┘                       score
 └────────────────────────────┘      │
-                                    │        ┌─ MOMENT 100M+ params ─┐
+                                    │        ┌─ MOMENT ~350M params ─┐
                                     └───────>│ cloud-only, 1.4 GB    │──LoRA───────────────> tremor
                                              └───────────────────────┘                    score (B)
 
@@ -598,7 +598,7 @@ Rule of thumb, by trainable parameter count of the pretrained model:
 
 | Model size | Method | Why |
 |---|---|---|
-| **> 100M params** (MOMENT) | **LoRA** | Full FT overfits badly; freezing entirely is too rigid to pick up cohort-specific patterns. LoRA trains small adapter matrices alongside the frozen weights, typically under 1% of parameters |
+| **> 100M params** (MOMENT-1-large, ~350M) | **LoRA** | Full FT overfits badly; freezing entirely is too rigid to pick up cohort-specific patterns. LoRA trains small adapter matrices alongside the frozen weights, typically under 1% of parameters |
 | **1M – 100M params** (likely the voice model) | **Freeze most layers, train the last block plus head** | Enough capacity to adapt, few enough trainable weights to survive small n |
 | **< 1M params** (the CNN, tapping, probably gait) | **Freeze the feature extractor, train the final layer only** | A few hundred trainable parameters. LoRA here would add complexity for no benefit — it exists to make *large* models cheap to adapt |
 
@@ -624,7 +624,7 @@ Easy to conflate. **Both pretrain on PADS** (Diagram 1), then diverge:
 | | On-device motion model | Cloud second-opinion model |
 |---|---|---|
 | Model | CNN1D | MOMENT-1-large |
-| Trainable params | ~11,600 | 100M+ |
+| Trainable params | ~11,600 | ~350M (Flan-T5-large encoder, 24 layers, d_model 1024) |
 | Size | 19.6 KB quantized | 1.4 GB |
 | Pretrain on PADS | Full fine-tune | Full fine-tune (done, D2: F1 0.626) |
 | Adapt to patients | Freeze convs, retrain final Dense (~130 params) | LoRA |
